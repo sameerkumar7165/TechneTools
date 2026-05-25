@@ -1,0 +1,2761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TechneTools</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:           #2b2e35;
+    --surface:      #363a43;
+    --surface2:     #3f4450;
+    --surface3:     #474d59;
+    --border:       #505664;
+    --accent:       #627FBF;
+    --accent2:      #4e6aa0;
+    --accent-text:  #fff;
+    --text:         #f0f0f0;
+    --text-muted:   #8a9099;
+    --text-soft:    #b8bec8;
+    --danger:       #DC5B23;
+    --radius:       6px;
+    --input-bg:     #3f4450;
+    --select-bg:    #3f4450;
+  }
+  /* Light theme */
+  body[data-theme="light"] {
+    --bg:           #F9F7F4;
+    --surface:      #ffffff;
+    --surface2:     #f0eeeb;
+    --surface3:     #e5e3e0;
+    --border:       #d0cec9;
+    --text:         #161615;
+    --text-muted:   #7a7870;
+    --text-soft:    #4a4845;
+    --input-bg:     #ffffff;
+    --select-bg:    #ffffff;
+  }
+  body[data-theme="light"] .input-wrap input,
+  body[data-theme="light"] .input-wrap select { background: var(--input-bg); color: var(--text); }
+  body[data-theme="light"] .drum-wrap { background: var(--input-bg); }
+  body[data-theme="light"] .drum-wrap::after {
+    background: linear-gradient(to bottom, var(--input-bg) 0%, transparent 40%, transparent 60%, var(--input-bg) 100%);
+  }
+  body[data-theme="light"] h2 { color: #161615; }
+  /* Per-tab accent overrides */
+  body[data-tab="uv"] {
+    --accent: #627FBF; --accent2: #4e6aa0; --accent-text: #fff;
+  }
+  body[data-tab="ms"] {
+    --accent: #DC5B23; --accent2: #b84a1c; --accent-text: #fff;
+  }
+  body[data-tab="gw"] {
+    --accent: #EFC455; --accent2: #d4a93a; --accent-text: #161615;
+  }
+  body[data-tab="si"] {
+    --accent: #DA7DA8; --accent2: #c0628e; --accent-text: #fff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Lato', sans-serif;
+    min-height: 100vh;
+    padding: 0 0 24px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* ── Tabs ── */
+  .tab-bar {
+    display: grid; grid-template-columns: 1fr 1fr;
+    background: var(--surface); border-bottom: 2px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    padding: 8px 10px; gap: 6px;
+  }
+  .tab-btn {
+    padding: 9px 10px; border: none; background: var(--surface2);
+    color: var(--text-muted); font-family: 'Lato', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .tab-btn.active { background: var(--accent); color: var(--accent-text); }
+  .tab-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+  .tab-content { display: none; padding: 0 16px; }
+  .tab-content.active { display: block; padding-top: 14px; }
+
+  /* ── Header ── */
+  .tool-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; padding-top: 4px;
+  }
+  .logo-line { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 28px; height: 28px; background: var(--accent);
+    border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .logo-icon svg { width: 15px; height: 15px; stroke: var(--accent-text) !important; }
+  h2 { font-family: 'Lato', sans-serif; font-size: 16px; font-weight: 900;
+       letter-spacing: 0.5px; color: #2b2e35; text-transform: uppercase; }
+  body[data-theme='dark'] h2 { color: #f0f0f0; }
+
+  /* ── Unit toggle ── */
+  .unit-toggle {
+    display: flex; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 100px; padding: 3px;
+  }
+  .unit-btn {
+    padding: 5px 14px; border-radius: 100px; border: none;
+    background: transparent; color: var(--text-muted);
+    font-family: 'Lato', sans-serif; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+  }
+  .unit-btn.active { background: var(--accent); color: var(--accent-text); }
+
+  /* ── Sections ── */
+  .section {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 8px;
+  }
+  .section-label {
+    font-size: 10px; font-family: 'Lato', sans-serif; font-weight: 700;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px;
+  }
+
+  /* ── Fields ── */
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11px; color: var(--text-muted); font-family: 'Lato', sans-serif;
+                 font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+                 min-height: 2.4em; display: flex; align-items: flex-end; padding-bottom: 2px; }
+  .ftin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ftin-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .ftin-pair .input-wrap input { font-size: 15px; padding: 10px 28px 10px 10px; }
+  .ftin-pair .unit-tag { right: 8px; font-size: 10px; }
+
+  .input-wrap { position: relative; display: flex; align-items: center; }
+  .input-wrap input {
+    width: 100%; background: var(--input-bg, var(--surface2)); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 36px 10px 12px; color: var(--text);
+    font-family: 'Lato', sans-serif; font-size: 18px; font-weight: 400; outline: none;
+    transition: border-color 0.2s; -moz-appearance: textfield;
+  }
+  .input-wrap input::-webkit-outer-spin-button,
+  .input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .input-wrap input:focus { border-color: var(--accent); }
+  .input-wrap input::placeholder { color: var(--border); }
+
+  /* Select styled like input */
+  .input-wrap select {
+    width: 100%; background: var(--select-bg, var(--surface2)); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 12px; color: var(--text);
+    font-family: 'Lato', sans-serif; font-size: 15px; font-weight: 400; outline: none;
+    transition: border-color 0.2s; appearance: none; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a9099' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+    height: 42px; box-sizing: border-box;
+  }
+  .input-wrap select:focus { border-color: var(--accent); }
+  /* Match input height */
+  .input-wrap input { height: 42px; box-sizing: border-box; }
+
+  .unit-tag {
+    position: absolute; right: 10px; font-size: 11px;
+    font-family: 'Lato', sans-serif; font-weight: 700;
+    color: var(--text-muted); pointer-events: none; text-transform: lowercase;
+  }
+
+  /* ── Slider ── */
+  .slider-row { display: flex; flex-direction: column; gap: 6px; }
+  .slider-header { display: flex; justify-content: space-between; align-items: center; }
+  .slider-val {
+    font-family: 'Lato', sans-serif; font-size: 15px; font-weight: 700; color: var(--accent);
+  }
+  input[type=range] {
+    width: 100%; -webkit-appearance: none; appearance: none;
+    height: 4px; border-radius: 2px; background: var(--border); outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent); cursor: pointer; border: 2px solid #fff;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent); cursor: pointer; border: 2px solid #fff;
+  }
+
+  /* ── Glass lites ── */
+  .lite-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .lite-entry { display: flex; align-items: center; gap: 8px; animation: slideIn 0.2s ease; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .lite-num {
+    font-family: 'Lato', sans-serif; font-weight: 700; font-size: 11px;
+    color: var(--accent); min-width: 26px; text-align: center;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 4px 5px; flex-shrink: 0; text-transform: uppercase;
+  }
+
+  /* ── Drum picker ── */
+  .drum-wrap {
+    flex: 1; background: var(--input-bg, var(--surface2)); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; position: relative;
+    user-select: none; -webkit-user-select: none; cursor: pointer;
+  }
+  .drum-track {
+    display: flex; flex-direction: column;
+    transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: grab;
+  }
+  .drum-track:active { cursor: grabbing; }
+  .drum-item {
+    height: 36px; display: flex; align-items: center; justify-content: center;
+    font-family: 'Lato', sans-serif; font-size: 15px; font-weight: 400; color: var(--text-muted);
+    transition: color 0.15s; flex-shrink: 0; padding: 0 12px; white-space: nowrap;
+  }
+  .drum-item.selected { color: var(--text); font-weight: 400; }
+  .drum-item.near { color: var(--text-soft); }
+  .drum-wrap::before {
+    content: ''; position: absolute; left: 0; right: 0;
+    top: 50%; transform: translateY(-50%);
+    height: 36px; background: transparent;
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    pointer-events: none; z-index: 1;
+  }
+  .drum-wrap::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to bottom, var(--surface2) 0%, transparent 40%, transparent 60%, var(--surface2) 100%);
+    pointer-events: none; z-index: 2;
+  }
+  .drum-viewport { height: 36px; overflow: hidden; width: 100%; position: relative; }
+
+  /* ── Buttons ── */
+  .remove-btn {
+    width: 28px; height: 28px; border-radius: 4px; border: none;
+    background: var(--accent); color: var(--accent-text); font-size: 17px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s; line-height: 1;
+  }
+  .remove-btn:hover { background: var(--accent2); }
+
+  .add-btn {
+    width: 100%; padding: 9px; border-radius: var(--radius); border: none;
+    background: var(--accent); color: #fff;
+    font-family: 'Lato', sans-serif; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+  }
+  .add-btn:hover { background: var(--accent2); }
+
+  /* ── Error ── */
+  .error-msg {
+    background: rgba(224,90,78,0.15); border: 1px solid rgba(224,122,110,0.4);
+    border-radius: var(--radius); padding: 10px 14px; font-size: 13px;
+    font-family: 'Lato', sans-serif; color: var(--accent); display: none; margin-bottom: 8px;
+  }
+  .error-msg.visible { display: block; }
+
+  /* ── Result panel ── */
+  .result {
+    background: var(--surface); border-radius: var(--radius); padding: 14px 16px; display: none;
+  }
+  .result.visible { display: block; animation: fadeUp 0.25s ease; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .result-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  }
+  .result-label {
+    font-size: 10px; font-family: 'Lato', sans-serif; font-weight: 700;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;
+  }
+  .result-values {
+    display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 14px;
+    border-bottom: 1px solid var(--border); padding-bottom: 14px;
+  }
+  .result-col { display: flex; flex-direction: column; padding-right: 16px; }
+  .result-col:last-child { padding-right: 0; padding-left: 16px; border-left: 1px solid var(--border); }
+  .result-col-label {
+    font-family: 'Lato', sans-serif; font-weight: 700; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;
+    color: var(--text-muted); transition: color 0.2s;
+  }
+  .result-col.active .result-col-label { color: var(--accent); }
+  .result-val {
+    font-family: 'Lato', sans-serif; font-weight: 900;
+    font-size: 30px; line-height: 1; transition: color 0.2s;
+  }
+  .result-val.active { color: var(--accent); }
+  .result-val.inactive { color: var(--text-soft); }
+  .result-val-unit {
+    font-family: 'Lato', sans-serif; font-weight: 300; font-size: 0.42em;
+    margin-left: 2px; letter-spacing: 0.5px;
+  }
+  .copy-btn {
+    background: var(--accent); border: none; border-radius: 4px;
+    color: var(--accent-text); font-family: 'Lato', sans-serif; font-weight: 700;
+    font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+    padding: 5px 10px; cursor: pointer; display: flex; align-items: center; gap: 5px;
+    transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
+  }
+  .copy-btn:hover, .copy-btn.copied { background: var(--accent2); }
+  .copy-btn svg { width: 11px; height: 11px; }
+  .result-breakdown { display: flex; flex-direction: column; gap: 0; }
+  .brow {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: 'Lato', sans-serif; padding: 8px 0;
+  }
+  .brow .bl { color: var(--text-muted); }
+  .brow .bv { color: var(--text-soft); }
+  .brow.area-brow { font-size: 16px; border-bottom: 1px solid var(--accent); margin-bottom: 2px; }
+  .brow.sep-above { border-top: 1px solid var(--accent); margin-top: 2px; }
+  .brow.lite-brow { font-size: 14px; }
+  .brow.lite-brow .bl { color: var(--text-muted); }
+
+  /* ── Mullion result ── */
+  .m-result {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 14px 16px; display: none; margin-bottom: 8px;
+  }
+  .m-result.visible { display: block; animation: fadeUp 0.25s ease; }
+  .m-result-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+  }
+  .m-kpi-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+    background: var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 14px;
+  }
+  .m-kpi {
+    background: var(--surface2); padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .m-kpi-label {
+    font-size: 9px; font-weight: 700; font-family: 'Lato', sans-serif;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px;
+  }
+  .m-kpi-val {
+    font-size: 22px; font-weight: 900; font-family: 'Lato', sans-serif;
+    line-height: 1; color: var(--accent);
+  }
+  .m-kpi-unit {
+    font-size: 11px; font-weight: 300; margin-left: 2px; color: var(--text-soft);
+  }
+  .m-kpi.secondary .m-kpi-val { color: var(--text); font-size: 18px; }
+  .m-section-label {
+    font-size: 10px; font-weight: 700; font-family: 'Lato', sans-serif;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px;
+  }
+  .profile-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px;
+  }
+  .profile-card.pass { border-color: #4caf7a; }
+  .profile-card.fail { border-color: var(--border); opacity: 0.5; }
+  .profile-top {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+  }
+  .profile-name { font-size: 15px; font-weight: 700; color: var(--text); }
+  .profile-badge {
+    font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 3px;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .profile-badge.pass { background: #1a3a2a; color: #4caf7a; }
+  .profile-badge.fail { background: var(--surface3); color: var(--text-muted); }
+  .profile-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px;
+  }
+  .profile-stat { display: flex; flex-direction: column; gap: 2px; }
+  .profile-stat-label { font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  .profile-stat-val { font-size: 13px; font-weight: 700; color: var(--text-soft); }
+  .util-bar-wrap { margin-top: 8px; }
+  .util-bar-bg { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .util-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+  .util-bar-fill.pass { background: #4caf7a; }
+  .util-bar-fill.fail { background: var(--accent); }
+  .util-label { font-size: 10px; color: var(--text-muted); margin-top: 3px; font-family: 'Lato', sans-serif; }
+
+  /* custom section divider */
+  .section + .section { border-top: 1px solid var(--surface3); }
+
+  /* section type toggle */
+  .sec-type-row {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  }
+  .sec-type-label {
+    font-size: 11px; color: var(--text-muted); font-family: 'Lato', sans-serif;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  }
+  .sec-type-toggle {
+    display: flex; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 100px; padding: 3px;
+  }
+  .sec-type-btn {
+    padding: 4px 14px; border-radius: 100px; border: none;
+    background: transparent; color: var(--text-muted);
+    font-family: 'Lato', sans-serif; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+  }
+  .sec-type-btn.active { background: var(--accent); color: var(--accent-text); }
+  #wall-t-field { transition: opacity 0.2s; }
+  #wall-t-field.hidden { display: none; }
+  .select-accent {
+    background: var(--accent) !important; color: var(--accent-text) !important;
+    border-color: var(--accent) !important; font-weight: 700 !important;
+    background-image: none !important;
+  }
+</style>
+</head>
+<body data-tab="uv" data-theme="light">
+
+<!-- Tab bar -->
+<div class="tab-bar" style="grid-template-columns:1fr 1fr 1fr 1fr">
+  <button class="tab-btn active" id="tab-uv" onclick="switchTab('uv')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    U-Value
+  </button>
+  <button class="tab-btn" id="tab-ms" onclick="switchTab('ms')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="12" y1="3" x2="12" y2="21"/>
+      <line x1="5" y1="6" x2="19" y2="6"/>
+      <line x1="5" y1="18" x2="19" y2="18"/>
+    </svg>
+    Mullion
+  </button>
+  <button class="tab-btn" id="tab-gw" onclick="switchTab('gw')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <line x1="3" y1="9" x2="21" y2="9"/>
+      <line x1="9" y1="9" x2="9" y2="21"/>
+    </svg>
+    Glass Wt
+  </button>
+  <button class="tab-btn" id="tab-si" onclick="switchTab('si')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <line x1="8" y1="3" x2="8" y2="21"/>
+      <line x1="16" y1="3" x2="16" y2="21"/>
+    </svg>
+    Sil. Bite
+  </button>
+</div>
+<button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark"
+  style="position:fixed;top:8px;right:8px;z-index:200;background:var(--surface2);border:1px solid var(--border);border-radius:6px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s">
+  <svg id="theme-icon-dark" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round">
+    <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </svg>
+  <svg id="theme-icon-light" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" style="display:none">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+</button>
+
+<!-- ═══════════════════════════════════════════ TAB 1: GLASS WEIGHT -->
+<div class="tab-content" id="content-gw">
+
+  <div class="tool-header">
+    <div class="logo-line">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="3" y1="9" x2="21" y2="9"/>
+          <line x1="9" y1="9" x2="9" y2="21"/>
+        </svg>
+      </div>
+      <h2>Glass Weight</h2>
+    </div>
+    <div class="unit-toggle">
+      <button class="unit-btn active" id="btn-metric"   onclick="setUnit('metric')">mm / kg</button>
+      <button class="unit-btn"        id="btn-imperial" onclick="setUnit('imperial')">in / lbs</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Panel Dimensions</div>
+    <div id="dims-metric">
+      <div class="field-row">
+        <div class="field">
+          <label>Length</label>
+          <div class="input-wrap">
+            <input type="number" id="inp-length-mm" placeholder="0" min="0" step="any" inputmode="decimal">
+            <span class="unit-tag">mm</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Width</label>
+          <div class="input-wrap">
+            <input type="number" id="inp-width-mm" placeholder="0" min="0" step="any" inputmode="decimal">
+            <span class="unit-tag">mm</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="dims-imperial" style="display:none">
+      <div class="ftin-grid">
+        <div class="field">
+          <label>Length</label>
+          <div class="ftin-pair">
+            <div class="input-wrap">
+              <input type="number" id="inp-length-ft" placeholder="0" min="0" step="1" inputmode="numeric">
+              <span class="unit-tag">ft</span>
+            </div>
+            <div class="input-wrap">
+              <input type="number" id="inp-length-in" placeholder="0" min="0" step="0.125" inputmode="decimal">
+              <span class="unit-tag">in</span>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Width</label>
+          <div class="ftin-pair">
+            <div class="input-wrap">
+              <input type="number" id="inp-width-ft" placeholder="0" min="0" step="1" inputmode="numeric">
+              <span class="unit-tag">ft</span>
+            </div>
+            <div class="input-wrap">
+              <input type="number" id="inp-width-in" placeholder="0" min="0" step="0.125" inputmode="decimal">
+              <span class="unit-tag">in</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label" style="margin-bottom:12px">Glass Lites</div>
+    <div class="lite-list" id="lite-list"></div>
+    <button class="add-btn" onclick="addLite()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Add Lite
+    </button>
+  </div>
+
+  <div class="error-msg" id="gw-error"></div>
+
+  <div class="result" id="gw-result">
+    <div class="result-header">
+      <div class="result-label">Total Panel Weight</div>
+      <button class="copy-btn" id="copy-btn" onclick="copyResult()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        Copy
+      </button>
+    </div>
+    <div class="result-values">
+      <div class="result-col active" id="result-col-metric">
+        <div class="result-col-label">Metric</div>
+        <div class="result-val active" id="result-val-metric">—</div>
+      </div>
+      <div class="result-col inactive" id="result-col-imperial">
+        <div class="result-col-label">Imperial</div>
+        <div class="result-val inactive" id="result-val-imperial">—</div>
+      </div>
+    </div>
+    <div class="result-breakdown" id="result-breakdown"></div>
+  </div>
+
+</div><!-- end tab-gw -->
+
+<!-- ═══════════════════════════════════════════ TAB 2: MULLION SIZE -->
+<div class="tab-content" id="content-ms">
+
+  <div class="tool-header">
+    <div class="logo-line">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="12" y1="3" x2="12" y2="21"/>
+          <line x1="5" y1="6" x2="19" y2="6"/>
+          <line x1="5" y1="18" x2="19" y2="18"/>
+        </svg>
+      </div>
+      <h2>Mullion Size</h2>
+    </div>
+    <div class="unit-toggle">
+      <button class="unit-btn active" id="ms-btn-imperial" onclick="setMsUnit('imperial')">in / lb</button>
+      <button class="unit-btn"        id="ms-btn-metric"   onclick="setMsUnit('metric')">mm / kg</button>
+    </div>
+  </div>
+
+  <!-- Wind Load -->
+  <div class="section">
+    <div class="section-label">Wind Load</div>
+    <div class="slider-row">
+      <div class="slider-header">
+        <label class="field" style="gap:0"><span style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:1px">Design Wind Pressure</span></label>
+        <span class="slider-val" id="wl-display">20 psf</span>
+      </div>
+      <input type="range" id="wl-slider" min="5" max="80" step="1" value="20" oninput="onWlChange()">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px">
+        <span id="wl-min-label">5 psf</span><span id="wl-max-label">80 psf</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel Size -->
+  <div class="section">
+    <div class="section-label">Panel Size</div>
+    <div class="ftin-grid">
+      <div class="field">
+        <label id="ms-height-label">Height (Span)</label>
+        <div class="ftin-pair">
+          <div class="input-wrap">
+            <input type="number" id="ms-height-ft" placeholder="0" min="0" step="1" inputmode="decimal" oninput="onMullionChange()">
+            <span class="unit-tag" id="ms-height-ft-tag">ft</span>
+          </div>
+          <div class="input-wrap" id="ms-height-in-wrap">
+            <input type="number" id="ms-height-in" placeholder="0" min="0" step="0.125" inputmode="decimal" oninput="onMullionChange()">
+            <span class="unit-tag" id="ms-height-in-tag">in</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label id="ms-width-label">Width (Trib.)</label>
+        <div class="ftin-pair">
+          <div class="input-wrap">
+            <input type="number" id="ms-width-ft" placeholder="0" min="0" step="1" inputmode="decimal" oninput="onMullionChange()">
+            <span class="unit-tag" id="ms-width-ft-tag">ft</span>
+          </div>
+          <div class="input-wrap" id="ms-width-in-wrap">
+            <input type="number" id="ms-width-in" placeholder="0" min="0" step="0.125" inputmode="decimal" oninput="onMullionChange()">
+            <span class="unit-tag" id="ms-width-in-tag">in</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Design Criteria -->
+  <div class="section">
+    <div class="section-label">Design Criteria</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Material</label>
+        <div class="input-wrap">
+          <select id="ms-material" class="select-accent" onchange="onMullionChange()">
+            <option value="aluminum">Aluminum 6063-T5</option>
+            <option value="steel">Steel A36</option>
+            <option value="stainless">Stainless 316</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Deflection Limit</label>
+        <div class="input-wrap">
+          <select id="ms-defl" onchange="onMullionChange()">
+            <option value="175">L/175</option>
+            <option value="200" selected>L/200</option>
+            <option value="240">L/240</option>
+            <option value="240q">L/240 + 1/4"</option>
+            <option value="360">L/360</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section Adjustments -->
+  <div class="section">
+    <div class="section-label">Section Parameters</div>
+    <div class="sec-type-row">
+      <span class="sec-type-label">Section Type</span>
+      <div class="sec-type-toggle">
+        <button class="sec-type-btn active" id="sec-hollow-btn" onclick="setSectionType('hollow')">Hollow</button>
+        <button class="sec-type-btn"        id="sec-solid-btn"  onclick="setSectionType('solid')">Solid</button>
+      </div>
+    </div>
+    <div class="field-row" style="margin-bottom:14px">
+      <div class="field">
+        <label id="ms-b-label">Width (B)</label>
+        <div class="input-wrap">
+          <input type="number" id="ms-width-b" value="2.5" min="1" max="6" step="0.25" inputmode="decimal" oninput="onMullionChange()">
+          <span class="unit-tag" id="ms-b-unit">in</span>
+        </div>
+      </div>
+      <div class="field" id="wall-t-field">
+        <label>Wall Thickness (t)</label>
+        <div class="input-wrap">
+          <input type="number" id="ms-wall-t" value="0.125" min="0.063" max="0.5" step="0.0625" inputmode="decimal" oninput="onMullionChange()">
+          <span class="unit-tag" id="ms-t-unit">in</span>
+        </div>
+      </div>
+    </div>
+    <div class="slider-row">
+      <div class="slider-header">
+        <label style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:1px">Section Depth (D)</label>
+        <span class="slider-val" id="depth-display">3.0 in</span>
+      </div>
+      <input type="range" id="ms-depth-slider" min="1" max="12" step="0.25" value="3" oninput="onDepthSlide()">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px"><span>1 in</span><span>12 in</span></div>
+    </div>
+  </div>
+
+  <div class="error-msg" id="ms-error"></div>
+
+  <!-- Mullion Results -->
+  <div class="m-result" id="ms-result">
+    <div class="m-result-header">
+      <div class="result-label">Mullion Analysis</div>
+      <button class="copy-btn" id="ms-copy-btn" onclick="copyMullionResult()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        Copy
+      </button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="m-kpi-grid" id="ms-kpi-grid"></div>
+
+    <!-- Profile card -->
+    <div class="m-section-label">Section Check</div>
+    <div id="ms-profile-card"></div>
+  </div>
+
+</div><!-- end tab-ms -->
+
+<!-- ═══════════════════════════════════════════ TAB 3: SILICONE BITE -->
+<div class="tab-content" id="content-si">
+
+  <div class="tool-header">
+    <div class="logo-line">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="8" y1="3" x2="8" y2="21"/>
+          <line x1="16" y1="3" x2="16" y2="21"/>
+        </svg>
+      </div>
+      <h2>Silicone Bite</h2>
+    </div>
+    <div class="unit-toggle">
+      <button class="unit-btn active" id="si-btn-imperial" onclick="setSiUnit('imperial')">in / lb</button>
+      <button class="unit-btn"        id="si-btn-metric"   onclick="setSiUnit('metric')">mm / kPa</button>
+    </div>
+  </div>
+
+  <!-- Wind Load -->
+  <div class="section">
+    <div class="section-label">Wind Load</div>
+    <div class="slider-row">
+      <div class="slider-header">
+        <label style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:1px">Design Wind Pressure</label>
+        <span class="slider-val" id="si-wl-display">20 psf</span>
+      </div>
+      <input type="range" id="si-wl-slider" min="5" max="80" step="1" value="20" oninput="onSiWlChange()">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px">
+        <span id="si-wl-min">5 psf</span><span id="si-wl-max">80 psf</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel Size -->
+  <div class="section">
+    <div class="section-label">Panel Size</div>
+    <div class="ftin-grid">
+      <div class="field">
+        <label id="si-height-label">Height</label>
+        <div class="ftin-pair">
+          <div class="input-wrap">
+            <input type="number" id="si-height-ft" placeholder="0" min="0" step="1" inputmode="decimal" oninput="onSiChange()">
+            <span class="unit-tag" id="si-height-ft-tag">ft</span>
+          </div>
+          <div class="input-wrap" id="si-height-in-wrap">
+            <input type="number" id="si-height-in" placeholder="0" min="0" step="0.125" inputmode="decimal" oninput="onSiChange()">
+            <span class="unit-tag" id="si-height-in-tag">in</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label id="si-width-label">Width</label>
+        <div class="ftin-pair">
+          <div class="input-wrap">
+            <input type="number" id="si-width-ft" placeholder="0" min="0" step="1" inputmode="decimal" oninput="onSiChange()">
+            <span class="unit-tag" id="si-width-ft-tag">ft</span>
+          </div>
+          <div class="input-wrap" id="si-width-in-wrap">
+            <input type="number" id="si-width-in" placeholder="0" min="0" step="0.125" inputmode="decimal" oninput="onSiChange()">
+            <span class="unit-tag" id="si-width-in-tag">in</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Design Strength -->
+  <div class="section">
+    <div class="section-label">Design Strength</div>
+    <div class="field-row" style="align-items:flex-end;gap:10px">
+      <div class="field">
+        <label>Product</label>
+        <div class="input-wrap">
+          <select id="si-product" class="select-accent" onchange="onSiProductChange()">
+            <option value="20">Dow 995 / Pecora 895 (20 psi)</option>
+            <option value="20">Momentive SSG4000 (20 psi)</option>
+            <option value="20">Sika SG-20 (20 psi)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label id="si-fs-label">S-Allow</label>
+        <div class="input-wrap">
+          <input type="number" id="si-fs" value="20" min="1" step="1" inputmode="decimal"
+            oninput="onSiChange()" disabled
+            style="opacity:0.5;cursor:not-allowed">
+          <span class="unit-tag" id="si-fs-unit">psi</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="error-msg" id="si-error"></div>
+
+  <!-- Result -->
+  <div class="result" id="si-result">
+    <div class="result-header">
+      <div class="result-label" id="si-result-label">Calculated Bite</div>
+      <button class="copy-btn" id="si-copy-btn" onclick="copySiResult()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        Copy
+      </button>
+    </div>
+    <div class="result-values">
+      <div class="result-col active" id="si-col-imperial">
+        <div class="result-col-label">Imperial</div>
+        <div class="result-val active" id="si-val-imperial">—</div>
+      </div>
+      <div class="result-col inactive" id="si-col-metric">
+        <div class="result-col-label">Metric</div>
+        <div class="result-val inactive" id="si-val-metric">—</div>
+      </div>
+    </div>
+    <div class="result-breakdown" id="si-breakdown"></div>
+  </div>
+
+</div><!-- end tab-si -->
+
+
+<!-- ═══════════════════════════════════════════ TAB 4: U-VALUE -->
+<div class="tab-content active" id="content-uv">
+
+  <div class="tool-header">
+    <div class="logo-line">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <h2>U-Value</h2>
+    </div>
+    <div class="unit-toggle">
+      <button class="unit-btn active" id="uv-btn-imperial" onclick="setUvUnit('imperial')">in / BTU</button>
+      <button class="unit-btn"        id="uv-btn-metric"   onclick="setUvUnit('metric')">mm / W</button>
+    </div>
+  </div>
+
+  <!-- Panel Dimensions -->
+  <div class="section">
+    <div class="section-label">Panel Dimensions (Centreline)</div>
+    <div class="ftin-grid">
+      <div class="field">
+        <label id="uv-h-label">Height</label>
+        <div class="ftin-pair" id="uv-h-pair">
+          <div class="input-wrap">
+            <input type="number" id="uv-h-ft" placeholder="0" min="0" step="1" inputmode="decimal" oninput="onUvChange()">
+            <span class="unit-tag" id="uv-h-ft-tag">ft</span>
+          </div>
+          <div class="input-wrap" id="uv-h-in-wrap">
+            <input type="number" id="uv-h-in" placeholder="0" min="0" step="0.125" inputmode="decimal" oninput="onUvChange()">
+            <span class="unit-tag" id="uv-h-in-tag">in</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label id="uv-w-label">Width</label>
+        <div class="ftin-pair" id="uv-w-pair">
+          <div class="input-wrap">
+            <input type="number" id="uv-w-ft" placeholder="0" min="0" step="1" inputmode="decimal" oninput="onUvChange()">
+            <span class="unit-tag" id="uv-w-ft-tag">ft</span>
+          </div>
+          <div class="input-wrap" id="uv-w-in-wrap">
+            <input type="number" id="uv-w-in" placeholder="0" min="0" step="0.125" inputmode="decimal" oninput="onUvChange()">
+            <span class="unit-tag" id="uv-w-in-tag">in</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="field" style="margin-top:10px">
+      <label id="uv-fw-label">Frame Width</label>
+      <div class="input-wrap" style="max-width:48%">
+        <input type="number" id="uv-fw" value="3" min="0" step="0.125" inputmode="decimal" oninput="onUvFwChange()">
+        <span class="unit-tag" id="uv-fw-tag">in</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transom -->
+  <div class="section">
+    <div class="sec-type-row">
+      <span class="sec-type-label">Transom</span>
+      <div class="sec-type-toggle">
+        <button class="sec-type-btn active" id="uv-transom-off" onclick="setUvTransom(false)">None</button>
+        <button class="sec-type-btn"        id="uv-transom-on"  onclick="setUvTransom(true)">Add Transom</button>
+      </div>
+    </div>
+    <div id="uv-transom-fields" style="display:none">
+      <div class="field-row" style="margin-bottom:10px">
+        <div class="field">
+          <label>Position from</label>
+          <div class="input-wrap">
+            <select id="uv-transom-from" onchange="onUvChange()" style="height:42px;box-sizing:border-box">
+              <option value="top">Top</option>
+              <option value="bottom">Bottom</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label id="uv-td-label">Distance</label>
+          <div class="ftin-pair" id="uv-td-pair">
+            <div class="input-wrap">
+              <input type="number" id="uv-td-ft" value="3" min="0" step="1" inputmode="numeric" oninput="onUvChange()">
+              <span class="unit-tag" id="uv-td-ft-tag">ft</span>
+            </div>
+            <div class="input-wrap" id="uv-td-in-wrap">
+              <input type="number" id="uv-td-in" value="0" min="0" step="0.125" inputmode="decimal" oninput="onUvChange()">
+              <span class="unit-tag" id="uv-td-in-tag">in</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label id="uv-tw-label">Transom Width</label>
+        <div class="input-wrap" style="max-width:48%">
+          <input type="number" id="uv-tw" value="3" id="uv-tw" min="0" step="0.125" inputmode="decimal" oninput="onUvChange()">
+          <span class="unit-tag" id="uv-tw-tag">in</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zone 1 -->
+  <div class="section" id="uv-zone1-section">
+    <div class="sec-type-row">
+      <span class="sec-type-label" id="uv-zone1-label">Zone 1</span>
+      <div class="sec-type-toggle">
+        <button class="sec-type-btn active" id="uv-z1-vision-btn"  onclick="setUvZoneType(1,'vision')">Vision</button>
+        <button class="sec-type-btn"        id="uv-z1-spandrel-btn" onclick="setUvZoneType(1,'spandrel')">Spandrel</button>
+      </div>
+    </div>
+    <div id="uv-z1-spandrel-fields" style="display:none;margin-top:10px">
+      <div class="field-row">
+        <div class="field">
+          <label id="uv-z1-ins-label">Insulation Thickness</label>
+          <div class="input-wrap">
+            <input type="number" id="uv-z1-ins" value="4" min="0" step="0.25" inputmode="decimal" oninput="onUvChange()">
+            <span class="unit-tag" id="uv-z1-ins-tag">in</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>R per inch</label>
+          <div class="input-wrap">
+            <input type="number" id="uv-z1-rpi" value="4.2" min="0" step="0.1" inputmode="decimal" oninput="onUvChange()">
+            <span class="unit-tag">—</span>
+          </div>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top:10px">
+        <div class="field">
+          <label>U-COG Spandrel <span id="uv-z1-cog-calc" style="font-size:10px;color:var(--accent)">(calculated)</span></label>
+          <div class="input-wrap">
+            <input type="number" id="uv-z1-cog" value="" min="0" step="0.01" inputmode="decimal" disabled style="opacity:0.7">
+            <span class="unit-tag" id="uv-z1-cog-tag">BTU</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>U-EOG Spandrel</label>
+          <div class="input-wrap">
+            <input type="number" id="uv-z1-eog" value="0.35" min="0" step="0.01" inputmode="decimal" oninput="onUvChange()">
+            <span class="unit-tag" id="uv-z1-eog-tag">BTU</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zone 2 (only when transom added) -->
+  <div class="section" id="uv-zone2-section" style="display:none">
+    <div class="sec-type-row">
+      <span class="sec-type-label" id="uv-zone2-label">Zone 2</span>
+      <div class="sec-type-toggle">
+        <button class="sec-type-btn active" id="uv-z2-vision-btn"   onclick="setUvZoneType(2,'vision')">Vision</button>
+        <button class="sec-type-btn"        id="uv-z2-spandrel-btn" onclick="setUvZoneType(2,'spandrel')">Spandrel</button>
+      </div>
+    </div>
+    <div id="uv-z2-spandrel-fields" style="display:none;margin-top:10px">
+      <div class="field-row">
+        <div class="field">
+          <label id="uv-z2-ins-label">Insulation Thickness</label>
+          <div class="input-wrap">
+            <input type="number" id="uv-z2-ins" value="4" min="0" step="0.25" inputmode="decimal" oninput="onUvChange()">
+            <span class="unit-tag" id="uv-z2-ins-tag">in</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>R per inch</label>
+          <div class="input-wrap">
+            <input type="number" id="uv-z2-rpi" value="4.2" min="0" step="0.1" inputmode="decimal" oninput="onUvChange()">
+            <span class="unit-tag">—</span>
+          </div>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top:10px">
+        <div class="field">
+          <label>U-COG Spandrel <span id="uv-z2-cog-calc" style="font-size:10px;color:var(--accent)">(calculated)</span></label>
+          <div class="input-wrap">
+            <input type="number" id="uv-z2-cog" value="" min="0" step="0.01" inputmode="decimal" disabled style="opacity:0.7">
+            <span class="unit-tag" id="uv-z2-cog-tag">BTU</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>U-EOG Spandrel</label>
+          <div class="input-wrap">
+            <input type="number" id="uv-z2-eog" value="0.35" min="0" step="0.01" inputmode="decimal" oninput="onUvChange()">
+            <span class="unit-tag" id="uv-z2-eog-tag">BTU</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Show Diagram Button -->
+  <button class="add-btn" style="margin-bottom:8px" onclick="showUvDiagram()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <line x1="3" y1="9" x2="21" y2="9"/>
+      <line x1="9" y1="3" x2="9" y2="21"/>
+    </svg>
+    Show Panel Diagram
+  </button>
+
+  <!-- Diagram Modal -->
+  <div id="uv-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;overflow-y:auto;-webkit-overflow-scrolling:touch" onclick="hideUvDiagram(event)">
+    <div style="background:var(--surface);border-radius:12px;margin:16px;padding:16px;position:relative" onclick="event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <span style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif">Panel Diagram</span>
+        <button onclick="hideUvDiagram()" style="background:var(--accent);border:none;border-radius:4px;color:#fff;font-size:18px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'Lato',sans-serif">&times;</button>
+      </div>
+      <canvas id="uv-canvas" style="width:100%;display:block;border-radius:6px"></canvas>
+      <!-- Legend -->
+      <div id="uv-legend" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;font-size:11px;font-family:'Lato',sans-serif"></div>
+    </div>
+  </div>
+
+  <!-- Frame -->
+  <div class="section">
+    <div class="section-label">Frame Configuration</div>
+    <div class="field-row" style="margin-bottom:10px">
+      <div class="field">
+        <label>Frame Type</label>
+        <div class="input-wrap">
+          <select id="uv-frame-type" class="select-accent" onchange="onUvFrameConfig()">
+            <option value="1.10">Al — No thermal break</option>
+            <option value="0.70">Al — Poured &amp; debridged TB</option>
+            <option value="0.50" selected>Al — Isobar / European TB</option>
+            <option value="1.00">Steel — No thermal break</option>
+            <option value="0.62">Steel — Thermal break</option>
+            <option value="0.38">Wood / Fibreglass</option>
+            <option value="0.40">uPVC</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Spacer Bar</label>
+        <div class="input-wrap">
+          <select id="uv-spacer-bar" onchange="onUvFrameConfig()">
+            <option value="0.25">Aluminium (+0.25)</option>
+            <option value="0.12">Stainless steel (+0.12)</option>
+            <option value="0.05" selected>Warm-edge / TGI (+0.05)</option>
+            <option value="0.00">None / unknown (+0.00)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>U-Frame <span style="font-size:10px;color:var(--accent)" id="uv-uf-src">(calculated)</span></label>
+        <div class="input-wrap">
+          <input type="number" id="uv-uf" style="border-color:var(--accent)" min="0" step="0.01" inputmode="decimal" oninput="onUvChange()" style="opacity:0.75">
+          <span class="unit-tag" id="uv-uf-tag">BTU</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>U-EOG <span style="font-size:10px;color:var(--accent)" id="uv-eog-src">(calculated)</span></label>
+        <div class="input-wrap">
+          <input type="number" id="uv-eog-v" style="border-color:var(--accent)" min="0" step="0.01" inputmode="decimal" oninput="onUvChange()" style="opacity:0.75">
+          <span class="unit-tag" id="uv-eogv-tag">BTU</span>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:8px;line-height:1.5">
+      U-Frame = frame base + spacer adder<br>
+      U-EOG = (U-Frame + U-COG) / 2
+    </div>
+  </div>
+
+  <!-- Glass Config -->
+  <div class="section">
+    <div class="section-label">Glass Configuration (Vision)</div>
+    <div class="field-row" style="margin-bottom:10px">
+      <div class="field">
+        <label>IGU Type</label>
+        <div class="input-wrap">
+          <select id="uv-igu" class="select-accent" onchange="onUvGlassConfig()">
+            <option value="double">Double</option>
+            <option value="triple">Triple</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Fill Gas</label>
+        <div class="input-wrap">
+          <select id="uv-fill" onchange="onUvGlassConfig()">
+            <option value="air">Air</option>
+            <option value="argon" selected>Argon</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Coatings</label>
+        <div class="input-wrap">
+          <select id="uv-coatings" onchange="onUvGlassConfig()">
+            <option value="0">None</option>
+            <option value="1" selected>1 Coating</option>
+            <option value="2">2 Coatings</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>U-COG <span id="uv-cog-source" style="font-size:10px;color:var(--accent)">(from config)</span></label>
+        <div class="input-wrap">
+          <input type="number" id="uv-cog-v" style="border-color:var(--accent)" value="0.25" min="0" step="0.01" inputmode="decimal" oninput="onUvChange()">
+          <span class="unit-tag" id="uv-cogv-tag">BTU</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="error-msg" id="uv-error"></div>
+
+  <!-- Result -->
+  <div class="result" id="uv-result">
+    <div class="result-header">
+      <div class="result-label">Area-Weighted U-Value</div>
+      <button class="copy-btn" id="uv-copy-btn" onclick="copyUvResult()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        Copy
+      </button>
+    </div>
+    <div class="result-values">
+      <div class="result-col active" id="uv-col-imperial">
+        <div class="result-col-label">Imperial</div>
+        <div class="result-val active" id="uv-val-imperial">—</div>
+      </div>
+      <div class="result-col inactive" id="uv-col-metric">
+        <div class="result-col-label">Metric</div>
+        <div class="result-val inactive" id="uv-val-metric">—</div>
+      </div>
+    </div>
+    <!-- Area check warning -->
+    <div id="uv-area-check" style="display:none;background:rgba(224,102,80,0.15);border:1px solid var(--accent);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent);margin-bottom:12px;font-family:'Lato',sans-serif"></div>
+    <!-- Breakdown table -->
+    <div class="result-breakdown" id="uv-breakdown"></div>
+  </div>
+
+</div><!-- end tab-uv -->
+<script>
+/* ═══════ TAB SWITCHING ═══════ */
+const TAB_IDS = ['uv', 'ms', 'gw', 'si'];
+
+let themeManualOverride = false;
+
+function toggleTheme() {
+  themeManualOverride = true;
+  const isLight = document.body.getAttribute('data-theme') === 'light';
+  applyTheme(isLight ? 'dark' : 'light');
+}
+
+function applyTheme(theme) {
+  document.body.setAttribute('data-theme', theme);
+  const isDark = theme === 'dark';
+  document.getElementById('theme-icon-dark').style.display  = isDark ? 'none'  : 'block';
+  document.getElementById('theme-icon-light').style.display = isDark ? 'block' : 'none';
+}
+
+// Detect system dark mode and apply automatically unless user has overridden
+const darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
+function handleSystemTheme(e) {
+  if (!themeManualOverride) applyTheme(e.matches ? 'dark' : 'light');
+}
+darkMQ.addEventListener('change', handleSystemTheme);
+// Apply on load
+if (darkMQ.matches) applyTheme('dark');
+
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  document.getElementById('content-' + id).classList.add('active');
+  document.body.setAttribute('data-tab', id);
+}
+
+// Swipe to switch tabs
+(function() {
+  let startX = 0, startY = 0, startTime = 0;
+  const SWIPE_THRESHOLD = 50;   // min horizontal px
+  const ANGLE_THRESHOLD = 35;   // max degrees from horizontal
+  const TIME_THRESHOLD  = 400;  // max ms
+
+  document.addEventListener('touchstart', e => {
+    startX    = e.touches[0].clientX;
+    startY    = e.touches[0].clientY;
+    startTime = Date.now();
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    const dx   = e.changedTouches[0].clientX - startX;
+    const dy   = e.changedTouches[0].clientY - startY;
+    const dt   = Date.now() - startTime;
+    const angle = Math.abs(Math.atan2(Math.abs(dy), Math.abs(dx)) * 180 / Math.PI);
+
+    if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+    if (angle > ANGLE_THRESHOLD) return;  // too vertical — could be scroll
+    if (dt > TIME_THRESHOLD) return;
+
+    const activeTab = document.querySelector('.tab-btn.active');
+    if (!activeTab) return;
+    const currentIdx = TAB_IDS.indexOf(activeTab.id.replace('tab-', ''));
+    if (currentIdx === -1) return;
+
+    const nextIdx = dx < 0
+      ? Math.min(currentIdx + 1, TAB_IDS.length - 1)  // swipe left → next
+      : Math.max(currentIdx - 1, 0);                   // swipe right → prev
+
+    if (nextIdx !== currentIdx) switchTab(TAB_IDS[nextIdx]);
+  }, { passive: true });
+})();
+
+/* ═══════════════════════════════════════════ GLASS WEIGHT ═══════ */
+const THICKNESSES_MM = [3, 4, 5, 6, 8, 10, 12, 15, 19, 22, 25];
+const DENSITY = 2500;
+let currentUnit = 'metric';
+let liteCount = 0;
+const drums = {};
+let lastResult = null;
+
+function mmToIn(v) { return v / 25.4; }
+function inToMm(v) { return v * 25.4; }
+
+const INCH_NOMINAL = {3:'1/8',4:'5/32',5:'3/16',6:'1/4',8:'5/16',10:'3/8',12:'1/2',15:'19/32',19:'3/4',22:'7/8',25:'1'};
+
+function inchFraction(mm) {
+  if (INCH_NOMINAL[mm]) return INCH_NOMINAL[mm] + '"';
+  const inches = mm / 25.4;
+  const fracs = [[1,8],[3,32],[1,4],[5,16],[3,8],[7,16],[1,2],[9,16],[5,8],[3,4],[7,8],[1,1]];
+  let best = null, bestDiff = Infinity;
+  for (const [n,d] of fracs) { const diff = Math.abs(inches-n/d); if(diff<bestDiff){bestDiff=diff;best=d===1?n+'"':n+'/'+d+'"';} }
+  return best || inches.toFixed(2)+'"';
+}
+
+function getDisplayThicknesses() {
+  return THICKNESSES_MM.map(t => t + 'mm  |  ' + inchFraction(t));
+}
+
+const ITEM_H = 36, VISIBLE = 1;
+
+function buildDrum(liteId) {
+  const wrapper = document.getElementById('drum-wrap-' + liteId);
+  if (!wrapper) return;
+  const labels = getDisplayThicknesses();
+  const selectedIdx = drums[liteId] ? drums[liteId].selectedIndex : 3;
+  drums[liteId] = { selectedIndex: selectedIdx };
+  wrapper.innerHTML = '';
+  const viewport = document.createElement('div'); viewport.className = 'drum-viewport';
+  const track = document.createElement('div'); track.className = 'drum-track'; track.id = 'drum-track-' + liteId;
+  const pad = Math.floor(VISIBLE/2);
+  for(let i=0;i<pad;i++){const g=document.createElement('div');g.className='drum-item';track.appendChild(g);}
+  labels.forEach((lbl,i)=>{const item=document.createElement('div');item.className='drum-item'+(i===selectedIdx?' selected':(Math.abs(i-selectedIdx)===1?' near':''));item.textContent=lbl;track.appendChild(item);});
+  for(let i=0;i<pad;i++){const g=document.createElement('div');g.className='drum-item';track.appendChild(g);}
+  viewport.appendChild(track); wrapper.appendChild(viewport);
+  setDrumPosition(liteId, selectedIdx, false);
+  attachDrumEvents(liteId, track, viewport, labels.length);
+}
+
+function setDrumPosition(liteId, idx, animate) {
+  const track = document.getElementById('drum-track-' + liteId);
+  if (!track) return;
+  track.style.transition = animate ? 'transform 0.2s cubic-bezier(0.25,0.46,0.45,0.94)' : 'none';
+  track.style.transform = 'translateY(' + (-(idx*ITEM_H)) + 'px)';
+  updateDrumClasses(liteId, idx);
+}
+
+function updateDrumClasses(liteId, idx) {
+  const track = document.getElementById('drum-track-' + liteId);
+  if (!track) return;
+  const pad = Math.floor(VISIBLE/2);
+  track.querySelectorAll('.drum-item').forEach((el,i)=>{const di=i-pad;el.classList.remove('selected','near');if(di===idx)el.classList.add('selected');else if(Math.abs(di-idx)===1)el.classList.add('near');});
+}
+
+function attachDrumEvents(liteId, track, viewport, count) {
+  let startY=0,lastY=0,startIdx=0,isDragging=false,velocity=0,lastTime=0;
+  function getIdx(){return drums[liteId].selectedIndex;}
+  function setIdx(i){drums[liteId].selectedIndex=Math.max(0,Math.min(count-1,i));}
+  function onStart(cy){isDragging=true;startY=cy;lastY=cy;startIdx=getIdx();velocity=0;lastTime=Date.now();track.style.transition='none';}
+  function onMove(cy){if(!isDragging)return;const now=Date.now();velocity=(lastY-cy)/(now-lastTime+1);lastY=cy;lastTime=now;const delta=startY-cy;const clamped=Math.max(0,Math.min(count-1,Math.round(startIdx+delta/ITEM_H)));track.style.transform='translateY('+(-(startIdx*ITEM_H)-delta)+'px)';updateDrumClasses(liteId,clamped);}
+  function onEnd(cy){if(!isDragging)return;isDragging=false;const delta=startY-cy;const fi=Math.round(Math.max(0,Math.min(count-1,startIdx+(delta+velocity*80)/ITEM_H)));setIdx(fi);setDrumPosition(liteId,fi,true);autoRecalculate();}
+  viewport.addEventListener('touchstart',e=>{onStart(e.touches[0].clientY);},{passive:true});
+  viewport.addEventListener('touchmove',e=>{onMove(e.touches[0].clientY);e.preventDefault();},{passive:false});
+  viewport.addEventListener('touchend',e=>{onEnd(e.changedTouches[0].clientY);});
+  viewport.addEventListener('mousedown',e=>{onStart(e.clientY);e.preventDefault();});
+  window.addEventListener('mousemove',e=>{if(isDragging)onMove(e.clientY);});
+  window.addEventListener('mouseup',e=>{if(isDragging)onEnd(e.clientY);});
+  viewport.addEventListener('click',e=>{const rect=viewport.getBoundingClientRect();const relY=e.clientY-rect.top;const zone=viewport.offsetHeight/3;if(relY<zone){const ni=Math.max(0,getIdx()-1);setIdx(ni);setDrumPosition(liteId,ni,true);autoRecalculate();}else if(relY>zone*2){const ni=Math.min(count-1,getIdx()+1);setIdx(ni);setDrumPosition(liteId,ni,true);autoRecalculate();}});
+}
+
+function getDimMm(axis) {
+  if (currentUnit === 'metric') {
+    const v = parseFloat(document.getElementById('inp-'+axis+'-mm').value);
+    return isNaN(v) ? null : v;
+  } else {
+    const ft = parseFloat(document.getElementById('inp-'+axis+'-ft').value)||0;
+    const ins = parseFloat(document.getElementById('inp-'+axis+'-in').value)||0;
+    const total = ft*12+ins; return total<=0?null:inToMm(total);
+  }
+}
+
+function setUnit(u) {
+  if (u===currentUnit) return;
+  const L=getDimMm('length'), W=getDimMm('width');
+  currentUnit=u;
+  if (u==='imperial') {
+    document.getElementById('dims-metric').style.display='none';
+    document.getElementById('dims-imperial').style.display='block';
+    if(L){const r=mmToFtIn(L);document.getElementById('inp-length-ft').value=r.ft||'';document.getElementById('inp-length-in').value=r.ins||'';}
+    if(W){const r=mmToFtIn(W);document.getElementById('inp-width-ft').value=r.ft||'';document.getElementById('inp-width-in').value=r.ins||'';}
+  } else {
+    document.getElementById('dims-imperial').style.display='none';
+    document.getElementById('dims-metric').style.display='block';
+    if(L)document.getElementById('inp-length-mm').value=parseFloat(L.toFixed(1));
+    if(W)document.getElementById('inp-width-mm').value=parseFloat(W.toFixed(1));
+  }
+  document.getElementById('btn-metric').classList.toggle('active',u==='metric');
+  document.getElementById('btn-imperial').classList.toggle('active',u==='imperial');
+  Object.keys(drums).forEach(id=>buildDrum(parseInt(id)));
+  document.getElementById('gw-error').classList.remove('visible');
+  if (lastResult) renderResult(lastResult);
+}
+
+function mmToFtIn(mm) {
+  const total=mm/25.4,ft=Math.floor(total/12);
+  return {ft,ins:parseFloat((total-ft*12).toFixed(2))};
+}
+
+function addLite() {
+  liteCount++;
+  const id=liteCount;
+  const div=document.createElement('div'); div.className='lite-entry'; div.id='lite-entry-'+id;
+  div.innerHTML='<span class="lite-num">#'+id+'</span><div class="drum-wrap" id="drum-wrap-'+id+'" style="flex:1"></div><button class="remove-btn" onclick="removeLite('+id+')" title="Remove">&times;</button>';
+  document.getElementById('lite-list').appendChild(div);
+  drums[id]={selectedIndex:3}; buildDrum(id); renumberLites(); autoRecalculate();
+}
+
+function renumberLites() {
+  document.querySelectorAll('.lite-entry .lite-num').forEach((el,i)=>{ el.textContent='#'+(i+1); });
+}
+
+function removeLite(id) {
+  const el=document.getElementById('lite-entry-'+id); if(el)el.remove();
+  delete drums[id]; renumberLites(); autoRecalculate();
+}
+
+function autoRecalculate() {
+  const L=getDimMm('length'),W=getDimMm('width');
+  if(!L||!W)return;
+  const ids=Object.keys(drums).map(Number);
+  if(ids.length===0){document.getElementById('gw-result').classList.remove('visible');return;}
+  let totalKg=0; const breakdown=[]; const labels=getDisplayThicknesses();
+  ids.forEach((id,i)=>{const idx=drums[id].selectedIndex;const thk=THICKNESSES_MM[idx];const wkg=(L/1000)*(W/1000)*(thk/1000)*DENSITY;totalKg+=wkg;breakdown.push({num:i+1,label:labels[idx],weightKg:wkg});});
+  lastResult={totalKg,breakdown,L_mm:L,W_mm:W}; renderResult(lastResult);
+}
+
+function calculate() { autoRecalculate(); }
+
+function renderResult(r) {
+  const {totalKg,breakdown,L_mm,W_mm}=r;
+  const totalLbs=totalKg*2.20462;
+  const mEl=document.getElementById('result-val-metric'),iEl=document.getElementById('result-val-imperial');
+  const mCol=document.getElementById('result-col-metric'),iCol=document.getElementById('result-col-imperial');
+  mEl.innerHTML=totalKg.toFixed(1)+'<span class="result-val-unit">kg</span>';
+  iEl.innerHTML=totalLbs.toFixed(1)+'<span class="result-val-unit">lbs</span>';
+  const im=currentUnit==='metric';
+  mEl.classList.toggle('active',im);mEl.classList.toggle('inactive',!im);
+  iEl.classList.toggle('active',!im);iEl.classList.toggle('inactive',im);
+  mCol.classList.toggle('active',im);mCol.classList.toggle('inactive',!im);
+  iCol.classList.toggle('active',!im);iCol.classList.toggle('inactive',im);
+  const bEl=document.getElementById('result-breakdown'); bEl.innerHTML='';
+  const L_in=mmToIn(L_mm),W_in=mmToIn(W_mm);
+  const aM2=((L_mm*W_mm)/1e6).toFixed(2)+' m\u00b2', aFt2=(L_in*W_in/144).toFixed(2)+' ft\u00b2';
+  const mA='<span style="color:'+(im?'var(--accent)':'var(--text-muted')+')">' +aM2+'</span>';
+  const iA='<span style="color:'+(!im?'var(--accent)':'var(--text-muted)')+'font-size:13px"> | '+aFt2+'</span>';
+  bEl.innerHTML+='<div class="brow area-brow"><span class="bl">Panel area</span><span class="bv">'+mA+iA+'</span></div>';
+  breakdown.forEach(b=>{
+    const kg=b.weightKg.toFixed(1)+' kg',lbs=(b.weightKg*2.20462).toFixed(1)+' lbs';
+    const kgS='<span style="color:'+(im?'var(--accent)':'var(--text-muted)')+'">'+kg+'</span>';
+    const lbS='<span style="color:'+(!im?'var(--accent)':'var(--text-muted)')+';font-size:13px"> | '+lbs+'</span>';
+    bEl.innerHTML+='<div class="brow lite-brow"><span class="bl">Lite #'+b.num+' \xb7 '+b.label+'</span><span class="bv">'+kgS+lbS+'</span></div>';
+  });
+  document.getElementById('gw-result').classList.add('visible');
+}
+
+function copyResult() {
+  if(!lastResult)return;
+  const{totalKg,breakdown,L_mm,W_mm}=lastResult,totalLbs=totalKg*2.20462;
+  const L_in=mmToIn(L_mm),W_in=mmToIn(W_mm),im=currentUnit==='metric';
+  let text=im?'Total: '+totalKg.toFixed(1)+' kg\n':'Total: '+totalLbs.toFixed(1)+' lbs\n';
+  text+=im?'Area: '+((L_mm*W_mm)/1e6).toFixed(2)+' m\u00b2\n':'Area: '+(L_in*W_in/144).toFixed(2)+' ft\u00b2\n';
+  breakdown.forEach(b=>{text+=im?'Lite #'+b.num+' ('+b.label+'): '+b.weightKg.toFixed(1)+' kg\n':'Lite #'+b.num+' ('+b.label+'): '+(b.weightKg*2.20462).toFixed(1)+' lbs\n';});
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.getElementById('copy-btn');btn.classList.add('copied');
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';},2000);
+  });
+}
+
+['inp-length-mm','inp-width-mm','inp-length-ft','inp-length-in','inp-width-ft','inp-width-in'].forEach(id=>{
+  const el=document.getElementById(id); if(!el)return;
+  el.addEventListener('focus',function(){this.select();});
+  el.addEventListener('input',function(){autoRecalculate();});
+  el.addEventListener('change',function(){autoRecalculate();});
+});
+
+/* ═══════════════════════════════════════════ MULLION CALC ═══════ */
+let msUnit = 'imperial'; // 'imperial' | 'metric'
+
+// Conversion helpers (all internal calc stays in imperial)
+const PSF_TO_KPA = 0.0478803;
+const IN_TO_MM   = 25.4;
+const FT_TO_M    = 0.3048;
+const IN4_TO_MM4 = Math.pow(25.4, 4);
+const IN3_TO_MM3 = Math.pow(25.4, 3);
+const IN4_TO_CM4 = IN4_TO_MM4 / 1e4;  // not used but handy
+const LB_FT_TO_KG_M = 1.48816;
+
+function setMsUnit(u) {
+  if (u === msUnit) return;
+  // Read current values and convert to canonical inches/in units before switching
+  const prevIsM = msUnit === 'metric';
+  let totalH_in, totalW_in, B_in, t_in, D_in;
+  if (prevIsM) {
+    // fields currently hold mm
+    const hMm = parseFloat(document.getElementById('ms-height-ft').value) || 0;
+    const wMm = parseFloat(document.getElementById('ms-width-ft').value)  || 0;
+    totalH_in = hMm / IN_TO_MM;
+    totalW_in = wMm / IN_TO_MM;
+    B_in = (parseFloat(document.getElementById('ms-width-b').value) || 0) / IN_TO_MM;
+    t_in = (parseFloat(document.getElementById('ms-wall-t').value)  || 0) / IN_TO_MM;
+    D_in = (parseFloat(document.getElementById('ms-depth-slider').value) || 0) / IN_TO_MM;
+  } else {
+    // fields currently hold ft + in
+    const hFt = parseFloat(document.getElementById('ms-height-ft').value) || 0;
+    const hIn = parseFloat(document.getElementById('ms-height-in').value) || 0;
+    const wFt = parseFloat(document.getElementById('ms-width-ft').value)  || 0;
+    const wIn = parseFloat(document.getElementById('ms-width-in').value)  || 0;
+    totalH_in = hFt * 12 + hIn;
+    totalW_in = wFt * 12 + wIn;
+    B_in = parseFloat(document.getElementById('ms-width-b').value) || 0;
+    t_in = parseFloat(document.getElementById('ms-wall-t').value)  || 0;
+    D_in = parseFloat(document.getElementById('ms-depth-slider').value) || 0;
+  }
+  const wl_psf = parseFloat(document.getElementById('wl-slider').value);
+
+  msUnit = u;
+  const isM = u === 'metric';
+
+  document.getElementById('ms-btn-imperial').classList.toggle('active', !isM);
+  document.getElementById('ms-btn-metric').classList.toggle('active',    isM);
+
+  // Wind load: slider always stores psf internally; just update label
+  const wl_disp = isM ? (wl_psf * PSF_TO_KPA).toFixed(2) + ' kPa' : wl_psf + ' psf';
+  document.getElementById('wl-display').textContent = wl_disp;
+  document.getElementById('wl-min-label').textContent = isM ? (5  * PSF_TO_KPA).toFixed(2) + ' kPa' : '5 psf';
+  document.getElementById('wl-max-label').textContent = isM ? (80 * PSF_TO_KPA).toFixed(2) + ' kPa' : '80 psf';
+
+  // Panel size inputs — convert and switch layout
+  if (isM) {
+    // Switch to single mm field per dimension
+    const hMm = totalH_in * IN_TO_MM, wMm = totalW_in * IN_TO_MM;
+    document.getElementById('ms-height-ft').value = parseFloat(hMm.toFixed(0));
+    document.getElementById('ms-height-in-wrap').style.display = 'none';
+    document.getElementById('ms-height-ft-tag').textContent = 'mm';
+    document.getElementById('ms-height-ft').closest('.ftin-pair').style.gridTemplateColumns = '1fr';
+    document.getElementById('ms-width-ft').value  = parseFloat(wMm.toFixed(0));
+    document.getElementById('ms-width-in-wrap').style.display  = 'none';
+    document.getElementById('ms-width-ft-tag').textContent  = 'mm';
+    document.getElementById('ms-width-ft').closest('.ftin-pair').style.gridTemplateColumns = '1fr';
+    document.getElementById('ms-height-label').textContent = 'Height (Span)';
+    document.getElementById('ms-width-label').textContent  = 'Width (Trib.)';
+  } else {
+    // Switch back to ft+in
+    const hTotalFt = totalH_in / 12, hFtOut = Math.floor(hTotalFt), hInOut = parseFloat(((hTotalFt - hFtOut)*12).toFixed(2));
+    const wTotalFt = totalW_in / 12, wFtOut = Math.floor(wTotalFt), wInOut = parseFloat(((wTotalFt - wFtOut)*12).toFixed(2));
+    document.getElementById('ms-height-ft').value = hFtOut;
+    document.getElementById('ms-height-in').value = hInOut;
+    document.getElementById('ms-height-in-wrap').style.display = '';
+    document.getElementById('ms-height-ft-tag').textContent = 'ft';
+    document.getElementById('ms-height-in-tag').textContent = 'in';
+    document.getElementById('ms-height-ft').closest('.ftin-pair').style.gridTemplateColumns = '';
+    document.getElementById('ms-width-ft').value  = wFtOut;
+    document.getElementById('ms-width-in').value  = wInOut;
+    document.getElementById('ms-width-in-wrap').style.display  = '';
+    document.getElementById('ms-width-ft-tag').textContent  = 'ft';
+    document.getElementById('ms-width-in-tag').textContent  = 'in';
+    document.getElementById('ms-width-ft').closest('.ftin-pair').style.gridTemplateColumns = '';
+  }
+
+  // Section parameters — B, t, D
+  if (isM) {
+    document.getElementById('ms-width-b').value = parseFloat((B_in * IN_TO_MM).toFixed(1));
+    document.getElementById('ms-wall-t').value  = parseFloat((t_in * IN_TO_MM).toFixed(2));
+    document.getElementById('ms-b-unit').textContent = 'mm';
+    document.getElementById('ms-t-unit').textContent = 'mm';
+    document.getElementById('ms-b-label').textContent = 'Width (B)';
+    // Depth slider: convert to mm, keep range sensible (25–300mm)
+    const D_mm = D_in * IN_TO_MM;
+    document.getElementById('ms-depth-slider').min   = 25;
+    document.getElementById('ms-depth-slider').max   = 300;
+    document.getElementById('ms-depth-slider').step  = 5;
+    document.getElementById('ms-depth-slider').value = parseFloat(D_mm.toFixed(0));
+    document.getElementById('depth-display').textContent = parseFloat(D_mm.toFixed(0)) + ' mm';
+  } else {
+    document.getElementById('ms-width-b').value = parseFloat((B_in).toFixed(3));
+    document.getElementById('ms-wall-t').value  = parseFloat((t_in).toFixed(4));
+    document.getElementById('ms-b-unit').textContent = 'in';
+    document.getElementById('ms-t-unit').textContent = 'in';
+    document.getElementById('ms-b-label').textContent = 'Width (B)';
+    document.getElementById('ms-depth-slider').min   = 1;
+    document.getElementById('ms-depth-slider').max   = 12;
+    document.getElementById('ms-depth-slider').step  = 0.25;
+    document.getElementById('ms-depth-slider').value = parseFloat(D_in.toFixed(2));
+    document.getElementById('depth-display').textContent = parseFloat(D_in.toFixed(2)) + ' in';
+  }
+
+  if (msResult) renderMullionResult(msResult);
+  onMullionChange();
+}
+
+// Material properties (E in ksi, Fy in ksi)
+const MATERIALS = {
+  aluminum: { name:'Aluminum 6063-T5', E:10000, Fy:22,  label:'Al 6063-T5' },
+  steel:    { name:'Steel A36',         E:29000, Fy:36,  label:'A36 Steel'  },
+  stainless:{ name:'Stainless 316',     E:28000, Fy:30,  label:'SS 316'     },
+};
+
+let msResult = null;
+
+function setSectionType(type) {
+  const isHollow = type === 'hollow';
+  document.getElementById('sec-hollow-btn').classList.toggle('active', isHollow);
+  document.getElementById('sec-solid-btn').classList.toggle('active', !isHollow);
+  document.getElementById('wall-t-field').classList.toggle('hidden', !isHollow);
+  onMullionChange();
+}
+
+function onWlChange() {
+  const v = parseFloat(document.getElementById('wl-slider').value);
+  document.getElementById('wl-display').textContent = msUnit === 'metric'
+    ? (v * PSF_TO_KPA).toFixed(2) + ' kPa' : v + ' psf';
+  onMullionChange();
+}
+
+function onDepthSlide() {
+  const v = parseFloat(document.getElementById('ms-depth-slider').value);
+  document.getElementById('depth-display').textContent = msUnit === 'metric'
+    ? v.toFixed(0) + ' mm' : v.toFixed(2) + ' in';
+  onMullionChange();
+}
+
+function onMullionChange() {
+  const errEl = document.getElementById('ms-error');
+  errEl.classList.remove('visible');
+
+  const w_psf  = parseFloat(document.getElementById('wl-slider').value); // always psf internally
+  const isM = msUnit === 'metric';
+  // Span + tributary: read in current unit, convert to ft for calc
+  let L_ft, trib_ft;
+  if (isM) {
+    const hMm = parseFloat(document.getElementById('ms-height-ft').value) || 0;
+    const wMm = parseFloat(document.getElementById('ms-width-ft').value)  || 0;
+    L_ft    = hMm / (IN_TO_MM * 12);
+    trib_ft = wMm / (IN_TO_MM * 12);
+  } else {
+    L_ft    = (parseFloat(document.getElementById('ms-height-ft').value) || 0) +
+              (parseFloat(document.getElementById('ms-height-in').value) || 0) / 12;
+    trib_ft = (parseFloat(document.getElementById('ms-width-ft').value)  || 0) +
+              (parseFloat(document.getElementById('ms-width-in').value)  || 0) / 12;
+  }
+  const mat    = MATERIALS[document.getElementById('ms-material').value];
+  const deflVal = document.getElementById('ms-defl').value;
+  const deflLim = deflVal === '240q' ? 240 : parseInt(deflVal);
+  const deflPlus = deflVal === '240q';
+  // Section dims: read in current unit, convert to inches for calc
+  const B_raw = parseFloat(document.getElementById('ms-width-b').value);
+  const D_raw = parseFloat(document.getElementById('ms-depth-slider').value);
+  const t_raw = parseFloat(document.getElementById('ms-wall-t').value);
+  const B = isM ? B_raw / IN_TO_MM : B_raw;
+  const D = isM ? D_raw / IN_TO_MM : D_raw;
+  const isSolid = document.getElementById('sec-solid-btn').classList.contains('active');
+  const t = isSolid ? 0 : (isM ? t_raw / IN_TO_MM : t_raw);
+
+  if (!L_ft || !trib_ft || isNaN(L_ft) || isNaN(trib_ft) || L_ft<=0 || trib_ft<=0) return;
+  if (!B || !D || isNaN(B) || isNaN(D)) return;
+  if (!isSolid && (!t || isNaN(t))) return;
+  if (!isSolid && (t >= D/2 || t >= B/2)) { errEl.textContent='Wall thickness too large for section dimensions.'; errEl.classList.add('visible'); return; }
+
+  const L_in   = L_ft * 12;         // span in inches
+  const trib_in= trib_ft * 12;
+  const w_pli  = w_psf * (trib_in/12) / 12; // load in lbs/in (tributary width in ft × psf → lb/ft → lb/in)
+
+  // Simple beam: M_max = wL²/8
+  const M_max_lbin = w_pli * L_in * L_in / 8;  // lb·in
+
+  // Required Sx (in³) for bending: S_req = M / (Fb)
+  // Allowable bending stress Fb = 0.6×Fy for simple estimate
+  const Fb_ksi  = 0.6 * mat.Fy;                 // ksi
+  const Fb_psi  = Fb_ksi * 1000;
+  const Sx_req  = M_max_lbin / Fb_psi;           // in³
+
+  // Deflection limit
+  const delta_allow = deflPlus ? (L_in / deflLim + 0.25) : (L_in / deflLim); // in
+  const E_psi = mat.E * 1000;
+  const I_req = (5 * w_pli * Math.pow(L_in,4)) / (384 * E_psi * delta_allow); // in⁴
+
+  // Section properties
+  let I_prov, Sx_prov, area_cs;
+  if (isSolid) {
+    I_prov   = B * Math.pow(D,3) / 12;
+    Sx_prov  = I_prov / (D/2);
+    area_cs  = B * D;
+  } else {
+    const Bi = B - 2*t, Di = D - 2*t;
+    I_prov   = (B*Math.pow(D,3) - Bi*Math.pow(Di,3)) / 12;
+    Sx_prov  = I_prov / (D/2);
+    area_cs  = B*D - Bi*Di;
+  }
+
+  // Actual max deflection
+  const delta_actual = (5 * w_pli * Math.pow(L_in,4)) / (384 * E_psi * I_prov);
+
+  // Utilisation ratios
+  const util_bending = Sx_req / Sx_prov;
+  const util_defl    = delta_actual / delta_allow;
+  const governs      = util_bending > util_defl ? 'bending' : 'deflection';
+  const util_max     = Math.max(util_bending, util_defl);
+  const passes       = util_max <= 1.0;
+
+  // Weight
+  const rho_pli = { aluminum:0.098, steel:0.284, stainless:0.289 }[document.getElementById('ms-material').value];
+  const wt_plf  = area_cs * rho_pli * 12;  // lb/ft
+
+  msResult = {
+    w_psf, L_ft, trib_ft, mat, deflLim, deflPlus, deflVal, B, t, D, isSolid,
+    Sx_req, I_req, Sx_prov, I_prov, delta_actual, delta_allow,
+    util_bending, util_defl, util_max, passes, governs, wt_plf,
+    L_in, M_max_lbin
+  };
+  renderMullionResult(msResult);
+}
+
+function renderMullionResult(r) {
+  const isM = msUnit === 'metric';
+
+  // Unit-aware display values
+  const I_req_d   = isM ? r.I_req  * IN4_TO_MM4 : r.I_req;
+  const I_prov_d  = isM ? r.I_prov * IN4_TO_MM4 : r.I_prov;
+  const Sx_req_d  = isM ? r.Sx_req  * IN3_TO_MM3 : r.Sx_req;
+  const Sx_prov_d = isM ? r.Sx_prov * IN3_TO_MM3 : r.Sx_prov;
+  const I_unit    = isM ? 'mm⁴' : 'in⁴';
+  const S_unit    = isM ? 'mm³' : 'in³';
+  const defl_d_a  = isM ? r.delta_actual * IN_TO_MM : r.delta_actual;
+  const defl_unit = isM ? 'mm' : '"';
+  const wt_d      = isM ? r.wt_plf * LB_FT_TO_KG_M : r.wt_plf;
+  const wt_unit   = isM ? 'kg/m' : 'lb/ft';
+
+  // Section name in current unit
+  const B_d = isM ? (r.B * IN_TO_MM).toFixed(0) : r.B;
+  const D_d = isM ? (r.D * IN_TO_MM).toFixed(0) : r.D;
+  const t_d = isM ? (r.t * IN_TO_MM).toFixed(1) : r.t;
+  const dim_unit = isM ? 'mm' : '"';
+  const secName = r.isSolid
+    ? B_d + dim_unit + ' × ' + D_d + dim_unit + ' Solid Bar'
+    : B_d + dim_unit + ' × ' + D_d + dim_unit + ' × ' + t_d + dim_unit + ' HSS';
+
+  // I display precision
+  const I_dec = isM ? 0 : 3;
+  const S_dec = isM ? 0 : 3;
+
+  // KPIs
+  const kpiGrid = document.getElementById('ms-kpi-grid');
+  kpiGrid.innerHTML = `
+    <div class="m-kpi">
+      <div class="m-kpi-label">Required I</div>
+      <div class="m-kpi-val">${I_req_d.toFixed(I_dec)}<span class="m-kpi-unit">${I_unit}</span></div>
+    </div>
+    <div class="m-kpi">
+      <div class="m-kpi-label">Provided I</div>
+      <div class="m-kpi-val">${I_prov_d.toFixed(I_dec)}<span class="m-kpi-unit">${I_unit}</span></div>
+    </div>
+    <div class="m-kpi secondary">
+      <div class="m-kpi-label">Required Sx</div>
+      <div class="m-kpi-val">${Sx_req_d.toFixed(S_dec)}<span class="m-kpi-unit">${S_unit}</span></div>
+    </div>
+    <div class="m-kpi secondary">
+      <div class="m-kpi-label">Provided Sx</div>
+      <div class="m-kpi-val">${Sx_prov_d.toFixed(S_dec)}<span class="m-kpi-unit">${S_unit}</span></div>
+    </div>
+  `;
+
+  // Profile card
+  const pCard = document.getElementById('ms-profile-card');
+  const statusClass = r.passes ? 'pass' : 'fail';
+  const util_pct = (r.util_max * 100).toFixed(1);
+  const defl_ratio = r.delta_actual > 0 ? 'L/' + Math.round(r.L_in / r.delta_actual) : '—';
+
+  pCard.innerHTML = `
+    <div class="profile-card ${statusClass}">
+      <div class="profile-top">
+        <div class="profile-name">${secName}</div>
+        <div class="profile-badge ${statusClass}">${r.passes ? '✓ Pass' : '✗ Fail'}</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">${r.mat.name}  ·  ${r.deflVal === "240q" ? "L/240 + 1/4&quot;" : "L/"+r.deflLim} limit  ·  Governs: ${r.governs}</div>
+      <div class="profile-stats">
+        <div class="profile-stat">
+          <div class="profile-stat-label">Max Defl.</div>
+          <div class="profile-stat-val">${defl_d_a.toFixed(isM?1:3)}${defl_unit}</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-label">Defl. Ratio</div>
+          <div class="profile-stat-val">${defl_ratio}</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-label">Self Wt.</div>
+          <div class="profile-stat-val">${wt_d.toFixed(2)} ${wt_unit}</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-label">Utilisation</div>
+          <div class="profile-stat-val">${util_pct}%</div>
+        </div>
+      </div>
+      <div class="util-bar-wrap">
+        <div class="util-bar-bg">
+          <div class="util-bar-fill ${statusClass}" style="width:${Math.min(100,r.util_max*100).toFixed(1)}%"></div>
+        </div>
+        <div class="util-label">${util_pct}% utilisation${r.passes ? '' : ' — increase depth or reduce span'}</div>
+      </div>
+    </div>`;
+
+  document.getElementById('ms-result').classList.add('visible');
+}
+
+function copyMullionResult() {
+  if (!msResult) return;
+  const r = msResult;
+  let text = 'Mullion Analysis\n';
+  text += `Section: ${r.isSolid ? r.B+'" × '+r.D+'" Solid Bar' : r.B+'" × '+r.D+'" × '+r.t+'" HSS'}  (${r.mat.name})\n`;
+  text += `Span: ${r.L_ft} ft  |  Tributary: ${r.trib_ft} ft  |  Wind: ${r.w_psf} psf  |  Defl: ${r.deflVal === "240q" ? "L/240 + 1/4\"" : "L/"+r.deflLim}\n`;
+  text += `Required I: ${r.I_req.toFixed(3)} in⁴  |  Provided I: ${r.I_prov.toFixed(3)} in⁴\n`;
+  text += `Required Sx: ${r.Sx_req.toFixed(3)} in³  |  Provided Sx: ${r.Sx_prov.toFixed(3)} in³\n`;
+  text += `Max deflection: ${r.delta_actual.toFixed(3)}"  |  Allowable: ${r.delta_allow.toFixed(3)}"\n`;
+  text += `Utilisation: ${(r.util_max*100).toFixed(1)}%  |  ${r.passes ? 'PASS' : 'FAIL'}\n`;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.getElementById('ms-copy-btn'); btn.classList.add('copied');
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';},2000);
+  });
+}
+
+['ms-height-ft','ms-height-in','ms-width-ft','ms-width-in','ms-width-b','ms-wall-t'].forEach(id=>{
+  const el=document.getElementById(id); if(!el)return;
+  el.addEventListener('focus',function(){this.select();});
+});
+
+/* ═══════ INIT ═══════ */
+document.getElementById('inp-length-mm').value = 1000;
+document.getElementById('inp-width-mm').value  = 1000;
+addLite(); addLite();
+
+// Default mullion inputs
+document.getElementById('ms-height-ft').value = 10;
+document.getElementById('ms-height-in').value = 0;
+document.getElementById('ms-width-ft').value  = 5;
+document.getElementById('ms-width-in').value  = 0;
+onMullionChange();
+
+/* ═══════════════════════════════════════════ SILICONE BITE ═══════ */
+let siUnit = 'imperial';
+let siResult = null;
+
+function setSiUnit(u) {
+  if (u === siUnit) return;
+  const prevIsM = siUnit === 'metric';
+
+  // Read current values as total inches / psi before switching
+  let totalH_in, totalW_in, fs_psi;
+  if (prevIsM) {
+    totalH_in = (parseFloat(document.getElementById('si-height-ft').value) || 0) / IN_TO_MM;
+    totalW_in = (parseFloat(document.getElementById('si-width-ft').value)  || 0) / IN_TO_MM;
+    fs_psi    = (parseFloat(document.getElementById('si-fs').value) || 0) / PSF_TO_KPA * (1/144);
+    // kPa → psi: 1 psi = 6.89476 kPa
+    fs_psi    = (parseFloat(document.getElementById('si-fs').value) || 0) / 6.89476;
+  } else {
+    totalH_in = (parseFloat(document.getElementById('si-height-ft').value) || 0) * 12 +
+                (parseFloat(document.getElementById('si-height-in').value) || 0);
+    totalW_in = (parseFloat(document.getElementById('si-width-ft').value)  || 0) * 12 +
+                (parseFloat(document.getElementById('si-width-in').value)  || 0);
+    fs_psi    = parseFloat(document.getElementById('si-fs').value) || 20;
+  }
+
+  siUnit = u;
+  const isM = u === 'metric';
+
+  document.getElementById('si-btn-imperial').classList.toggle('active', !isM);
+  document.getElementById('si-btn-metric').classList.toggle('active',    isM);
+
+  // Wind load label update
+  const wl_psf = parseFloat(document.getElementById('si-wl-slider').value);
+  document.getElementById('si-wl-display').textContent = isM
+    ? (wl_psf * PSF_TO_KPA).toFixed(2) + ' kPa' : wl_psf + ' psf';
+  document.getElementById('si-wl-min').textContent = isM ? (5*PSF_TO_KPA).toFixed(2)+' kPa' : '5 psf';
+  document.getElementById('si-wl-max').textContent = isM ? (80*PSF_TO_KPA).toFixed(2)+' kPa' : '80 psf';
+
+  // Panel size
+  if (isM) {
+    document.getElementById('si-height-ft').value = parseFloat((totalH_in * IN_TO_MM).toFixed(0));
+    document.getElementById('si-width-ft').value  = parseFloat((totalW_in * IN_TO_MM).toFixed(0));
+    document.getElementById('si-height-in-wrap').style.display = 'none';
+    document.getElementById('si-width-in-wrap').style.display  = 'none';
+    document.getElementById('si-height-ft-tag').textContent = 'mm';
+    document.getElementById('si-width-ft-tag').textContent  = 'mm';
+    document.getElementById('si-height-ft').closest('.ftin-pair').style.gridTemplateColumns = '1fr';
+    document.getElementById('si-width-ft').closest('.ftin-pair').style.gridTemplateColumns  = '1fr';
+  } else {
+    const hFt = Math.floor(totalH_in/12), hIn = parseFloat((totalH_in - hFt*12).toFixed(2));
+    const wFt = Math.floor(totalW_in/12), wIn = parseFloat((totalW_in - wFt*12).toFixed(2));
+    document.getElementById('si-height-ft').value = hFt;
+    document.getElementById('si-height-in').value = hIn;
+    document.getElementById('si-width-ft').value  = wFt;
+    document.getElementById('si-width-in').value  = wIn;
+    document.getElementById('si-height-in-wrap').style.display = '';
+    document.getElementById('si-width-in-wrap').style.display  = '';
+    document.getElementById('si-height-ft-tag').textContent = 'ft';
+    document.getElementById('si-height-in-tag').textContent = 'in';
+    document.getElementById('si-width-ft-tag').textContent  = 'ft';
+    document.getElementById('si-width-in-tag').textContent  = 'in';
+    document.getElementById('si-height-ft').closest('.ftin-pair').style.gridTemplateColumns = '';
+    document.getElementById('si-width-ft').closest('.ftin-pair').style.gridTemplateColumns  = '';
+  }
+
+  // Silicone strength
+  const fs_disp = isM ? parseFloat((fs_psi * 6.89476).toFixed(2)) : parseFloat(fs_psi.toFixed(1));
+  document.getElementById('si-fs').value = fs_disp;
+  document.getElementById('si-fs-unit').textContent = isM ? 'kPa' : 'psi';
+  document.getElementById('si-fs-label').innerHTML = isM
+    ? 'S<sub style="font-size:0.75em">allow</sub> (kPa)'
+    : 'S<sub style="font-size:0.75em">allow</sub> (psi)';
+
+  if (siResult) renderSiResult(siResult);
+  onSiChange();
+}
+
+function onSiWlChange() {
+  const v = parseFloat(document.getElementById('si-wl-slider').value);
+  document.getElementById('si-wl-display').textContent = siUnit === 'metric'
+    ? (v * PSF_TO_KPA).toFixed(2) + ' kPa' : v + ' psf';
+  onSiChange();
+}
+
+function onSiProductChange() {
+  const val = document.getElementById('si-product').value;
+  const fsEl = document.getElementById('si-fs');
+  if (val === 'custom') {
+    fsEl.disabled = false;
+    fsEl.style.opacity = '1';
+    fsEl.style.cursor  = '';
+  } else {
+    const psi = parseFloat(val);
+    fsEl.value = siUnit === 'metric' ? parseFloat((psi * 6.89476).toFixed(2)) : psi;
+    fsEl.disabled = true;
+    fsEl.style.opacity = '0.5';
+    fsEl.style.cursor  = 'not-allowed';
+    onSiChange();
+  }
+}
+
+function onSiChange() {
+  const errEl = document.getElementById('si-error');
+  errEl.classList.remove('visible');
+  const isM = siUnit === 'metric';
+
+  // Read panel size → total inches
+  let H_in, W_in;
+  if (isM) {
+    H_in = (parseFloat(document.getElementById('si-height-ft').value) || 0) / IN_TO_MM;
+    W_in = (parseFloat(document.getElementById('si-width-ft').value)  || 0) / IN_TO_MM;
+  } else {
+    H_in = (parseFloat(document.getElementById('si-height-ft').value) || 0) * 12 +
+            (parseFloat(document.getElementById('si-height-in').value) || 0);
+    W_in = (parseFloat(document.getElementById('si-width-ft').value)  || 0) * 12 +
+            (parseFloat(document.getElementById('si-width-in').value)  || 0);
+  }
+
+  const w_psf = parseFloat(document.getElementById('si-wl-slider').value);
+  const fs_raw = parseFloat(document.getElementById('si-fs').value) || 0;
+  const fs_psi = isM ? fs_raw / 6.89476 : fs_raw;
+
+  if (!H_in || !W_in || H_in <= 0 || W_in <= 0) return;
+  if (!fs_psi || fs_psi <= 0) { errEl.textContent = 'Please enter a valid silicone strength.'; errEl.classList.add('visible'); return; }
+
+  // BITE (imperial) = (0.5 × S_ft × W_psf) / (12 × Fs_psi)   → inches
+  // BITE (metric)   = (0.5 × S_mm × W_kPa) / Fs_kPa           → mm, round up
+  const S_ft  = Math.min(H_in, W_in) / 12;   // shortest dim in feet
+  const S_mm  = Math.min(H_in, W_in) * IN_TO_MM; // shortest dim in mm
+  const w_kpa = w_psf * PSF_TO_KPA;
+  const fs_kpa = fs_psi * 6.89476;
+
+  // Calculate in both units natively to avoid rounding error
+  const bite_in = (0.5 * S_ft * w_psf) / (12 * fs_psi);     // inches
+  const bite_mm_calc = (0.5 * S_mm * w_kpa) / fs_kpa;        // mm (pre-roundup)
+  const bite_mm = Math.ceil(bite_mm_calc * 10) / 10;          // round up to 0.1mm
+
+  // Minimum bite: 6mm / 0.25"
+  const min_bite_in = 0.25;
+  const min_bite_mm = 6.0;
+  const governing_in = Math.max(bite_in, min_bite_in);
+  const governing_mm = Math.max(bite_mm, min_bite_mm);
+  const min_governs  = min_bite_mm > bite_mm;
+
+  siResult = { bite_in, bite_mm, bite_mm_calc, governing_in, governing_mm, min_governs,
+               H_in, W_in, w_psf, fs_psi, S_ft, S_mm, w_kpa: w_psf * PSF_TO_KPA, fs_kpa: fs_psi * 6.89476 };
+  renderSiResult(siResult);
+}
+
+function renderSiResult(r) {
+  const isM = siUnit === 'metric';
+
+  const activeColor   = 'var(--accent)';
+  const inactiveColor = 'var(--text-muted)';
+  const inColor  = isM ? inactiveColor : activeColor;
+  const mmColor  = isM ? activeColor   : inactiveColor;
+
+  function dualVal(in_val, mm_val) {
+    return '<span style="color:' + inColor  + '">' + in_val + ' in</span>' +
+           '<span style="color:var(--text-muted);font-size:13px"> | </span>' +
+           '<span style="color:' + mmColor  + '">' + mm_val + ' mm</span>';
+  }
+
+  // Update label
+  const kpiLabel = r.min_governs ? 'Code Minimum' : 'Calculated Bite';
+  document.getElementById('si-result-label').textContent = kpiLabel;
+
+  // Two-column values — imperial left, metric right
+  const inEl  = document.getElementById('si-val-imperial');
+  const mmEl  = document.getElementById('si-val-metric');
+  const inCol = document.getElementById('si-col-imperial');
+  const mmCol = document.getElementById('si-col-metric');
+
+  inEl.innerHTML  = r.governing_in.toFixed(3) + '<span class="result-val-unit">in</span>';
+  mmEl.innerHTML  = Math.ceil(r.governing_mm).toFixed(0) + '<span class="result-val-unit">mm</span>';
+
+  inEl.classList.toggle('active',   !isM);  inEl.classList.toggle('inactive', isM);
+  mmEl.classList.toggle('active',    isM);  mmEl.classList.toggle('inactive', !isM);
+  inCol.classList.toggle('active',  !isM);  inCol.classList.toggle('inactive', isM);
+  mmCol.classList.toggle('active',   isM);  mmCol.classList.toggle('inactive', !isM);
+
+  const bEl = document.getElementById('si-breakdown');
+  bEl.innerHTML = '';
+
+  const S_in = (r.S_ft * 12).toFixed(2) + ' in';
+  const S_mm = r.S_mm.toFixed(0) + ' mm';
+  const w_d  = isM ? r.w_kpa.toFixed(2) + ' kPa'  : r.w_psf + ' psf';
+  const fs_d = isM ? r.fs_kpa.toFixed(1) + ' kPa' : r.fs_psi + ' psi';
+  const formula_in = r.bite_in.toFixed(3) + ' in';
+  const formula_mm = Math.ceil(r.bite_mm_calc) + ' mm';
+  const min_str    = '0.25 in | 6 mm';
+
+  const wInC  = isM ? inactiveColor : activeColor;
+  const wMmC  = isM ? activeColor   : inactiveColor;
+  const w_dual  = '<span style="color:' + wInC + '">' + r.w_psf + ' psf</span>' +
+                  '<span style="color:var(--text-muted);font-size:13px"> | </span>' +
+                  '<span style="color:' + wMmC + '">' + r.w_kpa.toFixed(2) + ' kPa</span>';
+  const fs_dual = '<span style="color:' + wInC + '">' + r.fs_psi.toFixed(1) + ' psi</span>' +
+                  '<span style="color:var(--text-muted);font-size:13px"> | </span>' +
+                  '<span style="color:' + wMmC + '">' + r.fs_kpa.toFixed(1) + ' kPa</span>';
+  const rows = [
+    ['Shortest side (S)',    dualVal((r.S_ft*12).toFixed(2), r.S_mm.toFixed(0))],
+    ['Wind pressure (W)',    w_dual],
+    ['Allowable strength',   fs_dual],
+    ['Formula (0.5×S×W/Fs)', dualVal(r.bite_in.toFixed(3), Math.ceil(r.bite_mm_calc).toFixed(0))],
+    ['Code minimum',         '0.25 in | 6 mm'],
+  ];
+
+  rows.forEach((row, i) => {
+    const cls = i === 4 ? 'brow lite-brow sep-above' : 'brow lite-brow';
+    bEl.innerHTML += `<div class="${cls}"><span class="bl">${row[0]}</span><span class="bv" style="color:var(--text-soft)">${row[1]}</span></div>`;
+  });
+
+  document.getElementById('si-result').classList.add('visible');
+}
+
+function copySiResult() {
+  if (!siResult) return;
+  const isM = siUnit === 'metric';
+  const r = siResult;
+  const bite_d = isM ? r.governing_mm : r.governing_in;
+  const bite_u = isM ? 'mm' : '"';
+  const w_d    = isM ? (r.w_psf * PSF_TO_KPA).toFixed(2) + ' kPa' : r.w_psf + ' psf';
+  const fs_d   = isM ? (r.fs_psi * 6.89476).toFixed(2) + ' kPa'   : r.fs_psi + ' psi';
+  let text = 'Structural Silicone Bite Calculation\n';
+  text += `Governing bite: ${bite_d.toFixed(isM?1:3)}${bite_u}  (${r.min_governs ? 'min. controls' : 'calc. controls'})\n`;
+  text += `Wind: ${w_d}  |  S_allow: ${fs_d}\n`;
+  text += `Formula: BITE = 0.5 × S × W / S_allow\n`;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('si-copy-btn'); btn.classList.add('copied');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy'; }, 2000);
+  });
+}
+
+['si-height-ft','si-height-in','si-width-ft','si-width-in','si-fs'].forEach(id => {
+  const el = document.getElementById(id); if (!el) return;
+  el.addEventListener('focus', function() { this.select(); });
+});
+
+// Silicone default
+document.getElementById('si-height-ft').value = 10;
+document.getElementById('si-height-in').value = 0;
+document.getElementById('si-width-ft').value  = 5;
+document.getElementById('si-width-in').value  = 0;
+onSiChange();
+
+
+/* ═══ UV DIAGRAM ═══ */
+function showUvDiagram() {
+  const modal = document.getElementById('uv-modal');
+  modal.style.display = 'block';
+  drawUvDiagram();
+}
+
+function hideUvDiagram(e) {
+  if (!e || e.target === document.getElementById('uv-modal')) {
+    document.getElementById('uv-modal').style.display = 'none';
+  }
+}
+
+function drawUvDiagram() {
+  const canvas = document.getElementById('uv-canvas');
+  const container = canvas.parentElement;
+  const CW = container.clientWidth - 32; // account for padding
+
+  // Read inputs in inches
+  const W   = getDimIn_uv('uv-w-ft', 'uv-w-in');
+  const H   = getDimIn_uv('uv-h-ft', 'uv-h-in');
+  const f   = getSingleIn_uv('uv-fw');
+  if (!W || !H || !f) return;
+
+  const hasTransom = uvTransom;
+  let tw = 0, z1h = 0, z2h = 0;
+  if (hasTransom) {
+    tw = getSingleIn_uv('uv-tw');
+    const td   = getSingleIn_uv('uv-td');
+    const from = document.getElementById('uv-transom-from').value;
+    const gl_H = H - f;
+    z1h = from === 'top' ? td - f/2 - tw/2 : gl_H - (td - f/2 + tw/2);
+    z2h = gl_H - z1h - tw;
+  }
+
+  const gl_W = W - f;
+  const gl_H = H - f;
+  const EOG  = EOG_IN;
+
+  // Scale to fit canvas
+  const MARGIN = 28; // px for dimension labels
+  const scale  = (CW - MARGIN * 2) / W;
+  const CH     = Math.round(H * scale + MARGIN * 2);
+
+  canvas.width  = Math.round(CW * window.devicePixelRatio);
+  canvas.height = Math.round(CH * window.devicePixelRatio);
+  canvas.style.height = CH + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  // Coordinate helpers (panel origin at top-left of panel)
+  const ox = MARGIN, oy = MARGIN; // canvas origin
+
+  function px(x) { return ox + x * scale; }
+  function py(y) { return oy + y * scale; }
+  function sc(v) { return v * scale; }
+
+  // Colors
+  const C = {
+    frameFill:   '#4a3530',
+    frameStroke: '#e06650',
+    eogVFill:    '#2a3545',
+    eogSFill:    '#3a3020',
+    cogVFill:    '#1a2535',
+    cogSFill:    '#2a2015',
+    spandrelFill:'#3a3525',
+    clLine:      '#666',
+    dimLine:     '#888',
+    dimText:     '#aaa',
+    label:       '#f0f0f0',
+    accentText:  '#e06650',
+  };
+
+  // ── Draw layers ──
+
+  // 1. Panel background (CL boundary)
+  ctx.fillStyle = '#1a1a20';
+  ctx.fillRect(px(0), py(0), sc(W), sc(H));
+
+  // 2. Frame zone
+  ctx.fillStyle = C.frameFill;
+  ctx.fillRect(px(0), py(0), sc(W), sc(H));
+
+  // 3. Glazing area (cut out frame)
+  const gx = px(f/2), gy = py(f/2), gw = sc(gl_W), gh = sc(gl_H);
+
+  function drawZone(zx, zy, zw, zh, type) {
+    const isSpandrel = type === 'spandrel';
+    // COG fill
+    ctx.fillStyle = isSpandrel ? C.spandrelFill : C.cogVFill;
+    ctx.fillRect(zx, zy, zw, zh);
+    // EOG band (only if zone big enough)
+    const e = sc(EOG);
+    if (zw > 2*e && zh > 2*e) {
+      ctx.fillStyle = isSpandrel ? C.eogSFill : C.eogVFill;
+      // top band
+      ctx.fillRect(zx, zy, zw, e);
+      // bottom band
+      ctx.fillRect(zx, zy + zh - e, zw, e);
+      // left band (between top/bottom)
+      ctx.fillRect(zx, zy + e, e, zh - 2*e);
+      // right band
+      ctx.fillRect(zx + zw - e, zy + e, e, zh - 2*e);
+    }
+  }
+
+  if (hasTransom) {
+    const y1 = py(f/2);
+    const h1 = sc(z1h);
+    const yt = py(f/2 + z1h);
+    const ht = sc(tw);
+    const y2 = py(f/2 + z1h + tw);
+    const h2 = sc(z2h);
+
+    drawZone(gx, y1, gw, h1, uvZoneType[1]);
+    // Transom member
+    ctx.fillStyle = C.frameFill;
+    ctx.fillRect(gx, yt, gw, ht);
+    drawZone(gx, y2, gw, h2, uvZoneType[2]);
+  } else {
+    drawZone(gx, gy, gw, gh, uvZoneType[1]);
+  }
+
+  // 4. Centreline (dashed)
+  ctx.strokeStyle = C.clLine;
+  ctx.lineWidth = 0.8;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeRect(px(0) + 0.5, py(0) + 0.5, sc(W) - 1, sc(H) - 1);
+  ctx.setLineDash([]);
+
+  // 5. Frame border
+  ctx.strokeStyle = C.frameStroke;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(px(f/2), py(f/2), sc(gl_W), sc(gl_H));
+  if (hasTransom) {
+    // Transom lines
+    const yt = py(f/2 + z1h);
+    const ht = sc(tw);
+    ctx.strokeRect(gx, yt, gw, ht);
+  }
+
+  // 6. EOG boundary lines (dashed)
+  const e = sc(EOG);
+  function drawEogLines(zx, zy, zw, zh) {
+    if (zw <= 2*e || zh <= 2*e) return;
+    ctx.strokeStyle = '#4a6080';
+    ctx.lineWidth = 0.6;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeRect(zx + e, zy + e, zw - 2*e, zh - 2*e);
+    ctx.setLineDash([]);
+  }
+  if (hasTransom) {
+    drawEogLines(gx, py(f/2), gw, sc(z1h));
+    drawEogLines(gx, py(f/2 + z1h + tw), gw, sc(z2h));
+  } else {
+    drawEogLines(gx, gy, gw, gh);
+  }
+
+  // 7. Dimension lines
+  ctx.strokeStyle = C.dimLine;
+  ctx.fillStyle = C.dimText;
+  ctx.font = `${Math.max(9, Math.round(10 * scale / 4))}px Lato, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const isM = uvUnit === 'metric';
+  function dimStr(val_in) {
+    if (isM) return Math.round(val_in * IN_TO_MM) + 'mm';
+    const ft = Math.floor(val_in / 12);
+    const ins = parseFloat((val_in - ft * 12).toFixed(1));
+    return ft > 0 ? ft + "'" + (ins > 0 ? ins + '"' : '') : ins + '"';
+  }
+
+  // Width dim (top)
+  const dimY = oy - 14;
+  ctx.fillStyle = C.dimText;
+  ctx.fillText(dimStr(W), px(W/2), dimY);
+
+  // Height dim (left)
+  ctx.save();
+  ctx.translate(ox - 14, py(H/2));
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText(dimStr(H), 0, 0);
+  ctx.restore();
+
+  // Frame width annotation
+  if (sc(f) > 10) {
+    ctx.font = `${Math.max(8, Math.round(8 * scale / 4))}px Lato, sans-serif`;
+    ctx.fillStyle = C.accentText;
+    ctx.fillText(dimStr(f/2), px(f/4), py(H/2));
+  }
+
+  // Zone labels
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `bold ${Math.max(9, Math.round(11 * scale / 4))}px Lato, sans-serif`;
+
+  function zoneLabel(zx, zy, zw, zh, type, name) {
+    const cx = zx + zw/2, cy = zy + zh/2;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(cx - 28, cy - 9, 56, 18);
+    ctx.fillStyle = type === 'spandrel' ? '#c8a060' : '#6ab0e0';
+    ctx.fillText(name, cx, cy);
+  }
+
+  if (hasTransom) {
+    zoneLabel(gx, py(f/2), gw, sc(z1h), uvZoneType[1], uvZoneType[1] === 'spandrel' ? 'SPANDREL' : 'VISION');
+    zoneLabel(gx, py(f/2 + z1h + tw), gw, sc(z2h), uvZoneType[2], uvZoneType[2] === 'spandrel' ? 'SPANDREL' : 'VISION');
+  } else {
+    zoneLabel(gx, gy, gw, gh, uvZoneType[1], uvZoneType[1] === 'spandrel' ? 'SPANDREL' : 'VISION');
+  }
+
+  // 8. Legend
+  const legendEl = document.getElementById('uv-legend');
+  const items = [
+    { color: C.frameFill, label: 'Frame' },
+    { color: C.eogVFill,  label: 'EOG — Vision' },
+    { color: C.cogVFill,  label: 'COG — Vision' },
+    { color: C.eogSFill,  label: 'EOG — Spandrel' },
+    { color: C.spandrelFill, label: 'COG — Spandrel' },
+  ];
+  legendEl.innerHTML = items.map(i =>
+    '<div style="display:flex;align-items:center;gap:5px">' +
+    '<div style="width:14px;height:14px;border-radius:2px;background:' + i.color + ';border:1px solid #444;flex-shrink:0"></div>' +
+    '<span style="color:var(--text-soft)">' + i.label + '</span></div>'
+  ).join('');
+}
+
+/* ═══════════════════════════════════════════ U-VALUE CALC ═══════ */
+let uvUnit = 'imperial';
+let uvTransom = false;
+let uvZoneType = { 1: 'vision', 2: 'vision' };
+let uvResult = null;
+
+// Glass COG lookup table (BTU/hr·ft²·°F)
+const UV_GLASS_COG = {
+  double: { 0: { air:0.48, argon:0.42 }, 1: { air:0.30, argon:0.25 }, 2: { air:0.26, argon:0.22 } },
+  triple: { 0: { air:0.28, argon:0.23 }, 1: { air:0.20, argon:0.17 }, 2: { air:0.17, argon:0.14 } }
+};
+
+// Air film resistances (hr·ft²·°F/BTU)
+const R_SI = 0.68, R_SE = 0.17;
+// EOG band
+const EOG_IN = 2.5;
+
+// BTU → W/m²K: multiply by 5.678
+const BTU_TO_W = 5.678;
+// in² → m²: divide by 1550.0031
+const IN2_TO_M2 = 1 / 1550.0031;
+
+function onUvFwChange() {
+  // Sync transom width to frame width if user hasn't overridden it
+  const fwEl = document.getElementById('uv-fw');
+  const twEl = document.getElementById('uv-tw');
+  const fw = parseFloat(fwEl.value) || 0;
+  const tw = parseFloat(twEl.value) || 0;
+  // Sync if transom width is empty or was previously equal to frame width
+  if (!twEl.dataset.overridden || Math.abs(tw - parseFloat(twEl.dataset.lastFw || fw)) < 0.001) {
+    twEl.value = fwEl.value;
+    twEl.dataset.lastFw = fwEl.value;
+  }
+  onUvChange();
+}
+
+function onUvFrameConfig() {
+  const frameBase = parseFloat(document.getElementById('uv-frame-type').value);
+  const spacerAdd = parseFloat(document.getElementById('uv-spacer-bar').value);
+  const U_frame_btu = frameBase + spacerAdd;
+
+  // Get current COG vision value in BTU
+  const U_cog_btu = getU_uv('uv-cog-v');
+  const U_eog_btu = (U_frame_btu + U_cog_btu) / 2;
+
+  const ufEl  = document.getElementById('uv-uf');
+  const eogEl = document.getElementById('uv-eog-v');
+
+  ufEl.value  = uvUnit === 'metric' ? (U_frame_btu * BTU_TO_W).toFixed(2) : U_frame_btu.toFixed(2);
+  eogEl.value = uvUnit === 'metric' ? (U_eog_btu   * BTU_TO_W).toFixed(2) : U_eog_btu.toFixed(2);
+  onUvChange();
+}
+
+function onUvGlassConfig() {
+  const igu      = document.getElementById('uv-igu').value;
+  const coatings = document.getElementById('uv-coatings').value;
+  const fill     = document.getElementById('uv-fill').value;
+
+  const cog      = UV_GLASS_COG[igu][coatings][fill];
+  document.getElementById('uv-cog-v').value = cog.toFixed(2);
+  document.getElementById('uv-cog-source').textContent = '(from config)';
+  // Recalculate EOG as transition between frame and COG
+  onUvFrameConfig();
+}
+
+function setUvTransom(on) {
+  uvTransom = on;
+  document.getElementById('uv-transom-on').classList.toggle('active', on);
+  document.getElementById('uv-transom-off').classList.toggle('active', !on);
+  document.getElementById('uv-transom-fields').style.display = on ? 'block' : 'none';
+  document.getElementById('uv-zone2-section').style.display  = on ? 'block' : 'none';
+  document.getElementById('uv-zone1-label').textContent = on ? 'Upper Zone' : 'Zone 1';
+  document.getElementById('uv-zone2-label').textContent = 'Lower Zone';
+  onUvChange();
+}
+
+function setUvZoneType(zone, type) {
+  uvZoneType[zone] = type;
+  const isSpandrel = type === 'spandrel';
+  document.getElementById('uv-z' + zone + '-vision-btn').classList.toggle('active',    !isSpandrel);
+  document.getElementById('uv-z' + zone + '-spandrel-btn').classList.toggle('active',  isSpandrel);
+  document.getElementById('uv-z' + zone + '-spandrel-fields').style.display = isSpandrel ? 'block' : 'none';
+  if (isSpandrel) calcSpandrelCog(zone);
+  onUvChange();
+}
+
+function calcSpandrelCog(zone) {
+  const ins = parseFloat(document.getElementById('uv-z' + zone + '-ins').value) || 0;
+  const rpi = parseFloat(document.getElementById('uv-z' + zone + '-rpi').value) || 4.2;
+  const isM = uvUnit === 'metric';
+  // Convert ins to inches for calc if metric
+  const ins_in = isM ? ins / IN_TO_MM : ins;
+  const R_total = R_SI + R_SE + ins_in * rpi;
+  const ucog = 1 / R_total;
+  const display = isM ? (ucog * BTU_TO_W).toFixed(3) : ucog.toFixed(3);
+  document.getElementById('uv-z' + zone + '-cog').value = display;
+  return ucog; // always in BTU
+}
+
+function getDimIn_uv(ftId, inId) {
+  if (uvUnit === 'metric') {
+    return (parseFloat(document.getElementById(ftId).value) || 0) / IN_TO_MM;
+  }
+  return (parseFloat(document.getElementById(ftId).value) || 0) * 12 +
+         (parseFloat(document.getElementById(inId).value) || 0);
+}
+
+function getSingleIn_uv(id) {
+  const v = parseFloat(document.getElementById(id).value) || 0;
+  return uvUnit === 'metric' ? v / IN_TO_MM : v;
+}
+
+function getU_uv(id) {
+  // always return BTU regardless of display unit
+  const v = parseFloat(document.getElementById(id).value) || 0;
+  return uvUnit === 'metric' ? v / BTU_TO_W : v;
+}
+
+function eogArea(w, h, e) {
+  // EOG band area for rectangle w×h with band e
+  // = 2e(w+h) - 4e²
+  if (w <= 2*e || h <= 2*e) return w * h; // zone too small — all EOG
+  return 2 * e * (w + h) - 4 * e * e;
+}
+
+function cogArea(w, h, e) {
+  if (w <= 2*e || h <= 2*e) return 0;
+  return (w - 2*e) * (h - 2*e);
+}
+
+function onUvChange() {
+  const errEl = document.getElementById('uv-error');
+  errEl.classList.remove('visible');
+
+  // Read all dimensions in inches
+  const W = getDimIn_uv('uv-w-ft', 'uv-w-in');
+  const H = getDimIn_uv('uv-h-ft', 'uv-h-in');
+  const f = getSingleIn_uv('uv-fw');
+  const U_frame = getU_uv('uv-uf');
+
+  if (!W || !H || W <= 0 || H <= 0) return;
+  if (!f || f <= 0) { errEl.textContent = 'Please enter a frame width.'; errEl.classList.add('visible'); return; }
+  if (f >= W/2 || f >= H/2) { errEl.textContent = 'Frame width too large for panel size.'; errEl.classList.add('visible'); return; }
+
+  // Panel and frame areas (in²)
+  const A_panel = W * H;
+  const gl_W = W - f;   // glazing width (centreline minus full frame)
+  const gl_H = H - f;   // glazing height
+  const A_frame = A_panel - gl_W * gl_H;
+
+  // Transom split
+  let zones = [];
+  let A_transom = 0; // transom member area (added to frame)
+  if (uvTransom) {
+    const td = uvUnit === 'metric'
+      ? (parseFloat(document.getElementById('uv-td-ft').value) || 0) / IN_TO_MM
+      : (parseFloat(document.getElementById('uv-td-ft').value) || 0) * 12 +
+        (parseFloat(document.getElementById('uv-td-in').value) || 0);
+    const tw = getSingleIn_uv('uv-tw');
+    const from = document.getElementById('uv-transom-from').value;
+    if (td <= 0 || tw <= 0) { errEl.textContent = 'Please enter valid transom dimensions.'; errEl.classList.add('visible'); return; }
+    // td = centreline distance from head/sill CL to transom CL
+    // Upper daylight height = td - f/2 - tw/2  (head face to transom top face)
+    // Lower daylight height = gl_H - td - tw/2 + f/2 = (H - f) - td - tw/2 + f/2 ... simplify:
+    // Total glazing height = gl_H = H - f
+    // Upper DLO = td - f/2 - tw/2
+    // Transom DLO height = tw (full member)
+    // Lower DLO = gl_H - (td - f/2 - tw/2) - tw
+    const z1h = from === 'top'
+      ? td - f/2 - tw/2
+      : gl_H - (td - f/2 + tw/2);
+    const z2h = gl_H - z1h - tw; // lower zone daylight
+    if (z1h <= 0 || z2h <= 0) { errEl.textContent = 'Transom position leaves a zone with zero or negative height.'; errEl.classList.add('visible'); return; }
+    // Transom member area = gl_W × tw (same thermal treatment as frame)
+    A_transom = gl_W * tw;
+    zones = [
+      { label: 'Upper', w: gl_W, h: z1h, type: uvZoneType[1], zIdx: 1 },
+      { label: 'Lower', w: gl_W, h: z2h, type: uvZoneType[2], zIdx: 2 },
+    ];
+  } else {
+    zones = [{ label: 'Zone 1', w: gl_W, h: gl_H, type: uvZoneType[1], zIdx: 1 }];
+  }
+
+  // Total frame area includes perimeter frame + transom member
+  const A_frame_total = A_frame + A_transom;
+
+  // Per-zone calcs
+  let sumUA = 0, sumA = 0;
+  const zoneResults = [];
+
+  for (const z of zones) {
+    const A_eog = eogArea(z.w, z.h, EOG_IN);
+    const A_cog = cogArea(z.w, z.h, EOG_IN);
+    const A_total_zone = z.w * z.h;
+
+    let U_cog, U_eog;
+    if (z.type === 'spandrel') {
+      U_cog = calcSpandrelCog(z.zIdx);
+      U_eog = getU_uv('uv-z' + z.zIdx + '-eog');
+    } else {
+      U_cog = getU_uv('uv-cog-v');
+      U_eog = getU_uv('uv-eog-v');
+    }
+
+    if (A_cog <= 0) {
+      sumUA += A_total_zone * U_eog;
+    } else {
+      sumUA += A_cog * U_cog + A_eog * U_eog;
+    }
+    sumA += A_total_zone;
+
+    zoneResults.push({ label: z.label, type: z.type, A_cog, A_eog, U_cog, U_eog, A_total_zone });
+  }
+
+  // Frame + transom contribution
+  sumUA += A_frame_total * U_frame;
+
+  const A_check = A_frame_total + sumA;
+  const checkDiff = Math.abs(A_check - A_panel);
+  const checkPass = checkDiff < 0.001;
+
+  const U_weighted = sumUA / A_panel; // BTU
+
+  uvResult = { U_weighted, A_panel, A_frame: A_frame_total, A_frame_perimeter: A_frame, A_transom, U_frame, zoneResults, checkPass, checkDiff, W, H, f };
+  renderUvResult(uvResult);
+}
+
+function renderUvResult(r) {
+  const isM = uvUnit === 'metric';
+  const U_disp_imp = r.U_weighted.toFixed(2);
+  const U_disp_met = (r.U_weighted * BTU_TO_W).toFixed(2);
+
+  const impEl = document.getElementById('uv-val-imperial');
+  const metEl = document.getElementById('uv-val-metric');
+  const impCol = document.getElementById('uv-col-imperial');
+  const metCol = document.getElementById('uv-col-metric');
+
+  impEl.innerHTML = U_disp_imp + '<span class="result-val-unit">BTU</span>';
+  metEl.innerHTML = U_disp_met + '<span class="result-val-unit">W/m²K</span>';
+
+  impEl.classList.toggle('active',  !isM); impEl.classList.toggle('inactive', isM);
+  metEl.classList.toggle('active',   isM); metEl.classList.toggle('inactive', !isM);
+  impCol.classList.toggle('active', !isM); impCol.classList.toggle('inactive', isM);
+  metCol.classList.toggle('active',  isM); metCol.classList.toggle('inactive', !isM);
+
+  // Area check
+  const chkEl = document.getElementById('uv-area-check');
+  if (!r.checkPass) {
+    chkEl.style.display = 'block';
+    chkEl.textContent = '⚠ Area check failed: zone areas sum to ' +
+      (isM ? ((r.A_frame + r.zoneResults.reduce((s,z)=>s+z.A_total_zone,0)) * IN2_TO_M2 * 1e6).toFixed(1) + ' mm²'
+           : (r.A_frame + r.zoneResults.reduce((s,z)=>s+z.A_total_zone,0)).toFixed(3) + ' in²') +
+      ', panel is ' + (isM ? (r.A_panel * IN2_TO_M2 * 1e6).toFixed(1) + ' mm²' : r.A_panel.toFixed(3) + ' in²') +
+      ' (diff: ' + r.checkDiff.toFixed(4) + ' in²)';
+  } else {
+    chkEl.style.display = 'none';
+  }
+
+  // Breakdown
+  const bEl = document.getElementById('uv-breakdown');
+  bEl.innerHTML = '';
+
+  function areaDisp(a_in2) {
+    return isM ? (a_in2 * IN2_TO_M2 * 1e6).toFixed(0) + ' mm²' : a_in2.toFixed(2) + ' in²';
+  }
+  function uDisp(u) {
+    return isM ? (u * BTU_TO_W).toFixed(2) + ' W/m²K' : u.toFixed(2) + ' BTU';
+  }
+  function pct(a) { return (a / r.A_panel * 100).toFixed(1) + '%'; }
+  function ua(a, u) { return isM ? (a * u * BTU_TO_W * IN2_TO_M2).toFixed(4) : (a * u).toFixed(4); }
+
+  // Header row
+  bEl.innerHTML += '<div class="brow area-brow" style="font-size:11px">' +
+    '<span class="bl" style="flex:2">Zone</span>' +
+    '<span class="bv" style="flex:1;text-align:right">Area</span>' +
+    '<span class="bv" style="flex:0.6;text-align:right">%</span>' +
+    '<span class="bv" style="flex:1;text-align:right">U-val</span>' +
+    '</div>';
+
+  // Frame row(s)
+  if (r.A_transom > 0) {
+    bEl.innerHTML += makeRow('Frame (perimeter)', r.A_frame_perimeter, r.U_frame, r.A_panel, isM, areaDisp, uDisp, pct, ua);
+    bEl.innerHTML += makeRow('Frame (transom)', r.A_transom, r.U_frame, r.A_panel, isM, areaDisp, uDisp, pct, ua);
+  } else {
+    bEl.innerHTML += makeRow('Frame', r.A_frame, r.U_frame, r.A_panel, isM, areaDisp, uDisp, pct, ua);
+  }
+
+  // Zone rows
+  for (const z of r.zoneResults) {
+    if (z.A_cog > 0) {
+      bEl.innerHTML += makeRow(z.label + ' COG (' + z.type + ')', z.A_cog, z.U_cog, r.A_panel, isM, areaDisp, uDisp, pct, ua);
+    }
+    bEl.innerHTML += makeRow(z.label + ' EOG (' + z.type + ')', z.A_eog, z.U_eog, r.A_panel, isM, areaDisp, uDisp, pct, ua);
+  }
+
+  // Total row
+  bEl.innerHTML += '<div class="brow area-brow" style="font-size:13px">' +
+    '<span class="bl" style="flex:2;color:var(--accent)">Total</span>' +
+    '<span class="bv" style="flex:1;text-align:right">' + areaDisp(r.A_panel) + '</span>' +
+    '<span class="bv" style="flex:0.6;text-align:right">100%</span>' +
+    '<span class="bv" style="flex:1;text-align:right;color:var(--accent)">' + uDisp(r.U_weighted) + '</span>' +
+    '</div>';
+
+  document.getElementById('uv-result').classList.add('visible');
+}
+
+function makeRow(label, area, u, A_panel, isM, areaDisp, uDisp, pct, ua) {
+  return '<div class="brow lite-brow">' +
+    '<span class="bl" style="flex:2">' + label + '</span>' +
+    '<span class="bv" style="flex:1;text-align:right">' + areaDisp(area) + '</span>' +
+    '<span class="bv" style="flex:0.6;text-align:right">' + pct(area) + '</span>' +
+    '<span class="bv" style="flex:1;text-align:right">' + uDisp(u) + '</span>' +
+    '</div>';
+}
+
+function setUvUnit(u) {
+  if (u === uvUnit) return;
+  const prevIsM = uvUnit === 'metric';
+
+  // Read current values as inches before switching
+  const W_in = getDimIn_uv('uv-w-ft', 'uv-w-in');
+  const H_in = getDimIn_uv('uv-h-ft', 'uv-h-in');
+  const fw_in = getSingleIn_uv('uv-fw');
+  const td_in = uvUnit === 'metric'
+    ? (parseFloat(document.getElementById('uv-td-ft').value) || 0) / IN_TO_MM
+    : (parseFloat(document.getElementById('uv-td-ft').value) || 0) * 12 +
+      (parseFloat(document.getElementById('uv-td-in').value) || 0);
+  const tw_in = getSingleIn_uv('uv-tw');
+  const z1ins_in = getSingleIn_uv('uv-z1-ins');
+  const z2ins_in = getSingleIn_uv('uv-z2-ins');
+
+  // Read U values in BTU
+  const U_fr  = getU_uv('uv-uf');
+  const U_cogv= getU_uv('uv-cog-v');
+  const U_eogv= getU_uv('uv-eog-v');
+  const U_z1eog = getU_uv('uv-z1-eog');
+  const U_z2eog = getU_uv('uv-z2-eog');
+
+  uvUnit = u;
+  const isM = u === 'metric';
+
+  document.getElementById('uv-btn-imperial').classList.toggle('active', !isM);
+  document.getElementById('uv-btn-metric').classList.toggle('active',    isM);
+
+  // Helper to set dimension field
+  function setDim(ftId, inId, pairId, val_in, ftTag, inTag) {
+    if (isM) {
+      document.getElementById(ftId).value = parseFloat((val_in * IN_TO_MM).toFixed(0));
+      document.getElementById(inId + '-wrap').style.display = 'none';
+      document.getElementById(pairId).style.gridTemplateColumns = '1fr';
+      document.getElementById(ftTag).textContent = 'mm';
+    } else {
+      const ft = Math.floor(val_in / 12), ins = parseFloat((val_in - ft*12).toFixed(2));
+      document.getElementById(ftId).value = ft;
+      document.getElementById(inId).value = ins;
+      document.getElementById(inId + '-wrap').style.display = '';
+      document.getElementById(pairId).style.gridTemplateColumns = '';
+      document.getElementById(ftTag).textContent = 'ft';
+      document.getElementById(inTag).textContent = 'in';
+    }
+  }
+
+  setDim('uv-w-ft', 'uv-w-in', 'uv-w-pair', W_in, 'uv-w-ft-tag', 'uv-w-in-tag');
+  setDim('uv-h-ft', 'uv-h-in', 'uv-h-pair', H_in, 'uv-h-ft-tag', 'uv-h-in-tag');
+
+  // Single-value dims
+  function setSingleDim(id, tagId, val_in, decimals) {
+    document.getElementById(id).value = isM
+      ? parseFloat((val_in * IN_TO_MM).toFixed(decimals)) : parseFloat(val_in.toFixed(decimals));
+    document.getElementById(tagId).textContent = isM ? 'mm' : 'in';
+  }
+  setSingleDim('uv-fw', 'uv-fw-tag', fw_in, 1);
+  // Transom distance: ft+in in imperial, mm single field in metric
+  if (isM) {
+    document.getElementById('uv-td-ft').value = parseFloat((td_in * IN_TO_MM).toFixed(0));
+    document.getElementById('uv-td-in-wrap').style.display = 'none';
+    document.getElementById('uv-td-pair').style.gridTemplateColumns = '1fr';
+    document.getElementById('uv-td-ft-tag').textContent = 'mm';
+  } else {
+    const tdFt = Math.floor(td_in / 12);
+    const tdIn = parseFloat((td_in - tdFt * 12).toFixed(2));
+    document.getElementById('uv-td-ft').value = tdFt;
+    document.getElementById('uv-td-in').value = tdIn;
+    document.getElementById('uv-td-in-wrap').style.display = '';
+    document.getElementById('uv-td-pair').style.gridTemplateColumns = '';
+    document.getElementById('uv-td-ft-tag').textContent = 'ft';
+    document.getElementById('uv-td-in-tag').textContent = 'in';
+  }
+  setSingleDim('uv-tw', 'uv-tw-tag', tw_in, 1);
+  setSingleDim('uv-z1-ins', 'uv-z1-ins-tag', z1ins_in, 1);
+  setSingleDim('uv-z2-ins', 'uv-z2-ins-tag', z2ins_in, 1);
+
+  // U-values: BTU ↔ W/m²K
+  function setU(id, tagId, u_btu) {
+    document.getElementById(id).value = isM
+      ? parseFloat((u_btu * BTU_TO_W).toFixed(3)) : parseFloat(u_btu.toFixed(3));
+    document.getElementById(tagId).textContent = isM ? 'W/m²K' : 'BTU';
+  }
+  setU('uv-uf',    'uv-uf-tag',    U_fr);
+  setU('uv-cog-v', 'uv-cogv-tag',  U_cogv);
+  setU('uv-eog-v', 'uv-eogv-tag',  U_eogv);
+  setU('uv-z1-eog','uv-z1-eog-tag',U_z1eog);
+  setU('uv-z2-eog','uv-z2-eog-tag',U_z2eog);
+  document.getElementById('uv-uf-tag').textContent    = isM ? 'W/m²K' : 'BTU';
+  document.getElementById('uv-cogv-tag').textContent  = isM ? 'W/m²K' : 'BTU';
+  document.getElementById('uv-eogv-tag').textContent  = isM ? 'W/m²K' : 'BTU';
+  document.getElementById('uv-z1-eog-tag').textContent= isM ? 'W/m²K' : 'BTU';
+  document.getElementById('uv-z2-eog-tag').textContent= isM ? 'W/m²K' : 'BTU';
+  document.getElementById('uv-z1-cog-tag').textContent= isM ? 'W/m²K' : 'BTU';
+  document.getElementById('uv-z2-cog-tag').textContent= isM ? 'W/m²K' : 'BTU';
+
+  if (uvZoneType[1] === 'spandrel') calcSpandrelCog(1);
+  if (uvZoneType[2] === 'spandrel') calcSpandrelCog(2);
+
+  onUvFrameConfig(); // recalculates U_frame and U_eog in new unit
+  if (uvResult) renderUvResult(uvResult);
+}
+
+function copyUvResult() {
+  if (!uvResult) return;
+  const isM = uvUnit === 'metric';
+  const r = uvResult;
+  let text = 'Area-Weighted U-Value: ';
+  text += isM ? (r.U_weighted * BTU_TO_W).toFixed(3) + ' W/m²K\n' : r.U_weighted.toFixed(3) + ' BTU/hr·ft²·°F\n';
+  text += '---\n';
+  function aD(a) { return isM ? (a * IN2_TO_M2 * 1e6).toFixed(0) + ' mm²' : a.toFixed(2) + ' in²'; }
+  function uD(u) { return isM ? (u * BTU_TO_W).toFixed(3) + ' W/m²K' : u.toFixed(3) + ' BTU'; }
+  text += 'Frame: ' + aD(r.A_frame) + ' @ ' + uD(r.U_frame) + '\n';
+  for (const z of r.zoneResults) {
+    if (z.A_cog > 0) text += z.label + ' COG (' + z.type + '): ' + aD(z.A_cog) + ' @ ' + uD(z.U_cog) + '\n';
+    text += z.label + ' EOG (' + z.type + '): ' + aD(z.A_eog) + ' @ ' + uD(z.U_eog) + '\n';
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('uv-copy-btn'); btn.classList.add('copied');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy'; }, 2000);
+  });
+}
+
+['uv-w-ft','uv-w-in','uv-h-ft','uv-h-in','uv-fw','uv-uf','uv-td-ft','uv-td-in',
+ 'uv-cog-v','uv-eog-v','uv-tw',
+ 'uv-z1-ins','uv-z1-rpi','uv-z1-eog',
+ 'uv-z2-ins','uv-z2-rpi','uv-z2-eog'].forEach(id => {
+  const el = document.getElementById(id); if (!el) return;
+  el.addEventListener('focus', function() { this.select(); });
+  el.addEventListener('input', onUvChange);
+});
+
+// UV defaults
+document.getElementById('uv-fw').value = 3;
+document.getElementById('uv-tw').value = 3;
+onUvFrameConfig();
+document.getElementById('uv-w-ft').value = 5;
+document.getElementById('uv-w-in').value = 0;
+document.getElementById('uv-h-ft').value = 10;
+document.getElementById('uv-h-in').value = 0;
+onUvGlassConfig();
+
+</script>
+
+</body>
+</html>
