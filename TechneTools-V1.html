@@ -55,7 +55,15 @@ body[data-tab="si"]   { --accent:#DA7DA8; --accent2:#c0628e; --accent-text:#fff;
 }
 
 /* ═══ LAYOUT ═══════════════════════════════════════════════════ */
-#app { display:flex; flex-direction:column; min-height:100vh; }
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  box-shadow: 0 0 40px rgba(0,0,0,0.15);
+}
 
 /* Panel configurator strip */
 #panel-strip {
@@ -95,7 +103,7 @@ body[data-tab="si"]   { --accent:#DA7DA8; --accent2:#c0628e; --accent-text:#fff;
 .tab-bar {
   display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
   background: var(--surface); border-bottom: 2px solid var(--border);
-  position: sticky; top: 48px; z-index: 100;
+  position: sticky; top: var(--panel-strip-h, 106px); z-index: 100;
   padding: 8px 10px; gap: 6px;
 }
 .tab-btn {
@@ -242,6 +250,8 @@ input[type=range]::-webkit-slider-thumb {
 .result-breakdown { margin-top: 8px; }
 .brow { display: flex; padding: 7px 0; border-bottom: 1px solid var(--border); align-items: baseline; }
 .brow:last-child { border-bottom: none; }
+.brow.area-brow + .brow { border-top: none; }
+.brow:nth-last-child(2) { border-bottom: none; }
 .brow.area-brow { border-top: 2px solid var(--accent); border-bottom: none; margin-top: 4px; padding-top: 8px; }
 .brow.lite-brow {}
 .bl { flex: 1; font-size: 12px; color: var(--text-soft); font-family: 'Lato', sans-serif; }
@@ -328,7 +338,9 @@ input[type=range]::-webkit-slider-thumb {
 }
 .modal-inner {
   background: var(--surface); border-radius: 12px;
-  margin: 16px; padding: 16px; position: relative;
+  margin: 16px auto; padding: 16px; position: relative;
+  max-width: calc(480px - 32px);
+  width: calc(100% - 32px);
 }
 .modal-header {
   display: flex; justify-content: space-between; align-items: center;
@@ -405,10 +417,13 @@ input[type=range]::-webkit-slider-thumb {
 }
 /* Panel section labels in green strip */
 #panel-body .section-label {
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.92);
 }
 #panel-body .sec-type-label {
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.92);
+}
+#panel-body label {
+  color: rgba(255,255,255,0.85) !important;
 }
 #panel-body .input-wrap {
   border-color: rgba(255,255,255,0.25);
@@ -421,7 +436,7 @@ input[type=range]::-webkit-slider-thumb {
 }
 #panel-body .input-wrap input::placeholder { color: rgba(255,255,255,0.3); }
 #panel-body .unit-tag {
-  color: rgba(255,255,255,0.6) !important;
+  color: rgba(255,255,255,0.80) !important;
   border-left-color: rgba(255,255,255,0.2) !important;
   background: transparent !important;
   display: flex !important;
@@ -462,6 +477,32 @@ input[type=range]::-webkit-slider-thumb {
 
 <div id="app">
 
+<!-- Error reporter -->
+<div id="err-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;
+  background:#cc2200;color:#fff;font-family:monospace;font-size:11px;
+  padding:10px 12px;z-index:9999;max-height:40vh;overflow-y:auto;
+  white-space:pre-wrap;word-break:break-all"></div>
+
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  const b = document.getElementById('err-banner');
+  if(b){
+    b.style.display='block';
+    b.textContent = (b.textContent ? b.textContent + '\n---\n' : '') +
+      'ERROR: ' + msg + '\nLine: ' + line + ':' + col +
+      (err && err.stack ? '\nStack: ' + err.stack : '');
+  }
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e){
+  const b = document.getElementById('err-banner');
+  if(b){
+    b.style.display='block';
+    b.textContent += '\nPROMISE: ' + (e.reason && e.reason.stack ? e.reason.stack : e.reason);
+  }
+});
+</script>
+
 <!-- ══════════════════════ PANEL CONFIGURATOR STRIP ══════════════ -->
 <div id="panel-strip">
   <!-- Wind pressure bar + unit toggle — always visible -->
@@ -470,14 +511,23 @@ input[type=range]::-webkit-slider-thumb {
       <label>Design Windload</label>
       <div id="wind-slider-row">
         <input type="range" id="pc-wl-slider" min="10" max="100" step="1" value="35" oninput="onPcWlChange()">
-        <span class="wind-val" id="pc-wl-display">35 psf</span>
+        <div style="display:flex;align-items:center;background:rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.15);border-radius:6px;overflow:hidden;height:38px">
+          <input type="number" id="pc-wl-input" value="35" min="10" max="200" step="0.5" inputmode="decimal"
+            style="width:62px;background:transparent;border:none;
+              color:var(--windbar-accent);font-size:20px;font-weight:900;font-family:'Lato',sans-serif;
+              text-align:center;outline:none;padding:0 6px;height:100%"
+            oninput="onPcWlInputChange(this.value)" onfocus="this.select()" onblur="onPcWlInputBlur(this)">
+          <span id="pc-wl-unit" style="color:rgba(255,255,255,0.55);font-size:11px;font-weight:700;
+            font-family:'Lato',sans-serif;white-space:nowrap;padding-right:8px;border-left:1px solid rgba(255,255,255,0.15);
+            padding-left:7px;height:100%;display:flex;align-items:center">psf</span>
+        </div>
       </div>
     </div>
     <div id="wind-bar-right">
       <span id="wind-unit-label">Units</span>
       <div class="wind-unit-toggle">
-        <button class="wind-unit-btn active" id="pc-btn-imperial" onclick="setPcUnit('imperial')">in/lb</button>
-        <button class="wind-unit-btn" id="pc-btn-metric" onclick="setPcUnit('metric')">mm/W</button>
+        <button class="wind-unit-btn active" id="pc-btn-imperial" onclick="setPcUnit('imperial')">Imp</button>
+        <button class="wind-unit-btn" id="pc-btn-metric" onclick="setPcUnit('metric')">Met</button>
       </div>
     </div>
   </div>
@@ -487,16 +537,16 @@ input[type=range]::-webkit-slider-thumb {
       <line x1="2" y1="9" x2="22" y2="9"/>
       <line x1="12" y1="9" x2="12" y2="21"/>
     </svg>
-    <span id="panel-summary-text">Panel Configurator</span>
+    <span id="panel-summary-text">Panel Configuration</span>
     <span id="panel-summary-badge">Configure</span>
-    <button id="panel-expand-btn" class="open">&#8964;</button>
+    <button id="panel-expand-btn">&#8964;</button>
   </div>
-  <div id="panel-body" class="open">
+  <div id="panel-body">
 
 
     <!-- Panel Dimensions -->
     <div class="pc-section">
-      <div class="section-label" style="margin-bottom:8px">Panel Dimensions (Centreline)</div>
+      <div class="section-label" style="margin-bottom:8px;margin-top:4px;padding:8px 0 6px;border-bottom:1px solid rgba(255,255,255,0.12)">Panel Dimensions (Centreline)</div>
       <div class="ftin-grid">
         <div class="field">
           <label>Height</label>
@@ -529,81 +579,7 @@ input[type=range]::-webkit-slider-thumb {
 
 
 
-    <!-- Transom 1 -->
-    <div class="pc-section">
-      <div class="sec-type-row" style="margin-bottom:0">
-        <span class="sec-type-label">Transom 1</span>
-        <div class="sec-type-toggle">
-          <button class="sec-type-btn active" id="pc-t1-off" onclick="setPcTransom(1,false)">None</button>
-          <button class="sec-type-btn" id="pc-t1-on" onclick="setPcTransom(1,true)">Add</button>
-        </div>
-      </div>
-      <div id="pc-t1-fields" style="display:none;margin-top:10px">
-        <div class="field-row">
-          <div class="field">
-            <label>From</label>
-            <div class="input-wrap">
-              <select id="pc-t1-from" onchange="onPcChange()" style="height:42px;box-sizing:border-box">
-                <option value="top">Top</option>
-                <option value="bottom">Bottom</option>
-              </select>
-            </div>
-          </div>
-          <div class="field">
-            <label>Distance</label>
-            <div class="ftin-pair" id="pc-t1d-pair">
-              <div class="input-wrap">
-                <input type="number" id="pc-t1d-ft" value="3" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
-                <span class="unit-tag" id="pc-t1d-ft-tag">ft</span>
-              </div>
-              <div class="input-wrap" id="pc-t1d-in-wrap">
-                <input type="number" id="pc-t1d-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
-                <span class="unit-tag" id="pc-t1d-in-tag">in</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Transom 2 -->
-    <div class="pc-section" id="pc-t2-section" style="display:none">
-      <div class="sec-type-row" style="margin-bottom:0">
-        <span class="sec-type-label">Transom 2</span>
-        <div class="sec-type-toggle">
-          <button class="sec-type-btn active" id="pc-t2-off" onclick="setPcTransom(2,false)">None</button>
-          <button class="sec-type-btn" id="pc-t2-on" onclick="setPcTransom(2,true)">Add</button>
-        </div>
-      </div>
-      <div id="pc-t2-fields" style="display:none;margin-top:10px">
-        <div class="field-row">
-          <div class="field">
-            <label>From</label>
-            <div class="input-wrap">
-              <select id="pc-t2-from" onchange="onPcChange()" style="height:42px;box-sizing:border-box">
-                <option value="top">Top</option>
-                <option value="bottom">Bottom</option>
-              </select>
-            </div>
-          </div>
-          <div class="field">
-            <label>Distance</label>
-            <div class="ftin-pair" id="pc-t2d-pair">
-              <div class="input-wrap">
-                <input type="number" id="pc-t2d-ft" value="6" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
-                <span class="unit-tag" id="pc-t2d-ft-tag">ft</span>
-              </div>
-              <div class="input-wrap" id="pc-t2d-in-wrap">
-                <input type="number" id="pc-t2d-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
-                <span class="unit-tag" id="pc-t2d-in-tag">in</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Zones container -->
+    <!-- All zones and transoms rendered dynamically in correct order -->
     <div id="pc-zones-container"></div>
 
     <!-- Diagram button -->
@@ -620,6 +596,16 @@ input[type=range]::-webkit-slider-thumb {
       Show Panel Diagram
     </button>
 
+    <!-- Close panel configurator -->
+    <div style="text-align:center;margin-top:14px">
+      <button onclick="togglePanelStrip()" style="background:none;border:none;
+        color:rgba(255,255,255,0.4);font-family:'Lato',sans-serif;font-size:11px;
+        font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;
+        padding:6px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.15)">
+        &#8593; Close
+      </button>
+    </div>
+
   </div><!-- end panel-body -->
 </div><!-- end panel-strip -->
 
@@ -635,13 +621,13 @@ input[type=range]::-webkit-slider-thumb {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
       <line x1="12" y1="3" x2="12" y2="21"/>
       <line x1="5" y1="6" x2="19" y2="6"/><line x1="5" y1="18" x2="19" y2="18"/>
-    </svg>Beam
+    </svg>Mullion
   </button>
   <button class="tab-btn" id="tab-gw" onclick="switchTab('gw')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
       <rect x="3" y="3" width="18" height="18" rx="2"/>
       <line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="9" x2="9" y2="21"/>
-    </svg>Glass Wt
+    </svg>Glass
   </button>
   <button class="tab-btn" id="tab-si" onclick="switchTab('si')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -663,7 +649,7 @@ input[type=range]::-webkit-slider-thumb {
           <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
       </div>
-      <h2>U-Value</h2>
+      <h2>System U-Value Calculation</h2>
     </div>
 
   </div>
@@ -827,21 +813,21 @@ input[type=range]::-webkit-slider-thumb {
           <line x1="5" y1="6" x2="19" y2="6"/><line x1="5" y1="18" x2="19" y2="18"/>
         </svg>
       </div>
-      <h2>Beam Design</h2>
+      <h2>Mullion Sizing</h2>
     </div>
 
   </div>
 
   <!-- Member Selection -->
   <div class="section">
-    <div class="section-label">Member Selection
-      <button class="help-btn" onclick="showHelp('beam_material')" title="Help">i</button>
-    </div>
+    <div class="section-label" style="display:flex;justify-content:space-between;align-items:center">Member Selection
+      <span id="beam-edit-link" style="display:none"><button onclick="document.getElementById('panel-body').classList.add('open');document.getElementById('panel-expand-btn').classList.add('open');updateTabBarTop()" style="font-size:10px;background:none;border:none;color:var(--accent);font-family:'Lato',sans-serif;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;padding:0">Edit ↑</button></span></div>
     <div class="field" style="margin-bottom:10px">
       <label>Member</label>
       <div class="input-wrap">
         <select id="beam-member" class="select-accent" onchange="onBeamMemberSelect()">
-          <option value="custom">Custom</option>
+          <option value="mullion">Mullion</option>
+          <option value="custom" selected>Custom</option>
         </select>
       </div>
     </div>
@@ -850,11 +836,11 @@ input[type=range]::-webkit-slider-thumb {
         <label id="beam-span-label">Span</label>
         <div class="ftin-pair" id="beam-span-pair">
           <div class="input-wrap">
-            <input type="number" id="beam-span-ft" value="10" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
+            <input type="number" id="beam-span-ft" value="12" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
             <span class="unit-tag" id="beam-span-ft-tag">ft</span>
           </div>
           <div class="input-wrap" id="beam-span-in-wrap">
-            <input type="number" id="beam-span-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
+            <input type="number" id="beam-span-in" value="6" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
             <span class="unit-tag" id="beam-span-in-tag">in</span>
           </div>
         </div>
@@ -921,30 +907,30 @@ input[type=range]::-webkit-slider-thumb {
     </div>
     <div class="field-row" style="margin-bottom:10px">
       <div class="field">
-        <label id="beam-b-label">Width B</label>
+        <label id="beam-b-label">Mullion Width B</label>
         <div class="input-wrap">
-          <input type="number" id="beam-b" value="2" min="0.1" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
+          <input type="number" id="beam-b" value="2.5" min="0.1" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
           <span class="unit-tag" id="beam-b-tag">in</span>
         </div>
       </div>
       <div class="field" id="beam-t-field">
-        <label id="beam-t-label">Wall t</label>
+        <label id="beam-t-label">Wall Thickness T</label>
         <div class="input-wrap">
-          <input type="number" id="beam-t" value="0.125" min="0.01" step="0.0625" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
+          <input type="number" id="beam-t" value="0.25" min="0.01" step="0.0625" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
           <span class="unit-tag" id="beam-t-tag">in</span>
         </div>
       </div>
     </div>
     <div class="field">
-      <label id="beam-d-label">Depth D</label>
+      <label id="beam-d-label">Mullion Depth D</label>
       <div class="slider-row">
         <div class="slider-header">
-          <span style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-family:'Lato',sans-serif">Depth</span>
-          <span class="slider-val" id="beam-d-display">3 in</span>
+          <span></span>
+          <span class="slider-val" id="beam-d-display">6 in</span>
         </div>
-        <input type="range" id="beam-d-slider" min="1" max="12" step="0.25" value="3" oninput="onBeamDepthSlide()">
+        <input type="range" id="beam-d-slider" min="1" max="20" step="0.25" value="6" oninput="onBeamDepthSlide()">
         <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px">
-          <span id="beam-d-min">1 in</span><span id="beam-d-max">12 in</span>
+          <span id="beam-d-min">1 in</span><span id="beam-d-max">20 in</span>
         </div>
       </div>
     </div>
@@ -966,12 +952,18 @@ input[type=range]::-webkit-slider-thumb {
     <div id="beam-util-bar" style="background:var(--surface2);border-radius:4px;height:8px;margin-bottom:12px;overflow:hidden">
       <div id="beam-util-fill" style="height:100%;border-radius:4px;transition:width 0.3s,background 0.3s"></div>
     </div>
+    <div id="beam-defl-display"></div>
     <div class="result-breakdown" id="beam-breakdown"></div>
+    <div style="margin-top:12px;padding:8px 10px;background:var(--surface2);border-radius:6px;
+      font-size:11px;color:var(--text-muted);font-family:'Lato',sans-serif;line-height:1.5;
+      border-left:3px solid var(--accent)">
+      Indicative check only — simply supported beam, uniform wind load. Verify with full structural analysis for final design.
+    </div>
   </div>
 
 </div><!-- end content-beam -->
 
-<!-- ══════════════════════ GLASS WEIGHT TAB ═════════════════════ -->
+<!-- ══════════════════════ GLASS SIZING TAB ═════════════════════ -->
 <div class="tab-content" id="content-gw">
   <div class="tool-header">
     <div class="logo-line">
@@ -981,14 +973,14 @@ input[type=range]::-webkit-slider-thumb {
           <line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="9" x2="9" y2="21"/>
         </svg>
       </div>
-      <h2>Glass Weight</h2>
+      <h2>Glass Sizing</h2>
     </div>
-
   </div>
 
-  <!-- Zone / Custom selector -->
+  <!-- Zone selector -->
   <div class="section">
-    <div class="section-label">Panel Zone</div>
+    <div class="section-label" style="display:flex;justify-content:space-between;align-items:center">Panel Zone
+      <span id="gw-edit-link" style="display:none"><button onclick="document.getElementById('panel-body').classList.add('open');document.getElementById('panel-expand-btn').classList.add('open');updateTabBarTop()" style="font-size:10px;background:none;border:none;color:var(--accent);font-family:'Lato',sans-serif;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;padding:0">Edit ↑</button></span></div>
     <div class="field" style="margin-bottom:10px">
       <label>Select Zone</label>
       <div class="input-wrap">
@@ -999,20 +991,20 @@ input[type=range]::-webkit-slider-thumb {
     </div>
     <div class="ftin-grid">
       <div class="field">
-        <label id="gw-h-label">Height (CL)</label>
+        <label>Height (CL)</label>
         <div class="ftin-pair" id="gw-h-pair">
           <div class="input-wrap">
-            <input type="number" id="gw-h-ft" value="10" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onGwChange()">
+            <input type="number" id="gw-h-ft" value="12" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onGwChange()">
             <span class="unit-tag" id="gw-h-ft-tag">ft</span>
           </div>
           <div class="input-wrap" id="gw-h-in-wrap">
-            <input type="number" id="gw-h-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onGwChange()">
+            <input type="number" id="gw-h-in" value="6" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onGwChange()">
             <span class="unit-tag" id="gw-h-in-tag">in</span>
           </div>
         </div>
       </div>
       <div class="field">
-        <label id="gw-w-label">Width (CL)</label>
+        <label>Width (CL)</label>
         <div class="ftin-pair" id="gw-w-pair">
           <div class="input-wrap">
             <input type="number" id="gw-w-ft" value="5" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onGwChange()">
@@ -1027,42 +1019,91 @@ input[type=range]::-webkit-slider-thumb {
     </div>
   </div>
 
-  <!-- Glass Lites -->
+  <!-- Glass configuration -->
   <div class="section">
-    <div class="section-label">Glass Lites</div>
-    <div id="gw-lites-container"></div>
-    <button class="add-btn" onclick="gwAddLite()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>Add Lite
-    </button>
+    <div class="section-label">Glass Configuration
+      <button class="help-btn" onclick="showHelp('glass_sizing')" title="Help">i</button>
+    </div>
+    <!-- Assembly type -->
+    <div class="sec-type-row" style="margin-bottom:12px">
+      <span class="sec-type-label" style="font-size:10px">Assembly</span>
+      <div class="sec-type-toggle">
+        <button class="sec-type-btn active" id="gw-mono-btn"   onclick="setGwAssembly('mono')">Mono</button>
+        <button class="sec-type-btn" id="gw-igu-btn"   onclick="setGwAssembly('igu')">Double</button>
+        <button class="sec-type-btn" id="gw-triple-btn" onclick="setGwAssembly('triple')">Triple</button>
+      </div>
+    </div>
+    <div id="gw-lite-fields"></div>
+    <!-- Support conditions -->
+    <div class="sec-type-row" style="margin-top:12px;margin-bottom:8px">
+      <span class="sec-type-label" style="font-size:10px">Support</span>
+      <div class="sec-type-toggle">
+        <button class="sec-type-btn active" id="gw-sup4" onclick="setGwSupport(4)">4-Edge</button>
+        <button class="sec-type-btn" id="gw-sup3" onclick="setGwSupport(3)">3-Edge</button>
+        <button class="sec-type-btn" id="gw-sup2" onclick="setGwSupport(2)">2-Edge</button>
+      </div>
+    </div>
+    <div id="gw-unsupported-row" style="display:none">
+      <div class="sec-type-row" style="margin-bottom:0">
+        <span class="sec-type-label" style="font-size:10px">Unsupported edge</span>
+        <div class="sec-type-toggle">
+          <button class="sec-type-btn active" id="gw-unsup-long"  onclick="setGwUnsupported('long')">Long</button>
+          <button class="sec-type-btn"        id="gw-unsup-short" onclick="setGwUnsupported('short')">Short</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deflection limit -->
+  <div class="section">
+    <div class="section-label">Deflection Limit</div>
+    <div class="field">
+      <div class="input-wrap">
+        <select id="gw-defl" onchange="onGwChange()">
+          <option value="175" selected>L/175 (ASTM E1300 / GANA)</option>
+          <option value="240">L/240</option>
+          <option value="19mm">¾" / 19mm absolute</option>
+          <option value="25mm">1" / 25mm absolute</option>
+          <option value="175_19">L/175 or ¾", whichever less</option>
+          <option value="none">None — strength check only</option>
+        </select>
+      </div>
+    </div>
   </div>
 
   <div class="error-msg" id="gw-error"></div>
 
-  <!-- Result -->
+  <!-- Results -->
   <div class="result" id="gw-result">
     <div class="result-header">
-      <div class="result-label">Glass Weight</div>
+      <div class="result-label">Glass Check — ASTM E1300</div>
       <button class="copy-btn" id="gw-copy-btn" onclick="copyGwResult()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
         </svg>Copy
       </button>
     </div>
-    <div class="result-values">
-      <div class="result-col active" id="gw-col-imperial">
-        <div class="result-col-label">Imperial</div>
-        <div class="result-val active" id="gw-val-imperial">—</div>
-      </div>
-      <div class="result-col inactive" id="gw-col-metric">
-        <div class="result-col-label">Metric</div>
-        <div class="result-val inactive" id="gw-val-metric">—</div>
+    <div id="gw-lite-results"></div>
+    <!-- Weight -->
+    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:8px">Glass Weight</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+        <div style="padding:10px;text-align:center;background:var(--surface2)">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:4px">Total</div>
+          <div style="font-size:22px;font-weight:900;font-family:'Lato',sans-serif;color:var(--accent)" id="gw-weight-total">—</div>
+        </div>
+        <div style="padding:10px;text-align:center">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:4px">Per m²</div>
+          <div style="font-size:22px;font-weight:900;font-family:'Lato',sans-serif;color:var(--text-soft)" id="gw-weight-area">—</div>
+        </div>
       </div>
     </div>
-    <div class="result-breakdown" id="gw-breakdown"></div>
+    <div style="margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:6px;
+      font-size:11px;color:var(--text-muted);font-family:'Lato',sans-serif;line-height:1.5;
+      border-left:3px solid var(--accent)">
+      Strength per ASTM E1300 glass failure prediction model. Deflection per plate bending approximation. Vertical glazing, short-duration wind load assumed.
+    </div>
   </div>
-
 </div><!-- end content-gw -->
 
 <!-- ══════════════════════ SILICONE BITE TAB ════════════════════ -->
@@ -1075,34 +1116,23 @@ input[type=range]::-webkit-slider-thumb {
           <line x1="8" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="16" y2="21"/>
         </svg>
       </div>
-      <h2>Sil. Bite</h2>
+      <h2>Silicone Bite Sizing</h2>
     </div>
 
   </div>
 
-  <!-- Wind Load -->
-  <div class="section">
-    <div class="section-label">Wind Load</div>
-    <div class="slider-row">
-      <div class="slider-header">
-        <label style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-family:'Lato',sans-serif">Design Wind Pressure</label>
-        <span class="slider-val" id="si-wl-display">20 psf</span>
-      </div>
-      <input type="range" id="si-wl-slider" min="10" max="100" step="1" value="20" oninput="onSiWlChange()">
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px">
-        <span id="si-wl-min">10 psf</span><span id="si-wl-max">100 psf</span>
-      </div>
-    </div>
-  </div>
+
 
   <!-- Zone / Custom -->
   <div class="section">
-    <div class="section-label">Panel Zone</div>
+    <div class="section-label" style="display:flex;justify-content:space-between;align-items:center">Panel Zone
+      <span id="si-edit-link" style="display:none"><button onclick="document.getElementById('panel-body').classList.add('open');document.getElementById('panel-expand-btn').classList.add('open');updateTabBarTop()" style="font-size:10px;background:none;border:none;color:var(--accent);font-family:'Lato',sans-serif;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;padding:0">Edit ↑</button></span></div>
     <div class="field" style="margin-bottom:10px">
       <label>Select Zone</label>
       <div class="input-wrap">
         <select id="si-zone" class="select-accent" onchange="onSiZoneSelect()">
-          <option value="custom">Custom</option>
+          <option value="mullion">Mullion</option>
+          <option value="custom" selected>Custom</option>
         </select>
       </div>
     </div>
@@ -1111,11 +1141,11 @@ input[type=range]::-webkit-slider-thumb {
         <label>Height (CL)</label>
         <div class="ftin-pair" id="si-h-pair">
           <div class="input-wrap">
-            <input type="number" id="si-h-ft" value="10" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onSiChange()">
+            <input type="number" id="si-h-ft" value="12" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onSiChange()">
             <span class="unit-tag" id="si-h-ft-tag">ft</span>
           </div>
           <div class="input-wrap" id="si-h-in-wrap">
-            <input type="number" id="si-h-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onSiChange()">
+            <input type="number" id="si-h-in" value="6" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onSiChange()">
             <span class="unit-tag" id="si-h-in-tag">in</span>
           </div>
         </div>
@@ -1138,21 +1168,21 @@ input[type=range]::-webkit-slider-thumb {
 
   <!-- Design Strength -->
   <div class="section">
-    <div class="section-label">Design Strength</div>
+    <div class="section-label">Design Strength
+      <button class="help-btn" onclick="showHelp('silicone')" title="Help">i</button>
+    </div>
     <div class="field-row" style="align-items:flex-end;gap:10px">
       <div class="field">
         <label>Product</label>
         <div class="input-wrap">
           <select id="si-product" class="select-accent" onchange="onSiProductChange()">
-            <option value="20">Dow 995 / Pecora 895 (20 psi)</option>
-            <option value="20">Momentive SSG4000 (20 psi)</option>
-            <option value="20">Sika SG-20 (20 psi)</option>
+            <option value="20">Standard</option>
             <option value="custom">Custom</option>
           </select>
         </div>
       </div>
       <div class="field">
-        <label id="si-fs-label">S-Allow</label>
+        <label id="si-fs-label">Allowable Stress</label>
         <div class="input-wrap">
           <input type="number" id="si-fs" value="20" min="1" step="1" inputmode="decimal" onfocus="this.select()" oninput="onSiChange()" disabled style="opacity:0.5;cursor:not-allowed">
           <span class="unit-tag" id="si-fs-unit">psi</span>
@@ -1164,7 +1194,7 @@ input[type=range]::-webkit-slider-thumb {
   <div class="error-msg" id="si-error"></div>
 
   <!-- Result -->
-  <div class="result" id="si-result">
+  <div class="result" id="si-result" style="--si-grid:auto auto">
     <div class="result-header">
       <div class="result-label" id="si-result-label">Calculated Bite</div>
       <button class="copy-btn" id="si-copy-btn" onclick="copySiResult()">
@@ -1173,10 +1203,10 @@ input[type=range]::-webkit-slider-thumb {
         </svg>Copy
       </button>
     </div>
-    <div class="result-values">
+    <div class="result-values" style="grid-template-columns:3fr 2fr">
       <div class="result-col active" id="si-col-imperial">
         <div class="result-col-label">Imperial</div>
-        <div class="result-val active" id="si-val-imperial">—</div>
+        <div class="result-val active" id="si-val-imperial" style="font-size:22px">—</div>
       </div>
       <div class="result-col inactive" id="si-col-metric">
         <div class="result-col-label">Metric</div>
@@ -1253,9 +1283,12 @@ function pcGetDimIn(ftId, inId) {
          (parseFloat(document.getElementById(inId).value)||0);
 }
 function pcGetTransomDist(n) {
-  if (pcUnit==='metric') return (parseFloat(document.getElementById('pc-t'+n+'d-ft').value)||0) / IN_TO_MM;
-  return (parseFloat(document.getElementById('pc-t'+n+'d-ft').value)||0)*12 +
-         (parseFloat(document.getElementById('pc-t'+n+'d-in').value)||0);
+  const ftEl = document.getElementById('pc-t'+n+'d-ft');
+  const inEl = document.getElementById('pc-t'+n+'d-in');
+  const ftVal = ftEl ? parseFloat(ftEl.value)||0 : parseFloat(pcTransoms[n]._ftVal)||0;
+  const inVal = inEl ? parseFloat(inEl.value)||0 : parseFloat(pcTransoms[n]._inVal)||0;
+  if (pcUnit==='metric') return ftVal / IN_TO_MM;
+  return ftVal*12 + inVal;
 }
 function pcGetSplitDist(n) {
   const z = pcZones[n];
@@ -1263,7 +1296,13 @@ function pcGetSplitDist(n) {
   return z.splitDistFt*12 + z.splitDistIn;
 }
 function pcGetWindPsf() {
-  return parseFloat(document.getElementById('pc-wl-slider').value) || 20;
+  const inputEl = document.getElementById('pc-wl-input');
+  if(inputEl) {
+    const isM = pcUnit==='metric';
+    const v = parseFloat(inputEl.value) || 0;
+    return isM ? v/PSF_TO_KPA : v;
+  }
+  return parseFloat(document.getElementById('pc-wl-slider').value) || 35;
 }
 
 /* ── Compute panel geometry (in inches) ────────────────────── */
@@ -1345,21 +1384,17 @@ function getPanelMemberList() {
   const geom = computePanelGeometry();
   if (!geom) return [];
   const {W, H, transoms, zones} = geom;
-  const list = [
-    { key:'jamb', label:'Jamb', span:H, trib:W/2, desc:'Vertical edge member' },
-    { key:'head', label:'Head', span:W, trib:H/2, desc:'Top horizontal member' },
-    { key:'sill', label:'Sill', span:W, trib:H/2, desc:'Bottom horizontal member' },
-  ];
+  const list = [];
+  // Mullion — uses panel height as span, half panel width as tributary
+  list.push({ key:'mullion', label:'Mullion', span:H, trib:W, desc:'Vertical glazing member' });
+  // Sill transom — uses panel width as span, half panel height as tributary
+  list.push({ key:'sill', label:'Sill / Transom', span:W, trib:H/2, desc:'Horizontal glazing member' });
+  // Additional transoms if defined
   for (const t of transoms) {
     const above = zones.find(z=>z.botCL===t.yCL);
     const below = zones.find(z=>z.topCL===t.yCL);
     const tribH = ((above?above.h:0) + (below?below.h:0)) / 2;
     list.push({ key:'t'+t.n, label:'Transom '+t.n, span:W, trib:tribH, desc:'Horizontal intermediate member' });
-  }
-  for (const z of zones) {
-    if (z.split) {
-      list.push({ key:'mull'+z.n, label:'Mullion Zone '+z.n, span:z.h, trib:(z.wA+z.wB)/2, desc:'Vertical intermediate member' });
-    }
   }
   return list;
 }
@@ -1385,23 +1420,67 @@ function togglePanelStrip() {
   const btn  = document.getElementById('panel-expand-btn');
   const open = body.classList.toggle('open');
   btn.classList.toggle('open', open);
+  updateTabBarTop();
+}
+
+function updateTabBarTop() {
+  const strip = document.getElementById('panel-strip');
+  if (strip) {
+    document.documentElement.style.setProperty('--panel-strip-h', strip.offsetHeight + 'px');
+  }
 }
 
 function onPcWlChange() {
   const v = parseFloat(document.getElementById('pc-wl-slider').value);
   const isM = pcUnit==='metric';
-  document.getElementById('pc-wl-display').textContent =
-    isM ? (v*PSF_TO_KPA).toFixed(2)+' kPa' : v+' psf';
+  const inputEl = document.getElementById('pc-wl-input');
+  const unitEl  = document.getElementById('pc-wl-unit');
+  if(inputEl) inputEl.value = isM ? (v*PSF_TO_KPA).toFixed(2) : v;
+  if(unitEl)  unitEl.textContent = isM ? 'kPa' : 'psf';
   onPcChange();
 }
 
+function onPcWlInputChange(val) {
+  const isM = pcUnit==='metric';
+  const v = parseFloat(val) || 0;
+  const psf = isM ? v/PSF_TO_KPA : v;
+  const clamped = Math.max(10, Math.min(200, psf));
+  const slider = document.getElementById('pc-wl-slider');
+  if(slider) slider.value = Math.min(100, clamped);
+  onPcChange();
+}
+
+function onPcWlInputBlur(el) {
+  const isM = pcUnit==='metric';
+  const v = parseFloat(el.value) || (isM ? 10*PSF_TO_KPA : 10);
+  if(isM){
+    // Metric: clamp in kPa, round to 2 decimal places, no psf conversion rounding
+    const kpa = Math.max(10*PSF_TO_KPA, Math.min(200*PSF_TO_KPA, v));
+    el.value = kpa.toFixed(2);
+    const slider = document.getElementById('pc-wl-slider');
+    if(slider) slider.value = Math.min(100, kpa/PSF_TO_KPA);
+  } else {
+    // Imperial: clamp in psf, round to nearest 0.5
+    const psf = Math.max(10, Math.min(200, v));
+    const rounded = Math.round(psf * 2) / 2;
+    el.value = rounded;
+    const slider = document.getElementById('pc-wl-slider');
+    if(slider) slider.value = Math.min(100, rounded);
+  }
+}
+
 function setPcTransom(n, active) {
+  // Preserve current transom distance values before rebuild
+  for(let i=1;i<=2;i++){
+    const ftEl=document.getElementById('pc-t'+i+'d-ft');
+    const inEl=document.getElementById('pc-t'+i+'d-in');
+    const fromEl=document.getElementById('pc-t'+i+'-from');
+    if(ftEl) pcTransoms[i]._ftVal = ftEl.value;
+    if(inEl) pcTransoms[i]._inVal = inEl.value;
+    if(fromEl) pcTransoms[i]._from = fromEl.value;
+  }
   pcTransoms[n].active = active;
-  document.getElementById('pc-t'+n+'-on').classList.toggle('active', active);
-  document.getElementById('pc-t'+n+'-off').classList.toggle('active', !active);
-  document.getElementById('pc-t'+n+'-fields').style.display = active ? 'block' : 'none';
-  document.getElementById('pc-t2-section').style.display = pcTransoms[1].active ? 'block' : 'none';
-  if (!active && n===1) { pcTransoms[2].active=false; setPcTransom(2,false); }
+  if (!active && n===1) pcTransoms[2].active = false;
   rebuildPcZones();
   onPcChange();
 }
@@ -1427,6 +1506,55 @@ function onPcSplitFt(n,val) {
   onPcChange();
 }
 function onPcSplitIn(n,val) { pcZones[n].splitDistIn=parseFloat(val)||0; onPcChange(); }
+
+function transomHTML(n, isM) {
+  const t = pcTransoms[n];
+  const active = t.active;
+  const fromVal = document.getElementById('pc-t'+n+'-from') ?
+    document.getElementById('pc-t'+n+'-from').value : 'top';
+  const ftVal = document.getElementById('pc-t'+n+'d-ft') ?
+    document.getElementById('pc-t'+n+'d-ft').value : (n===1?'3':'6');
+  const inVal = document.getElementById('pc-t'+n+'d-in') ?
+    document.getElementById('pc-t'+n+'d-in').value : '0';
+  const distVal = isM ?
+    ((parseFloat(ftVal)||0)/25.4*12).toFixed(0) : ftVal;
+
+  return `<div class="pc-section" id="pc-t${n}-wrap" style="background:rgba(255,255,255,0.12);border-radius:0;margin-left:-16px;margin-right:-16px;padding:10px 16px;">
+    <div class="sec-type-row" style="margin-bottom:0">
+      <span class="sec-type-label">Transom ${n}</span>
+      <div class="sec-type-toggle">
+        <button class="sec-type-btn ${!active?'active':''}" id="pc-t${n}-off" onclick="setPcTransom(${n},false)">None</button>
+        <button class="sec-type-btn ${active?'active':''}" id="pc-t${n}-on" onclick="setPcTransom(${n},true)">Add</button>
+      </div>
+    </div>
+    <div id="pc-t${n}-fields" style="display:${active?'block':'none'};margin-top:6px">
+      <div class="field-row">
+        <div class="field">
+          <label>From</label>
+          <div class="input-wrap">
+            <select id="pc-t${n}-from" onchange="onPcChange()" style="height:42px;box-sizing:border-box">
+              <option value="top" ${fromVal==='top'?'selected':''}>Top</option>
+              <option value="bottom" ${fromVal==='bottom'?'selected':''}>Bottom</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Distance</label>
+          <div class="ftin-pair" id="pc-t${n}d-pair">
+            <div class="input-wrap">
+              <input type="number" id="pc-t${n}d-ft" value="${distVal}" min="0" step="${isM?10:1}" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
+              <span class="unit-tag" id="pc-t${n}d-ft-tag">${isM?'mm':'ft'}</span>
+            </div>
+            <div class="input-wrap" id="pc-t${n}d-in-wrap" style="${isM?'display:none':''}">
+              <input type="number" id="pc-t${n}d-in" value="${inVal}" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
+              <span class="unit-tag" id="pc-t${n}d-in-tag">in</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
 
 function rebuildPcZones() {
   const geom = computePanelGeometry();
@@ -1501,6 +1629,19 @@ function rebuildPcZones() {
         </div>
       </div>` : ''}`;
     c.appendChild(div);
+    // After each zone, insert the transom that follows it (if applicable)
+    // Zone 1 → Transom 1, Zone 2 → Transom 2
+    // Always show Transom 1 after Zone 1
+    // Show Transom 2 after Zone 2 only if Transom 1 is active
+    if (n === 1) {
+      const tDiv = document.createElement('div');
+      tDiv.innerHTML = transomHTML(1, isM);
+      c.appendChild(tDiv.firstElementChild);
+    } else if (n === 2 && pcTransoms[1].active) {
+      const tDiv = document.createElement('div');
+      tDiv.innerHTML = transomHTML(2, isM);
+      c.appendChild(tDiv.firstElementChild);
+    }
   }
 }
 
@@ -1534,39 +1675,60 @@ function setPcUnit(u) {
   document.getElementById('pc-btn-metric').classList.toggle('active', isM);
 
   function setFtIn(ftId,inId,pairId,val,ftTag,inTag) {
+    const ftEl=document.getElementById(ftId);
+    const inWrapEl=document.getElementById(inId+'-wrap');
+    const pairEl=document.getElementById(pairId);
+    const ftTagEl=document.getElementById(ftTag);
+    const inTagEl=document.getElementById(inTag);
+    if(!ftEl) return; // element not in DOM (e.g. panel closed)
     if(isM){
-      document.getElementById(ftId).value=parseFloat((val*IN_TO_MM).toFixed(0));
-      document.getElementById(inId+'-wrap').style.display='none';
-      document.getElementById(pairId).style.gridTemplateColumns='1fr';
-      document.getElementById(ftTag).textContent='mm';
+      ftEl.value=parseFloat((val*IN_TO_MM).toFixed(0));
+      if(inWrapEl) inWrapEl.style.display='none';
+      if(pairEl) pairEl.style.gridTemplateColumns='1fr';
+      if(ftTagEl) ftTagEl.textContent='mm';
     } else {
       const ft=Math.floor(val/12);
-      // Round to nearest 1/8" to avoid floating point drift
       const ins=Math.round((val-ft*12)*8)/8;
-      document.getElementById(ftId).value=ft;
-      document.getElementById(inId).value=ins;
-      document.getElementById(inId+'-wrap').style.display='';
-      document.getElementById(pairId).style.gridTemplateColumns='';
-      document.getElementById(ftTag).textContent='ft';
-      document.getElementById(inTag).textContent='in';
+      ftEl.value=ft;
+      const inEl=document.getElementById(inId);
+      if(inEl) inEl.value=ins;
+      if(inWrapEl) inWrapEl.style.display='';
+      if(pairEl) pairEl.style.gridTemplateColumns='';
+      if(ftTagEl) ftTagEl.textContent='ft';
+      if(inTagEl) inTagEl.textContent='in';
     }
   }
   setFtIn('pc-h-ft','pc-h-in','pc-h-pair',H_in,'pc-h-ft-tag','pc-h-in-tag');
   setFtIn('pc-w-ft','pc-w-in','pc-w-pair',W_in,'pc-w-ft-tag','pc-w-in-tag');
-  setFtIn('pc-t1d-ft','pc-t1d-in','pc-t1d-pair',t1d_in,'pc-t1d-ft-tag','pc-t1d-in-tag');
-  setFtIn('pc-t2d-ft','pc-t2d-in','pc-t2d-pair',t2d_in,'pc-t2d-ft-tag','pc-t2d-in-tag');
+  // Transom inputs are dynamically rendered — only convert if present in DOM
+  if(document.getElementById('pc-t1d-ft'))
+    setFtIn('pc-t1d-ft','pc-t1d-in','pc-t1d-pair',t1d_in,'pc-t1d-ft-tag','pc-t1d-in-tag');
+  if(document.getElementById('pc-t2d-ft'))
+    setFtIn('pc-t2d-ft','pc-t2d-in','pc-t2d-pair',t2d_in,'pc-t2d-ft-tag','pc-t2d-in-tag');
 
   // Wind load labels
-  document.getElementById('pc-wl-display').textContent =
-    isM ? (wl_psf*PSF_TO_KPA).toFixed(2)+' kPa' : wl_psf+' psf';
+  const wlInputEl = document.getElementById('pc-wl-input');
+  const wlUnitEl  = document.getElementById('pc-wl-unit');
+  if(wlInputEl) wlInputEl.value = isM ? (wl_psf*PSF_TO_KPA).toFixed(2) : (Math.round(wl_psf*2)/2);
+  if(wlUnitEl)  wlUnitEl.textContent = isM ? 'kPa' : 'psf';
 
   rebuildPcZones();
   onPcChange();
-  // Convert all tool inputs to new unit
-  convertUvToUnit();
-  convertBeamToUnit();
-  convertGwToUnit();
-  convertSiToUnit();
+  // Convert all tool inputs to new unit — wrapped for error reporting
+  const banner = document.getElementById('err-banner');
+  function tryConvert(name, fn) {
+    try { fn(); }
+    catch(e) {
+      if(banner){
+        banner.style.display='block';
+        banner.textContent += name + ' FAILED: ' + e.message + '\n  ' + (e.stack||'').split('\n').slice(0,3).join('\n  ') + '\n';
+      }
+    }
+  }
+  tryConvert('convertUvToUnit',  convertUvToUnit);
+  tryConvert('convertBeamToUnit', convertBeamToUnit);
+  tryConvert('convertGwToUnit',  convertGwToUnit);
+  tryConvert('convertSiToUnit',  convertSiToUnit);
 }
 
 /* ── Tab switching ─────────────────────────────────────────── */
@@ -1619,6 +1781,7 @@ function hidePcDiagram(e){
 /* ── Init ──────────────────────────────────────────────────── */
 rebuildPcZones();
 updatePanelSummary();
+setTimeout(updateTabBarTop, 100);
 
 
 /* ═══ PANEL DIAGRAM ═══════════════════════════════════════════ */
@@ -1693,7 +1856,7 @@ function drawPcDiagram() {
 
   for(const z of zones){
     const zt=py(z.topCL)+f2;
-    const zh_px=sc(z.h)-f2*2-(transoms.some(t=>t.yCL===z.botCL)?f2:0);
+    const zh_px=sc(z.h)-f2*2;
     if(z.split){
       const mCL=px(z.mullionCL);
       ctx.fillStyle=C.frameFill;
@@ -1710,8 +1873,12 @@ function drawPcDiagram() {
   ctx.lineWidth=1.2; ctx.setLineDash([5,3]);
   ctx.strokeRect(panelLeft+0.6,panelTop+0.6,panelFW-1.2,panelFH-1.2);
   for(const t of transoms){
-    ctx.beginPath();ctx.moveTo(panelLeft,py(t.yCL)-f2);ctx.lineTo(panelRight,py(t.yCL)-f2);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(panelLeft,py(t.yCL)+f2);ctx.lineTo(panelRight,py(t.yCL)+f2);ctx.stroke();
+    // Left jamb portion
+    ctx.beginPath();ctx.moveTo(panelLeft,py(t.yCL)-f2);ctx.lineTo(px(0)-f2,py(t.yCL)-f2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(panelLeft,py(t.yCL)+f2);ctx.lineTo(px(0)-f2,py(t.yCL)+f2);ctx.stroke();
+    // Right jamb portion
+    ctx.beginPath();ctx.moveTo(px(W)+f2,py(t.yCL)-f2);ctx.lineTo(panelRight,py(t.yCL)-f2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(px(W)+f2,py(t.yCL)+f2);ctx.lineTo(panelRight,py(t.yCL)+f2);ctx.stroke();
   }
   for(const z of zones){
     if(!z.split) continue;
@@ -1721,13 +1888,18 @@ function drawPcDiagram() {
     ctx.beginPath();ctx.moveTo(mCL+f2,zt);ctx.lineTo(mCL+f2,zb);ctx.stroke();
   }
   ctx.setLineDash([]);
+  ctx.setLineDash([]);
 
-  // Sight-line borders
+  // Sight-line borders (CL of frame members)
   ctx.strokeStyle=C.frameStroke; ctx.lineWidth=1;
   ctx.strokeRect(px(0),py(0),sc(W),sc(H));
+
+  // Daylight opening — inner face of perimeter frame (CL + f/2 inset)
+  ctx.strokeStyle=C.frameStroke; ctx.lineWidth=1.5;
+  ctx.strokeRect(px(0)+f2, py(0)+f2, sc(W)-f2*2, sc(H)-f2*2);
   for(const t of transoms){
-    ctx.beginPath();ctx.moveTo(px(0),py(t.yCL)-f2);ctx.lineTo(px(W),py(t.yCL)-f2);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(px(0),py(t.yCL)+f2);ctx.lineTo(px(W),py(t.yCL)+f2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(px(0)+f2,py(t.yCL)-f2);ctx.lineTo(px(W)-f2,py(t.yCL)-f2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(px(0)+f2,py(t.yCL)+f2);ctx.lineTo(px(W)-f2,py(t.yCL)+f2);ctx.stroke();
   }
   for(const z of zones){
     if(!z.split) continue;
@@ -1736,6 +1908,7 @@ function drawPcDiagram() {
     ctx.beginPath();ctx.moveTo(mCL-f2,zt);ctx.lineTo(mCL-f2,zb);ctx.stroke();
     ctx.beginPath();ctx.moveTo(mCL+f2,zt);ctx.lineTo(mCL+f2,zb);ctx.stroke();
   }
+  ctx.setLineDash([]);
 
   // EOG dashed lines
   const e=sc(EOG_IN);
@@ -1824,25 +1997,25 @@ function drawPcDiagram() {
     }
   }
 
-  const wDimY = hasSplit ? py(0)-DIM_OFF*2 : py(0)-DIM_OFF;
-  drawDimLine(px(0),wDimY,px(W),wDimY,dimStr(W));
-  const hDimX = transoms.length>0||hasSplit ? px(0)-DIM_OFF*2 : px(0)-DIM_OFF;
-  drawDimLine(hDimX,py(0),hDimX,py(H),dimStr(H));
-
-  if(transoms.length>0){
-    const zDimX=px(0)-DIM_OFF;
-    let prevY=py(0);
-    const clYs=[0,...transoms.map(t=>t.yCL),H];
-    for(let i=0;i<clYs.length-1;i++){
-      drawDimLine(zDimX,py(clYs[i]),zDimX,py(clYs[i+1]),dimStr(clYs[i+1]-clYs[i]));
-    }
-  }
-
+  // Overall width dim — furthest from panel (highest on screen = top)
+  const hasSplitZone = zones.some(z=>z.split);
+  const wDimY = hasSplitZone ? py(0) - DIM_OFF*2 : py(0) - DIM_OFF;
+  drawDimLine(px(0), wDimY, px(W), wDimY, dimStr(W));
+  // Split sub-dims — between overall and panel (lower than overall)
   for(const z of zones){
     if(!z.split) continue;
-    const yDim=hasSplit?py(0)-DIM_OFF:py(0)-DIM_OFF;
-    drawDimLine(px(0),wDimY-DIM_OFF,px(z.mullionCL),wDimY-DIM_OFF,dimStr(z.mullionCL));
-    drawDimLine(px(z.mullionCL),wDimY-DIM_OFF,px(W),wDimY-DIM_OFF,dimStr(W-z.mullionCL));
+    const splitDimY = py(0) - DIM_OFF;
+    drawDimLine(px(0), splitDimY, px(z.mullionCL), splitDimY, dimStr(z.mullionCL));
+    drawDimLine(px(z.mullionCL), splitDimY, px(W), splitDimY, dimStr(W - z.mullionCL));
+  }
+  const hDimX = transoms.length>0||hasSplit ? px(0)-DIM_OFF*2 : px(0)-DIM_OFF;
+  drawDimLine(hDimX, py(0), hDimX, py(H), dimStr(H));
+  if(transoms.length>0){
+    const zDimX = px(0) - DIM_OFF;
+    const clYs = [0, ...transoms.map(t=>t.yCL), H];
+    for(let i=0; i<clYs.length-1; i++){
+      drawDimLine(zDimX, py(clYs[i]), zDimX, py(clYs[i+1]), dimStr(clYs[i+1]-clYs[i]));
+    }
   }
 
   // Legend
@@ -2125,7 +2298,7 @@ function renderUvResult(r){
   const chk=document.getElementById('uv-area-check');
   chk.style.display=r.checkPass?'none':'block';
   if(!r.checkPass) chk.textContent='⚠ Area check failed (diff: '+r.checkDiff.toFixed(2)+' in²)';
-  function aD(a){return isM?(a*IN2_TO_M2*1e6).toFixed(1)+' mm²':a.toFixed(1)+' in²';}
+  function aD(a){return isM?(a*IN2_TO_M2).toFixed(3)+' m²':a.toFixed(1)+' in²';}
   function uD(u){return isM?(u*BTU_TO_W).toFixed(2)+' W/m²K':u.toFixed(2)+' BTU';}
   function pct(a){return (a/r.A_panel*100).toFixed(1)+'%';}
   const bEl=document.getElementById('uv-breakdown');
@@ -2138,18 +2311,34 @@ function renderUvResult(r){
 }
 
 function convertUvToUnit(){
-  const U_fr=getU_uv('uv-uf'), U_cogv=getU_uv('uv-cog-v'), U_eogv=getU_uv('uv-eog-v');
-  const fw_in=getSingleIn_uv('uv-fw');
-  const isM=pcUnit==='metric';
-  function setU(id,tagId,u_btu){
-    document.getElementById(id).value=isM?(u_btu*BTU_TO_W).toFixed(2):u_btu.toFixed(2);
-    document.getElementById(tagId).textContent=isM?'W/m²K':'BTU';
+  const isM = pcUnit==='metric';
+
+  // Read U values using tag to detect PREVIOUS unit (not current)
+  function readU_byTag(id, tagId){
+    const v = parseFloat(document.getElementById(id).value)||0;
+    const wasMetric = document.getElementById(tagId).textContent.indexOf('W')!==-1;
+    return wasMetric ? v/BTU_TO_W : v; // always returns BTU/hr·ft²·°F
   }
-  document.getElementById('uv-fw').value=isM?parseFloat((fw_in*IN_TO_MM).toFixed(1)):parseFloat(fw_in.toFixed(2));
-  document.getElementById('uv-fw-tag').textContent=isM?'mm':'in';
-  setU('uv-uf','uv-uf-tag',U_fr);
-  setU('uv-cog-v','uv-cogv-tag',U_cogv);
-  setU('uv-eog-v','uv-eogv-tag',U_eogv);
+  function readIn_byTag(id, tagId){
+    const v = parseFloat(document.getElementById(id).value)||0;
+    const wasMetric = document.getElementById(tagId).textContent==='mm';
+    return wasMetric ? v/IN_TO_MM : v; // always returns inches
+  }
+  function setU(id, tagId, u_btu){
+    document.getElementById(id).value = isM ? (u_btu*BTU_TO_W).toFixed(2) : u_btu.toFixed(2);
+    document.getElementById(tagId).textContent = isM ? 'W/m²K' : 'BTU';
+  }
+
+  const U_fr   = readU_byTag('uv-uf',    'uv-uf-tag');
+  const U_cogv = readU_byTag('uv-cog-v', 'uv-cogv-tag');
+  const U_eogv = readU_byTag('uv-eog-v', 'uv-eogv-tag');
+  const fw_in  = readIn_byTag('uv-fw',   'uv-fw-tag');
+
+  document.getElementById('uv-fw').value = isM ? parseFloat((fw_in*IN_TO_MM).toFixed(1)) : parseFloat(fw_in.toFixed(2));
+  document.getElementById('uv-fw-tag').textContent = isM ? 'mm' : 'in';
+  setU('uv-uf',    'uv-uf-tag',   U_fr);
+  setU('uv-cog-v', 'uv-cogv-tag', U_cogv);
+  setU('uv-eog-v', 'uv-eogv-tag', U_eogv);
   rebuildUvSpandrelUI();
   if(uvResult) renderUvResult(uvResult);
   onUvChange();
@@ -2216,14 +2405,23 @@ function rebuildBeamMemberDropdown() {
   const sel = document.getElementById('beam-member');
   const cur = sel.value;
   const members = getPanelMemberList();
-  sel.innerHTML = '<option value="custom">Custom</option>' +
-    members.map(m=>`<option value="${m.key}">${m.label} (L=${dimStr_beam(m.span)}, trib=${dimStr_beam(m.trib)})</option>`).join('');
-  if (members.find(m=>m.key===cur)) sel.value=cur;
+  sel.innerHTML = '<option value="custom">Custom</option>'
+    + members.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');
+  // Keep custom as default, or restore previous selection if valid
+  if (cur === 'custom' || !cur) sel.value = 'custom';
+  else if (members.find(m=>m.key===cur)) sel.value = cur;
+  else sel.value = 'custom';
 }
 
 function syncBeamFromPanel() {
   const sel = document.getElementById('beam-member');
-  if (sel.value==='custom') return;
+  if (sel.value==='custom') {
+    ['beam-span-ft','beam-span-in','beam-trib-ft','beam-trib-in'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){ el.disabled=false; el.style.opacity='1'; el.style.cursor=''; }
+    });
+    return;
+  }
   const members = getPanelMemberList();
   const m = members.find(m=>m.key===sel.value);
   if (!m) return;
@@ -2235,7 +2433,7 @@ function syncBeamFromPanel() {
       document.getElementById(pairId).style.gridTemplateColumns='1fr';
       document.getElementById(ftTag).textContent='mm';
     } else {
-      const ft=Math.floor(val_in/12),ins=parseFloat((val_in-ft*12).toFixed(2));
+      const ft=Math.floor(val_in/12),ins=Math.round((val_in-ft*12)*8)/8;
       document.getElementById(ftId).value=ft; document.getElementById(inId).value=ins;
       document.getElementById(inId+'-wrap').style.display='';
       document.getElementById(pairId).style.gridTemplateColumns='';
@@ -2245,10 +2443,21 @@ function syncBeamFromPanel() {
   }
   setFtIn('beam-span-ft','beam-span-in','beam-span-pair',m.span,'beam-span-ft-tag','beam-span-in-tag');
   setFtIn('beam-trib-ft','beam-trib-in','beam-trib-pair',m.trib,'beam-trib-ft-tag','beam-trib-in-tag');
+  // Lock inputs when inherited from panel
+  const locked = true;
+  ['beam-span-ft','beam-span-in','beam-trib-ft','beam-trib-in'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.disabled=locked; el.style.opacity=locked?'0.5':'1'; el.style.cursor=locked?'not-allowed':''; }
+  });
   onBeamChange();
 }
 
-function onBeamMemberSelect() { syncBeamFromPanel(); onBeamChange(); }
+function onBeamMemberSelect() {
+  const isCustom = document.getElementById('beam-member').value === 'custom';
+  const link = document.getElementById('beam-edit-link');
+  if(link) link.style.display = isCustom ? 'none' : 'inline';
+  syncBeamFromPanel(); onBeamChange();
+}
 
 function dimStr_beam(val_in){
   if(pcUnit==='metric') return Math.round(val_in*IN_TO_MM)+'mm';
@@ -2312,9 +2521,9 @@ function onBeamChange(){
 
   // Required I (deflection)
   let delta_allow_in;
-  if(deflStr==='240q') delta_allow_in=Math.min(L_in/240,0.25);
+  if(deflStr==='240q') delta_allow_in=L_in/240+0.25;
   else delta_allow_in=L_in/parseFloat(deflStr);
-  const I_req=5*w_lbin*Math.pow(L_in,4)/(384*mat.E*delta_allow_in);
+  const I_req=5*w_lbin*Math.pow(L_in,4)/(384*mat.E*1000*delta_allow_in);
 
   // Required Sx (bending)
   const M_max=w_lbin*L_in*L_in/8; // lb·in
@@ -2327,7 +2536,7 @@ function onBeamChange(){
   const governs=I_util>Sx_util?'Deflection':'Bending';
   const pass=util<=1.0;
 
-  beamResult={I_in4,Sx_in3,I_req,Sx_req,I_util,Sx_util,util,pass,governs,L_in,w_psf,trib_in,mat,B_in,D_in,t_in};
+  beamResult={I_in4,Sx_in3,I_req,Sx_req,I_util,Sx_util,util,pass,governs,L_in,w_psf,trib_in,mat,B_in,D_in,t_in,w_lbin,defl_str:deflStr};
   renderBeamResult(beamResult);
 }
 
@@ -2346,16 +2555,52 @@ function renderBeamResult(r){
   document.getElementById('beam-util-fill').style.width=Math.min(100,pct)+'%';
   document.getElementById('beam-util-fill').style.background=color;
 
+  // Deflection display block — just below util bar
+  function dD(v){ return isM ? (v*25.4).toFixed(1)+' mm' : v.toFixed(3)+' in'; }
+  const delta_actual = 5*r.w_lbin*Math.pow(r.L_in,4)/(384*r.mat.E*1000*r.I_in4);
+  const delta_allow  = r.defl_str==='240q'
+    ? r.L_in/240+0.25
+    : r.L_in/parseFloat(r.defl_str);
+  const deflPass = delta_actual <= delta_allow;
+  const deflColor = deflPass ? '#4a9a6a' : '#DC5B23';
+  function valueCard(label, calcVal, calcColor, allowVal, unit) {
+    return `<div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:6px">${label}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+        <div style="padding:10px;text-align:center;background:var(--surface2)">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:4px">Calculated</div>
+          <div style="font-size:20px;font-weight:900;font-family:'Lato',sans-serif;color:${calcColor}">${calcVal}<span style="font-size:11px;font-weight:700;margin-left:2px">${unit}</span></div>
+        </div>
+        <div style="padding:10px;text-align:center">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:4px">Allowable</div>
+          <div style="font-size:20px;font-weight:900;font-family:'Lato',sans-serif;color:var(--text-soft)">${allowVal}<span style="font-size:11px;font-weight:700;margin-left:2px">${unit}</span></div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  const deflUnit = isM ? 'mm' : 'in';
+  const iUnit    = isM ? 'cm⁴' : 'in⁴';
+  const sUnit    = isM ? 'cm³' : 'in³';
+
+  function iVal(v){ return isM?(v*Math.pow(25.4,4)/1e6).toFixed(1):v.toFixed(3); }
+  function sVal(v){ return isM?(v*Math.pow(25.4,3)/1e3).toFixed(2):v.toFixed(3); }
+  function dVal(v){ return isM?(v*25.4).toFixed(1):v.toFixed(3); }
+
+  const iColor  = r.I_util  <= 1 ? '#4a9a6a' : '#DC5B23';
+  const sxColor = r.Sx_util <= 1 ? '#4a9a6a' : '#DC5B23';
+
+  document.getElementById('beam-defl-display').innerHTML =
+    valueCard('Deflection', dVal(delta_actual), deflColor, dVal(delta_allow), deflUnit) +
+    valueCard('Moment of Inertia', iVal(r.I_in4), iColor, iVal(r.I_req), iUnit) +
+    valueCard('Section Modulus', sVal(r.Sx_in3), sxColor, sVal(r.Sx_req), sUnit);
+
   const bEl=document.getElementById('beam-breakdown');
   const rows=[
-    ['Span', dimStr_beam(r.L_in)],
-    ['Wind load', isM?(r.w_psf*PSF_TO_KPA).toFixed(2)+' kPa':r.w_psf+' psf'],
-    ['Trib. width', dimStr_beam(r.trib_in)],
-    ['Material', r.mat.name+' (E='+r.mat.E.toLocaleString()+' ksi, Fy='+r.mat.Fy+' ksi)'],
-    ['Section I', sD(r.I_in4).replace('cm³','cm⁴').replace('in³','in⁴')+'  (provided)'],
-    ['Required I', iD(r.I_req)+' → '+(r.I_util*100).toFixed(0)+'%'],
-    ['Section Sx', sD(r.Sx_in3)+'  (provided)'],
-    ['Required Sx', sD(r.Sx_req)+' → '+(r.Sx_util*100).toFixed(0)+'%'],
+    ['Span',       dimStr_beam(r.L_in)],
+    ['Wind load',  isM?(r.w_psf*PSF_TO_KPA).toFixed(2)+' kPa':r.w_psf+' psf'],
+    ['Trib. width',dimStr_beam(r.trib_in)],
+    ['Material',   r.mat.name+' (E='+r.mat.E.toLocaleString()+' ksi, Fy='+r.mat.Fy+' ksi)'],
   ];
   bEl.innerHTML=rows.map((row,i)=>`<div class="brow ${i===rows.length-1?'area-brow':'lite-brow'}">
     <span class="bl">${row[0]}</span><span class="bv">${row[1]}</span></div>`).join('');
@@ -2363,15 +2608,106 @@ function renderBeamResult(r){
 }
 
 function convertBeamToUnit(){
+  // Convert section dimension inputs between units
+  const isM = pcUnit==='metric';
+  const bEl = document.getElementById('beam-b');
+  const tEl = document.getElementById('beam-t');
+  const bTagEl = document.getElementById('beam-b-tag');
+  const tTagEl = document.getElementById('beam-t-tag');
+  const dMinEl = document.getElementById('beam-d-min');
+  const dMaxEl = document.getElementById('beam-d-max');
+
+  if (bEl) {
+    const bCur = parseFloat(bEl.value) || 0;
+    // Detect current unit by checking if previous unit was opposite
+    // Safe approach: read stored _lastUnit flag
+    const wasMetric = bEl.dataset.unit === 'metric';
+    const b_in = wasMetric ? bCur / IN_TO_MM : bCur;
+    bEl.value = isM ? parseFloat((b_in * IN_TO_MM).toFixed(1)) : parseFloat(b_in.toFixed(3));
+    bEl.dataset.unit = isM ? 'metric' : 'imperial';
+    if (bTagEl) bTagEl.textContent = isM ? 'mm' : 'in';
+  }
+  if (tEl) {
+    const tCur = parseFloat(tEl.value) || 0;
+    const wasMetric = tEl.dataset.unit === 'metric';
+    const t_in = wasMetric ? tCur / IN_TO_MM : tCur;
+    tEl.value = isM ? parseFloat((t_in * IN_TO_MM).toFixed(1)) : parseFloat(t_in.toFixed(3));
+    tEl.dataset.unit = isM ? 'metric' : 'imperial';
+    if (tTagEl) tTagEl.textContent = isM ? 'mm' : 'in';
+  }
+  // Update depth slider labels
+  if (dMinEl) dMinEl.textContent = isM ? Math.round(1*IN_TO_MM)+'mm' : '1 in';
+  if (dMaxEl) dMaxEl.textContent = isM ? Math.round(20*IN_TO_MM)+'mm' : '20 in';
+
+  // Convert custom span/trib inputs (only when custom selected)
+  const memberSel = document.getElementById('beam-member');
+  if(memberSel && memberSel.value==='custom'){
+    function convBeamFtIn(ftId, inId, inWrapId, pairId, ftTagId, inTagId){
+      const ftEl=document.getElementById(ftId);
+      const inEl=document.getElementById(inId);
+      const inWrapEl=document.getElementById(inWrapId);
+      const pairEl=document.getElementById(pairId);
+      const ftTagEl=document.getElementById(ftTagId);
+      const inTagEl=document.getElementById(inTagId);
+      if(!ftEl) return;
+      const prevIsM = ftTagEl && ftTagEl.textContent==='mm';
+      const cur_in = prevIsM
+        ? (parseFloat(ftEl.value)||0)/IN_TO_MM
+        : (parseFloat(ftEl.value)||0)*12 + (parseFloat(inEl?inEl.value:0)||0);
+      if(isM){
+        ftEl.value = parseFloat((cur_in*IN_TO_MM).toFixed(0));
+        if(inWrapEl) inWrapEl.style.display='none';
+        if(pairEl) pairEl.style.gridTemplateColumns='1fr';
+        if(ftTagEl) ftTagEl.textContent='mm';
+      } else {
+        const ft=Math.floor(cur_in/12);
+        const ins=Math.round((cur_in-ft*12)*8)/8;
+        ftEl.value=ft;
+        if(inEl) inEl.value=ins;
+        if(inWrapEl) inWrapEl.style.display='';
+        if(pairEl) pairEl.style.gridTemplateColumns='';
+        if(ftTagEl) ftTagEl.textContent='ft';
+        if(inTagEl) inTagEl.textContent='in';
+      }
+    }
+    convBeamFtIn('beam-span-ft','beam-span-in','beam-span-in-wrap','beam-span-pair','beam-span-ft-tag','beam-span-in-tag');
+    convBeamFtIn('beam-trib-ft','beam-trib-in','beam-trib-in-wrap','beam-trib-pair','beam-trib-ft-tag','beam-trib-in-tag');
+  }
+
+  // Update depth slider display value
+  const dSlider = document.getElementById('beam-d-slider');
+  if(dSlider){
+    const d_in = pcUnit==='metric'
+      ? (parseFloat(dSlider.value)||0)/IN_TO_MM  // was metric, convert back
+      : (parseFloat(dSlider.value)||0);           // was imperial
+    // slider stores in inches always — just update display
+  }
+
   rebuildBeamMemberDropdown();
   syncBeamFromPanel();
+  onBeamDepthSlide();
+  if(beamResult) onBeamChange();
 }
 
 function copyBeamResult(){
   if(!beamResult) return;
   const r=beamResult;
-  const t=`Beam Design Check: ${r.pass?'PASS':'FAIL'} (${Math.round(r.util*100)}%)\nGoverns: ${r.governs}\n`;
-  navigator.clipboard.writeText(t);
+  const isM=pcUnit==='metric';
+  const t=[
+    'Mullion Sizing — Indicative Check',
+    `Result: ${r.pass?'PASS':'FAIL'} (${Math.round(r.util*100)}% — ${r.governs} governs)`,
+    `Span: ${dimStr_beam(r.L_in)}`,
+    `Wind load: ${isM?(r.w_psf*PSF_TO_KPA).toFixed(2)+' kPa':r.w_psf+' psf'}`,
+    `Trib. width: ${dimStr_beam(r.trib_in)}`,
+    `Material: ${r.mat.name}`,
+  ].join('\n');
+  navigator.clipboard.writeText(t).then(()=>{
+    const btn=document.getElementById('beam-copy-btn');
+    if(!btn) return;
+    btn.classList.add('copied');
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Copied!';
+    setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy';},2000);
+  });
 }
 
 HELP_CONTENT['beam_material']={title:'Beam Design — Material & Formula',body:`
@@ -2393,43 +2729,399 @@ HELP_CONTENT['beam_material']={title:'Beam Design — Material & Formula',body:`
 // Init beam
 rebuildBeamMemberDropdown();
 onBeamDepthSlide();
+setTimeout(function(){ syncBeamFromPanel(); onBeamChange(); }, 0);
 
 /* ═══════════════════════════════════════════════════════════════
-   GLASS WEIGHT TAB
+   GLASS SIZING TAB — ASTM E1300
    ═══════════════════════════════════════════════════════════════ */
-// pcUnit now references pcUnit
-let gwLites = [6, 6]; // mm thicknesses
-let gwResult = null;
-const GW_THICKNESSES = [3,4,5,6,8,10,12,15,19,22,25];
-const GW_FRACTIONS = ['1/8"','5/32"','3/16"','1/4"','5/16"','3/8"','1/2"','19/32"','3/4"','7/8"','1"'];
-const GLASS_DENSITY_KG_M3 = 2500;
 
+/* ── Constants ─────────────────────────────────────────────── */
+const GLASS_E_PSI    = 10400000; // Glass elastic modulus (psi) = 71.7 GPa
+const GLASS_DENSITY_KGM3 = 2500; // kg/m³
+const GLASS_GTF = { AN:1.0, HS:2.0, FT:4.0 };
+const GLASS_THICKNESSES_MM = [3,4,5,6,8,10,12,15,19,22,25];
+const GLASS_THICK_NOM_IN   = [0.125,0.156,0.1875,0.25,0.3125,0.375,0.5,0.59375,0.75,0.875,1.0];
+const GLASS_THICK_FRAC     = ['1/8"','5/32"','3/16"','1/4"','5/16"','3/8"','1/2"','19/32"','3/4"','7/8"','1"'];
+
+let gwAssembly = 'mono'; // mono | igu | lam
+let gwSupport  = 4;      // 2 | 3 | 4 edges
+let gwUnsupported = 'long'; // long | short (for 2/3-edge)
+let gwLites = [
+  { type:'AN', thickMM:6, lam:false, thickMM2:6, interlayer:'pvb', tPvbMM:0.76 },
+  { type:'AN', thickMM:6, lam:false, thickMM2:6, interlayer:'pvb', tPvbMM:0.76 },
+  { type:'AN', thickMM:6, lam:false, thickMM2:6, interlayer:'pvb', tPvbMM:0.76 },
+];
+let gwResult_data = null;
+
+/* ── E1300 NFL Lookup Table (AN glass, 4-edge SS, short duration)
+   Digitised from ASTM E1300 Figure 1. NFL in psf.
+   GTF multiplied for glass type. ───────────────────────────── */
+const NFL_TABLE = {
+  // Extended down to 1ft for narrow sub-zones (extrapolated using plate scaling NFL ∝ 1/a²)
+  '1x1':  {3:155,4:252,5:415,6:650,8:1300,10:2200},
+  '1x2':  {3:95, 4:155,5:255,6:400,8:800, 10:1350},
+  '1x3':  {3:65, 4:106,5:175,6:272,8:545, 10:920},
+  '1x4':  {3:52, 4: 85,5:140,6:218,8:436, 10:736},
+  '1x5':  {3:49, 4: 80,5:131,6:205,8:410, 10:693},
+  '1x6':  {3:42, 4: 68,5:112,6:175,8:350, 10:590},
+  '1x8':  {3:38, 4: 62,5:102,6:160,8:320, 10:541},
+  '1x9':  {3:36, 4: 59,5: 96,6:150,8:300, 10:508},
+  '1x10': {3:34, 4: 56,5: 92,6:143,8:287, 10:485},
+  '1x12': {3:33, 4: 54,5: 89,6:139,8:278, 10:470},
+  '2x2':  {3:38, 4: 63,5:103,6:162,8:325, 10:550},
+  '2x3':  {3:26, 4: 43,5: 71,6:111,8:222, 10:375},
+  '2x4':  {3:21, 4: 34,5: 57,6: 89,8:178, 10:300},
+  '2x5':  {3:20, 4: 32,5: 53,6: 83,8:167, 10:282},
+  '2x6':  {3:17, 4: 27,5: 45,6: 71,8:142, 10:240},
+  '2x8':  {3:15, 4: 24,5: 40,6: 63,8:126, 10:213},
+  '2x9':  {3:14, 4: 23,5: 38,6: 60,8:120, 10:203},
+  '2x10': {3:13, 4: 22,5: 36,6: 57,8:114, 10:193},
+  '2x12': {3:13, 4: 21,5: 35,6: 55,8:110, 10:187},
+  '3x3':  {3:17,4:28,5:46,6:72,8:145,10:245},
+  '3x4':  {3:13,4:22,5:36,6:56,8:112,10:190},
+  '3x5':  {3:11,4:18,5:30,6:47,8: 94,10:160},
+  '3x6':  {3: 9,4:15,5:25,6:40,8: 80,10:135},
+  '3x8':  {3: 8,4:13,5:21,6:33,8: 67,10:113},
+  '3x9':  {3: 7,4:12,5:20,6:31,8: 62,10:105},
+  '3x10': {3: 7,4:11,5:18,6:29,8: 58,10: 98},
+  '3x12': {3: 6,4:10,5:17,6:26,8: 53,10: 89},
+  '4x4':  {4:15,5:26,6:42,8: 85,10:145},
+  '4x5':  {4:12,5:21,6:33,8: 67,10:114},
+  '4x6':  {4:10,5:17,6:28,8: 56,10: 95},
+  '4x8':  {5:13,6:21,8: 43,10: 73,12:115},
+  '4x9':  {5:12,6:19,8: 37,10: 63,12:100},
+  '4x10': {5:11,6:17,8: 34,10: 58,12: 92},
+  '4x12': {5:10,6:15,8: 30,10: 51,12: 81},
+  '5x5':  {5:17,6:27,8: 55,10: 93,12:145},
+  '5x6':  {5:14,6:22,8: 45,10: 76,12:120},
+  '5x8':  {6:16,8: 33,10: 56,12: 88,15:155},
+  '5x9':  {6:14,8: 28,10: 48,12: 76,15:134},
+  '5x10': {6:12,8: 25,10: 43,12: 68,15:120},
+  '5x12': {8:20,10: 34,12: 54,15: 95,19:195},
+  '6x6':  {6:19,8: 38,10: 65,12:102,15:180},
+  '6x8':  {6:15,8: 30,10: 51,12: 80,15:142},
+  '6x9':  {8:26,10: 45,12: 71,15:125},
+  '6x10': {8:24,10: 41,12: 64,15:113},
+  '6x12': {8:20,10: 34,12: 53,15: 94,19:193},
+};
+
+function interpNflTable(a_ft_raw, b_ft_raw, t_mm) {
+  // Allow down to 1ft (12") — extrapolate below 3ft using plate scaling NFL ∝ 1/a²
+  const a_ft = Math.max(1, Math.min(6, a_ft_raw));
+  const b_ft = Math.max(a_ft, Math.min(12, b_ft_raw));
+  const aVals = [1,2,3,4,5,6];
+  const bVals = [1,2,3,4,5,6,8,9,10,12];
+
+  function findBounds(val, lst) {
+    const lo = Math.max(...lst.filter(v=>v<=val), lst[0]);
+    const hi = Math.min(...lst.filter(v=>v>=val), lst[lst.length-1]);
+    return [lo, hi];
+  }
+  function getNFL(a, b, t) {
+    const key = a<=b ? a+'x'+b : b+'x'+a;
+    const tbl = NFL_TABLE[key]; if(!tbl) return null;
+    const tKeys = Object.keys(tbl).map(Number).sort((x,y)=>x-y);
+    if(t<=tKeys[0]) return tbl[tKeys[0]];
+    if(t>=tKeys[tKeys.length-1]) return tbl[tKeys[tKeys.length-1]];
+    for(let i=0;i<tKeys.length-1;i++){
+      if(tKeys[i]<=t&&t<=tKeys[i+1]){
+        const t0=tKeys[i],t1=tKeys[i+1];
+        const f=(Math.pow(t,3)-Math.pow(t0,3))/(Math.pow(t1,3)-Math.pow(t0,3));
+        return tbl[t0]+f*(tbl[t1]-tbl[t0]);
+      }
+    }
+    return null;
+  }
+  const [a_lo,a_hi] = findBounds(a_ft, aVals);
+  const [b_lo,b_hi] = findBounds(b_ft, bVals);
+  const v00=getNFL(a_lo,b_lo,t_mm)||0;
+  const v10=getNFL(a_hi,b_lo,t_mm)||v00;
+  const v01=getNFL(a_lo,b_hi,t_mm)||v00;
+  const v11=getNFL(a_hi,b_hi,t_mm)||v00;
+  const fa = a_hi!==a_lo ? (a_ft-a_lo)/(a_hi-a_lo) : 0;
+  const fb = b_hi!==b_lo ? (b_ft-b_lo)/(b_hi-b_lo) : 0;
+  const nfl = v00*(1-fa)*(1-fb)+v10*fa*(1-fb)+v01*(1-fa)*fb+v11*fa*fb;
+  return nfl;
+}
+
+function calcLR_psi(t_mm, type, W_in, H_in, edges) {
+  // For 2-edge, the span direction depends on which edges are unsupported
+  // Long unsupported → short edges bear load → glass spans SHORT dimension
+  // Short unsupported → long edges bear load → glass spans LONG dimension
+  let a_ft, b_ft;
+  if(edges===2){
+    if(gwUnsupported==='long'){
+      // Long edges (vertical) free → bears on short edges → spans LONG dim
+      // Table lookup: span=long, perp=short → a=short, b=long (min/max as usual)
+      a_ft = Math.min(W_in,H_in)/12;
+      b_ft = Math.max(W_in,H_in)/12;
+    } else {
+      // Short edges (horizontal) free → bears on long edges → spans SHORT dim
+      // Table lookup: span=short, perp=short → use short×short
+      a_ft = Math.min(W_in,H_in)/12;
+      b_ft = Math.min(W_in,H_in)/12;
+    }
+  } else if(edges===3){
+    if(gwUnsupported==='long'){
+      // One long (vertical) edge free → spans short dim → use short×long table
+      a_ft = Math.min(W_in,H_in)/12;
+      b_ft = Math.max(W_in,H_in)/12;
+    } else {
+      // One short (horizontal) edge free → spans short dim with 3-side restraint
+      // Less severe — use short×short table (effective span = short dim)
+      a_ft = Math.min(W_in,H_in)/12;
+      b_ft = Math.min(W_in,H_in)/12;
+    }
+  } else {
+    a_ft = Math.min(W_in,H_in)/12;
+    b_ft = Math.max(W_in,H_in)/12;
+  }
+  let NFL = interpNflTable(a_ft, b_ft, t_mm);
+  if(edges===3){
+    NFL *= (gwUnsupported==='long') ? 0.45 : 0.60;
+  } else if(edges===2){
+    // Both cases now use correct span; apply beam reduction factor
+    NFL *= (gwUnsupported==='long') ? 0.30 : 0.30;
+  }
+  return NFL * (GLASS_GTF[type]||1.0);
+}
+
+/* ── Plate deflection (Timoshenko) ───────────────────────────
+   δ = α × w × a⁴ / (E × t³)
+   α from Timoshenko Table 8-1 (4-edge SS) ─────────────────── */
+function calcDeflection_in(t_mm, W_in, H_in, w_psf, edges) {
+  const t_in = t_mm / 25.4;
+  // Span dimension depends on which edges are unsupported
+  // Long unsupported → bears on short edges → spans LONG dim
+  // Short unsupported → bears on long edges → spans SHORT dim
+  let a, b;
+  if(edges===2){
+    if(gwUnsupported==='long'){
+      a = Math.max(W_in,H_in); // spans long
+      b = Math.min(W_in,H_in);
+    } else {
+      a = Math.min(W_in,H_in); // spans short
+      b = Math.min(W_in,H_in); // square for alpha
+    }
+  } else if(edges===3){
+    if(gwUnsupported==='long'){
+      // One long edge free → spans short dim
+      a = Math.min(W_in,H_in);
+      b = Math.max(W_in,H_in);
+    } else {
+      // One short edge free → less severe, spans short dim with 3-side restraint
+      a = Math.min(W_in,H_in);
+      b = Math.min(W_in,H_in);
+    }
+  } else {
+    a = Math.min(W_in,H_in);
+    b = Math.max(W_in,H_in);
+  }
+  const r = Math.min(1, a / b);
+
+  // Timoshenko alpha: a/b → alpha (Table 8-1)
+  function alpha4(rv) {
+    const pts=[[0.25,0.01282],[0.333,0.01223],[0.5,0.01013],[0.667,0.00726],[1.0,0.00406]];
+    if(rv<=pts[0][0]) return pts[0][1];
+    if(rv>=pts[pts.length-1][0]) return pts[pts.length-1][1];
+    for(let i=0;i<pts.length-1;i++){
+      if(pts[i][0]<=rv&&rv<=pts[i+1][0]){
+        const f=(rv-pts[i][0])/(pts[i+1][0]-pts[i][0]);
+        return pts[i][1]+f*(pts[i+1][1]-pts[i][1]);
+      }
+    }
+    return 0.00406;
+  }
+  let alpha;
+  if(edges===4) alpha=alpha4(r);
+  else if(edges===3) alpha=alpha4(r)*2.0; // conservative
+  else alpha=5.0/384.0; // beam analogy (2-edge)
+
+  const w_psi = w_psf/144;
+  return alpha * w_psi * Math.pow(a,4) / (GLASS_E_PSI * Math.pow(t_in,3));
+}
+
+/* ── Deflection allowable ────────────────────────────────────── */
+function getDeflAllow_in(W_in, H_in) {
+  const a = Math.min(W_in, H_in);
+  const deflOpt = document.getElementById('gw-defl').value;
+  if (deflOpt === 'none')   return Infinity;
+  if (deflOpt === '175')    return a / 175;
+  if (deflOpt === '240')    return a / 240;
+  if (deflOpt === '19mm')   return 19 / 25.4;
+  if (deflOpt === '25mm')   return 25 / 25.4;
+  if (deflOpt === '175_19') return Math.min(a/175, 19/25.4);
+  return a / 175;
+}
+
+/* ── Find minimum passing thickness ─────────────────────────── */
+function findMinThickness(type, W_in, H_in, w_psf, edges) {
+  const deflAllow = getDeflAllow_in(W_in, H_in);
+  for (const t of GLASS_THICKNESSES_MM) {
+    const LR = calcLR_psi(t, type, W_in, H_in, edges);
+    const defl = calcDeflection_in(t, W_in, H_in, w_psf, edges);
+    if (LR >= w_psf && defl <= deflAllow) return t;
+  }
+  return null;
+}
+
+function findSuggestedThickness(t_current_mm, type, W_in, H_in, w_psf, edges) {
+  // Find minimum adequate thickness; if current is more than one step above it, suggest reduction
+  const minT = findMinThickness(type, W_in, H_in, w_psf, edges);
+  if (!minT) return null; // nothing passes — no suggestion
+  const idx = GLASS_THICKNESSES_MM.indexOf(t_current_mm);
+  const minIdx = GLASS_THICKNESSES_MM.indexOf(minT);
+  if (minIdx < 0 || idx < 0) return null;
+  if (idx > minIdx + 1) return minT; // current is more than one step thicker than minimum
+  if (idx === minIdx + 1) return minT; // current is one step above minimum — still suggest
+  return null; // already at minimum or close enough
+}
+
+/* ── UI Builders ────────────────────────────────────────────── */
+function setGwAssembly(a) {
+  gwAssembly = a;
+  ['mono','igu','triple'].forEach(t =>
+    document.getElementById('gw-'+t+'-btn').classList.toggle('active', t===a));
+  rebuildGwLiteFields();
+  onGwChange();
+}
+
+function setGwSupport(n) {
+  gwSupport = n;
+  [2,3,4].forEach(e =>
+    document.getElementById('gw-sup'+e).classList.toggle('active', e===n));
+  const row = document.getElementById('gw-unsupported-row');
+  if(row) row.style.display = n===4 ? 'none' : 'block';
+  onGwChange();
+}
+
+function setGwUnsupported(edge) {
+  gwUnsupported = edge;
+  document.getElementById('gw-unsup-long').classList.toggle('active',  edge==='long');
+  document.getElementById('gw-unsup-short').classList.toggle('active', edge==='short');
+  onGwChange();
+}
+
+function rebuildGwLiteFields() {
+  const c = document.getElementById('gw-lite-fields');
+  const isM = pcUnit === 'metric';
+
+  function thickOptions(sel) {
+    return GLASS_THICKNESSES_MM.map((t,j)=>`<option value="${t}" ${t===sel?'selected':''}>${t}mm | ${GLASS_THICK_FRAC[j]}</option>`).join('');
+  }
+  function liteRow(idx, label) {
+    const l = gwLites[idx] || { type:'AN', thickMM:6, lam:false, thickMM2:6, interlayer:'pvb' };
+    return `
+    <div style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;font-family:'Lato',sans-serif">${label}</span>
+        <div class="sec-type-toggle" style="transform:scale(0.85);transform-origin:right center">
+          <button class="sec-type-btn ${!l.lam?'active':''}" onclick="gwLites[${idx}].lam=false;rebuildGwLiteFields();onGwChange()">Mono</button>
+          <button class="sec-type-btn ${l.lam?'active':''}"  onclick="gwLites[${idx}].lam=true;rebuildGwLiteFields();onGwChange()">Lam</button>
+        </div>
+      </div>
+      <div class="field-row" style="margin-bottom:${l.lam?'8px':'0'}">
+        <div class="field">
+          <label>Type</label>
+          <div class="input-wrap">
+            <select id="gw-type-${idx}" onchange="gwLites[${idx}].type=this.value;onGwChange()">
+              <option value="AN" ${l.type==='AN'?'selected':''}>Annealed (AN)</option>
+              <option value="HS" ${l.type==='HS'?'selected':''}>Heat Str. (HS)</option>
+              <option value="FT" ${l.type==='FT'?'selected':''}>Fully Temp. (FT)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>${l.lam?'Lite 1':'Thickness'}</label>
+          <div class="input-wrap">
+            <select id="gw-thick-${idx}" onchange="gwLites[${idx}].thickMM=parseInt(this.value);onGwChange()">
+              ${thickOptions(l.thickMM)}
+            </select>
+          </div>
+        </div>
+        ${l.lam ? `
+        <div class="field">
+          <label>Lite 2</label>
+          <div class="input-wrap">
+            <select id="gw-thick2-${idx}" onchange="gwLites[${idx}].thickMM2=parseInt(this.value);onGwChange()">
+              ${thickOptions(l.thickMM2)}
+            </select>
+          </div>
+        </div>` : ''}
+      </div>
+      ${l.lam ? `
+      <div class="field-row" style="margin-bottom:0">
+        <div class="field">
+          <label>Interlayer</label>
+          <div class="input-wrap">
+            <select id="gw-inter-${idx}" onchange="gwLites[${idx}].interlayer=this.value;gwLites[${idx}].tPvbMM={pvb:0.76,pvb_str:0.76,sgp:1.52}[this.value]||0.76;rebuildGwLiteFields();onGwChange()">
+              <option value="pvb"     ${l.interlayer==='pvb'    ?'selected':''}>PVB</option>
+              <option value="pvb_str" ${l.interlayer==='pvb_str'?'selected':''}>Structural PVB</option>
+              <option value="sgp"     ${l.interlayer==='sgp'    ?'selected':''}>SentryGlas (SGP)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Interlayer t</label>
+          <div class="input-wrap">
+            <select id="gw-tpvb-${idx}" onchange="gwLites[${idx}].tPvbMM=parseFloat(this.value);onGwChange()">
+              <option value="0.38" ${(l.tPvbMM||0.76)===0.38?'selected':''}>0.38mm | 0.015"</option>
+              <option value="0.76" ${(l.tPvbMM||0.76)===0.76?'selected':''}>0.76mm | 0.030"</option>
+              <option value="1.14" ${(l.tPvbMM||0.76)===1.14?'selected':''}>1.14mm | 0.045"</option>
+              <option value="1.52" ${(l.tPvbMM||0.76)===1.52?'selected':''}>1.52mm | 0.060"</option>
+              <option value="2.28" ${(l.tPvbMM||0.76)===2.28?'selected':''}>2.28mm | 0.090"</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:4px">
+        γ = ${{pvb:0.01,pvb_str:0.35,sgp:0.85}[l.interlayer||'pvb']} · t_eff = ${(()=>{const t1=l.thickMM,t2=l.thickMM2||l.thickMM,tp=l.tPvbMM||0.76,g={pvb:0.01,pvb_str:0.35,sgp:0.85}[l.interlayer||'pvb']||0.01,hs=(t1+tp+t2)/2;return Math.pow(t1**3+t2**3+12*g*t1*t2*hs**2,1/3).toFixed(1)})()}mm
+        ${(l.interlayer==='sgp'||l.interlayer==='pvb_str')?'· Result is conservative':''}
+      </div>` : ''}
+    </div>`;
+  }
+
+  let html = '';
+  if (gwAssembly === 'mono') {
+    html = liteRow(0, 'Glass Lite');
+  } else if (gwAssembly === 'igu') {
+    html = liteRow(0, 'Outer Lite') + liteRow(1, 'Inner Lite');
+  } else { // triple
+    html = liteRow(0, 'Outer Lite') + liteRow(1, 'Middle Lite') + liteRow(2, 'Inner Lite');
+  }
+  c.innerHTML = html;
+}
+
+/* ── Main calculation ────────────────────────────────────────── */
 function onGwPanelChange() { rebuildGwZoneDropdown(); onGwZoneSelect(); }
 
 function rebuildGwZoneDropdown() {
-  const sel=document.getElementById('gw-zone');
-  const cur=sel.value;
-  const zones=getPanelZoneList();
-  sel.innerHTML='<option value="custom">Custom</option>'+
+  const sel = document.getElementById('gw-zone');
+  const cur = sel.value;
+  const zones = getPanelZoneList();
+  sel.innerHTML = '<option value="custom">Custom</option>' +
     zones.map(z=>`<option value="${z.key}">${z.label}</option>`).join('');
-  if(zones.find(z=>z.key===cur)) sel.value=cur;
+  if (zones.find(z=>z.key===cur)) sel.value = cur;
 }
 
 function onGwZoneSelect() {
-  const sel=document.getElementById('gw-zone');
-  if(sel.value==='custom'){onGwChange();return;}
-  const zones=getPanelZoneList();
-  const z=zones.find(z=>z.key===sel.value);
-  if(!z) return;
-  const isM=pcUnit==='metric';
-  function setFtIn(ftId,inId,pairId,val_in,ftTag,inTag){
+  const sel = document.getElementById('gw-zone');
+  const isCustom_gw = sel.value === 'custom';
+  const gwLink = document.getElementById('gw-edit-link');
+  if(gwLink) gwLink.style.display = isCustom_gw ? 'none' : 'inline';
+  if (isCustom_gw) { onGwChange(); return; }
+  const zones = getPanelZoneList();
+  const z = zones.find(z=>z.key===sel.value);
+  if (!z) return;
+  const isM = pcUnit === 'metric';
+  function setFtIn(ftId,inId,pairId,val_in,ftTag,inTag) {
     if(isM){
       document.getElementById(ftId).value=parseFloat((val_in*IN_TO_MM).toFixed(0));
       document.getElementById(inId+'-wrap').style.display='none';
       document.getElementById(pairId).style.gridTemplateColumns='1fr';
       document.getElementById(ftTag).textContent='mm';
     } else {
-      const ft=Math.floor(val_in/12),ins=parseFloat((val_in-ft*12).toFixed(2));
+      const ft=Math.floor(val_in/12),ins=Math.round((val_in-ft*12)*8)/8;
       document.getElementById(ftId).value=ft; document.getElementById(inId).value=ins;
       document.getElementById(inId+'-wrap').style.display='';
       document.getElementById(pairId).style.gridTemplateColumns='';
@@ -2441,93 +3133,296 @@ function onGwZoneSelect() {
   onGwChange();
 }
 
-function gwAddLite(){
-  gwLites.push(6);
-  rebuildGwLites();
-  onGwChange();
-}
-function gwRemoveLite(i){
-  if(gwLites.length<=1) return;
-  gwLites.splice(i,1);
-  rebuildGwLites();
-  onGwChange();
-}
-function gwSetThickness(i,mm){
-  gwLites[i]=mm;
-  onGwChange();
+function getGwDimIn(ftId,inId) {
+  if(pcUnit==='metric') return (parseFloat(document.getElementById(ftId).value)||0)/IN_TO_MM;
+  return (parseFloat(document.getElementById(ftId).value)||0)*12+
+         (parseFloat(document.getElementById(inId).value)||0);
 }
 
-function rebuildGwLites(){
-  const c=document.getElementById('gw-lites-container');
-  c.innerHTML='';
-  gwLites.forEach((t,i)=>{
-    const row=document.createElement('div');
-    row.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:8px';
-    row.innerHTML=`
-      <div style="font-size:11px;font-weight:700;color:var(--text-muted);font-family:'Lato',sans-serif;min-width:40px">Lite ${i+1}</div>
-      <div class="drum-wrap" style="flex:1">
-        <div class="drum" id="gw-drum-${i}">
-          ${GW_THICKNESSES.map((th,j)=>`<div class="drum-item" data-mm="${th}">${th}mm | ${GW_FRACTIONS[j]}</div>`).join('')}
+function onGwChange() {
+  const errEl = document.getElementById('gw-error'); errEl.classList.remove('visible');
+  const H_in = getGwDimIn('gw-h-ft','gw-h-in');
+  const W_in = getGwDimIn('gw-w-ft','gw-w-in');
+  if (!H_in || !W_in || H_in<=0 || W_in<=0) return;
+
+  const w_psf = pcGetWindPsf();
+  const deflAllow_in = getDeflAllow_in(W_in, H_in);
+  const isM = pcUnit === 'metric';
+  const results = [];
+
+  // Bennison-Stelzer effective thickness
+  // Gamma: interlayer coupling factor (short-duration wind, 20°C)
+  const GW_GAMMA = { pvb:0.01, pvb_str:0.35, sgp:0.85 };
+  // Default interlayer thickness per type
+  const GW_TPVB_DEFAULT = { pvb:0.76, pvb_str:0.76, sgp:1.52 };
+  function effThick(l) {
+    if(!l.lam) return l.thickMM;
+    const t1 = l.thickMM, t2 = l.thickMM2||l.thickMM;
+    const tpvb = l.tPvbMM || GW_TPVB_DEFAULT[l.interlayer] || 0.76;
+    const gamma = GW_GAMMA[l.interlayer] || 0.01;
+    const h_s = (t1 + tpvb + t2) / 2;
+    return Math.pow(t1**3 + t2**3 + 12*gamma*t1*t2*h_s**2, 1/3);
+  }
+  function liteLabel(l, prefix) {
+    if(!l.lam) return prefix+' ('+l.type+', '+l.thickMM+'mm)';
+    const iLabel = l.interlayer==='sgp'?'SGP':l.interlayer==='pvb_str'?'Str. PVB':'PVB';
+    return prefix+' ('+l.type+', '+l.thickMM+'+'+l.thickMM2+'mm '+iLabel+', t_eff='+effThick(l).toFixed(1)+'mm)';
+  }
+  function sgpNote(l) { return l.lam && l.interlayer==='sgp'; }
+
+  if (gwAssembly === 'mono') {
+    const l = gwLites[0];
+    const te = effThick(l);
+    const LR   = calcLR_psi(te, l.type, W_in, H_in, gwSupport);
+    const defl  = calcDeflection_in(te, W_in, H_in, w_psf, gwSupport);
+    const strPass  = LR >= w_psf;
+    const deflPass = defl <= deflAllow_in;
+    const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w_psf, gwSupport) : null;
+    const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w_psf, gwSupport) : null;
+    results.push({ label:liteLabel(l,'Lite'), t:te, LR, w_psf, strPass, defl, deflAllow_in, deflPass, minT, suggestT, sgp:sgpNote(l) });
+
+  } else if (gwAssembly === 'igu' || gwAssembly === 'triple') {
+    const lites = gwAssembly === 'triple'
+      ? [gwLites[0], gwLites[1], gwLites[2]]
+      : [gwLites[0], gwLites[1]];
+    const labels = gwAssembly === 'triple'
+      ? ['Outer','Middle','Inner']
+      : ['Outer','Inner'];
+    const tes = lites.map(l => effThick(l));
+    const t3s = tes.map(t => Math.pow(t, 3));
+    const t3total = t3s.reduce((a,b) => a+b, 0);
+    const lsfs = t3s.map(t3 => t3 / t3total);
+    const loads = lsfs.map(lsf => w_psf * lsf);
+    lites.forEach((l, i) => {
+      const te = tes[i], w = loads[i], lsf = lsfs[i];
+      const LR   = calcLR_psi(te, l.type, W_in, H_in, gwSupport);
+      const defl  = calcDeflection_in(te, W_in, H_in, w, gwSupport);
+      const strPass  = LR >= w;
+      const deflPass = defl <= deflAllow_in;
+      const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w, gwSupport) : null;
+      const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w, gwSupport) : null;
+      results.push({ label:liteLabel(l, labels[i]), t:te, LR, w_psf:w, strPass, defl, deflAllow_in, deflPass, minT, suggestT, lsf, sgp:sgpNote(l) });
+    });
+
+  }
+
+  // Total glass weight
+  const A_m2 = (W_in * H_in) * IN2_TO_M2;
+  let totalThick_m = 0;
+  const liteThick = (l) => l.thickMM + (l.lam?(l.thickMM2||0):0);
+  if (gwAssembly==='mono') totalThick_m = liteThick(gwLites[0])/1000;
+  else if (gwAssembly==='triple') totalThick_m = (liteThick(gwLites[0])+liteThick(gwLites[1])+liteThick(gwLites[2]))/1000;
+  else totalThick_m = (liteThick(gwLites[0])+liteThick(gwLites[1]))/1000;
+  const mass_kg = A_m2 * totalThick_m * GLASS_DENSITY_KGM3;
+  const mass_lb = mass_kg / LB_TO_KG;
+  const kg_m2   = totalThick_m * GLASS_DENSITY_KGM3;
+  const lb_ft2  = kg_m2 * 0.20482;
+
+  gwResult_data = { results, mass_kg, mass_lb, kg_m2, lb_ft2, A_m2, W_in, H_in, w_psf };
+  renderGwResult(gwResult_data);
+}
+
+function renderGwResult(r) {
+  const isM = pcUnit === 'metric';
+  const dD = v => isM ? (v*25.4).toFixed(1)+' mm' : v.toFixed(3)+' in';
+  const pD = v => isM ? (v*PSF_TO_KPA).toFixed(2)+' kPa' : v.toFixed(1)+' psf';
+
+  function twoColCard(sectionLabel, leftLabel, leftVal, leftColor, leftSub, rightLabel, rightVal, rightColor, rightSub) {
+    return `<div style="margin-bottom:12px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:5px">${sectionLabel}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+        <div style="padding:12px;text-align:center;background:var(--surface2)">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:4px">${leftLabel}</div>
+          <div style="font-size:22px;font-weight:900;font-family:'Lato',sans-serif;color:${leftColor}">${leftVal}</div>
+          <div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:3px">${leftSub}</div>
+        </div>
+        <div style="padding:12px;text-align:center">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:4px">${rightLabel}</div>
+          <div style="font-size:22px;font-weight:900;font-family:'Lato',sans-serif;color:${rightColor}">${rightVal}</div>
+          <div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:3px">${rightSub}</div>
         </div>
       </div>
-      ${gwLites.length>1?`<button onclick="gwRemoveLite(${i})" style="background:var(--danger);border:none;border-radius:4px;color:#fff;width:28px;height:28px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>`:''}`;
-    c.appendChild(row);
-    // Set drum to current thickness
-    const drum=document.getElementById('gw-drum-'+i);
-    if(!drum) return;
-    const idx=GW_THICKNESSES.indexOf(t);
-    if(idx>=0) drum.scrollTop=idx*42;
-    drum.addEventListener('scroll',()=>{
-      const scrolled=Math.round(drum.scrollTop/42);
-      const mm=GW_THICKNESSES[Math.max(0,Math.min(GW_THICKNESSES.length-1,scrolled))];
-      gwLites[i]=mm; onGwChange();
-    });
-  });
-}
+    </div>`;
+  }
 
-function onGwChange(){
-  const isM=pcUnit==='metric';
-  const H_in=isM?(parseFloat(document.getElementById('gw-h-ft').value)||0)/IN_TO_MM:(parseFloat(document.getElementById('gw-h-ft').value)||0)*12+(parseFloat(document.getElementById('gw-h-in').value)||0);
-  const W_in=isM?(parseFloat(document.getElementById('gw-w-ft').value)||0)/IN_TO_MM:(parseFloat(document.getElementById('gw-w-ft').value)||0)*12+(parseFloat(document.getElementById('gw-w-in').value)||0);
-  if(!H_in||!W_in) return;
-  const A_m2=H_in*W_in*IN2_TO_M2;
-  const totalThick_m=gwLites.reduce((s,t)=>s+t/1000,0);
-  const mass_kg=A_m2*totalThick_m*GLASS_DENSITY_KG_M3;
-  const mass_lb=mass_kg/LB_TO_KG;
-  gwResult={mass_kg,mass_lb,A_m2,gwLites,H_in,W_in};
-  const impEl=document.getElementById('gw-val-imperial');
-  const metEl=document.getElementById('gw-val-metric');
-  impEl.innerHTML=mass_lb.toFixed(1)+'<span class="result-val-unit">lb</span>';
-  metEl.innerHTML=mass_kg.toFixed(1)+'<span class="result-val-unit">kg</span>';
-  ['imperial','metric'].forEach(u=>{
-    const active=(!isM&&u==='imperial')||(isM&&u==='metric');
-    document.getElementById('gw-val-'+u).classList.toggle('active',active);
-    document.getElementById('gw-val-'+u).classList.toggle('inactive',!active);
-    document.getElementById('gw-col-'+u).classList.toggle('active',active);
-    document.getElementById('gw-col-'+u).classList.toggle('inactive',!active);
+  let html = '';
+  r.results.forEach((res, idx) => {
+    const overall = res.strPass && res.deflPass;
+    const overallColor = overall ? '#4a9a6a' : '#DC5B23';
+    const strUtil = Math.round(res.w_psf / res.LR * 100);
+    const deflUtil = res.deflAllow_in < Infinity ? Math.round(res.defl / res.deflAllow_in * 100) : null;
+
+    if (idx > 0) html += '<div style="border-top:1px solid var(--border);margin:14px 0 14px"></div>';
+
+    // Load share — only render once, at top (idx===0), BEFORE lite label
+    if(res.lsf !== undefined && idx === 0){
+      const isTriple = r.results.length === 3;
+      html += `<div style="margin-bottom:14px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:6px">Load Share</div>
+        <div style="border-radius:6px;overflow:hidden;height:28px;display:flex">
+          ${r.results.map((lr,i)=>{
+            // Shades of accent color — for double: darkest + lightest; for triple: all three
+            const accentBase = getComputedStyle(document.body).getPropertyValue('--accent').trim()||'#EFC455';
+            const isTriple = r.results.length === 3;
+            const colors = isTriple
+              ? [accentBase, accentBase+'cc', accentBase+'88']
+              : [accentBase, accentBase+'88'];
+            const textColors = ['var(--accent-text)','var(--accent-text)','var(--accent-text)'];
+            const pct = (lr.lsf*100).toFixed(1);
+            const label = ['Outer','Mid','Inner'][i] || ('Lite '+(i+1));
+            return `<div style="flex:${lr.lsf};background:${colors[i]};display:flex;align-items:center;justify-content:center;gap:3px;min-width:0">
+              <span style="font-size:9px;font-weight:700;color:${textColors[i]};font-family:'Lato',sans-serif;white-space:nowrap">${label}</span>
+              <span style="font-size:10px;font-weight:900;color:${textColors[i]};font-family:'Lato',sans-serif">${pct}%</span>
+            </div>`;
+          }).join('')}
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px">
+          ${r.results.map(lr=>`<span style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif">${pD(lr.w_psf)}</span>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    // Separator after load share bar
+    if(res.lsf !== undefined && idx === 0) html += `<div style="border-top:1px solid var(--border);margin:12px 0"></div>`;
+
+    // Label + overall pass/fail (after load share bar)
+    html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span style="font-size:12px;font-weight:700;font-family:'Lato',sans-serif;color:var(--text-soft)">${res.label}</span>
+      <span style="font-size:15px;font-weight:900;font-family:'Lato',sans-serif;color:${overallColor}">${overall?'✓ PASS':'✗ FAIL'}</span>
+    </div>`;
+
+    // Strength card
+    html += twoColCard(
+      'Strength',
+      'Applied', pD(res.w_psf), res.strPass?'#4a9a6a':'#DC5B23', strUtil+'% of resistance',
+      'Resistance', pD(res.LR), 'var(--text-soft)', 'LR (ASTM E1300)'
+    );
+
+    // Deflection card
+    if(res.deflAllow_in < Infinity){
+      const deflLabel = document.getElementById('gw-defl').options[document.getElementById('gw-defl').selectedIndex].text.split('(')[0].trim();
+      html += twoColCard(
+        'Deflection',
+        'Calculated', dD(res.defl), res.deflPass?'#4a9a6a':'#DC5B23', deflUtil+'% of limit',
+        'Allowable', dD(res.deflAllow_in), 'var(--text-soft)', deflLabel
+      );
+    }
+
+    // Min thickness warning
+    if(res.minT) html += `<div style="font-size:11px;background:rgba(220,91,35,0.1);border:1px solid rgba(220,91,35,0.3);border-radius:4px;padding:7px 10px;color:var(--danger);font-family:'Lato',sans-serif;margin-top:6px">Min. adequate: <b>${res.minT}mm</b></div>`;
+    // Suggest reduction if significantly over-designed
+    if(!res.minT && res.suggestT) html += `<div style="font-size:11px;background:rgba(74,154,106,0.1);border:1px solid rgba(74,154,106,0.35);border-radius:4px;padding:7px 10px;color:#4a9a6a;font-family:'Lato',sans-serif;margin-top:6px">Could reduce to <b>${res.suggestT}mm</b></div>`;
+    if(res.sgp)  html += `<div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:5px">SGP: conservative model — actual performance will be higher.</div>`;
   });
-  const bEl=document.getElementById('gw-breakdown');
-  const A_ft2=A_m2/0.0929, A_m2_disp=A_m2.toFixed(2);
-  bEl.innerHTML=`
-    <div class="brow lite-brow"><span class="bl">Area</span><span class="bv">${A_ft2.toFixed(2)} ft² | ${A_m2_disp} m²</span></div>
-    ${gwLites.map((t,i)=>`<div class="brow lite-brow"><span class="bl">Lite ${i+1}</span><span class="bv">${t}mm | ${GW_FRACTIONS[GW_THICKNESSES.indexOf(t)]}</span></div>`).join('')}
-    <div class="brow area-brow"><span class="bl" style="color:var(--accent)">Total thickness</span><span class="bv">${gwLites.reduce((s,t)=>s+t,0)}mm</span></div>`;
+
+  document.getElementById('gw-lite-results').innerHTML = html;
+
+  // Weight
+  const weightTotal = isM ? r.mass_kg.toFixed(1)+' kg' : r.mass_lb.toFixed(1)+' lb';
+  const weightArea  = isM ? r.kg_m2.toFixed(1)+' kg/m²' : (r.lb_ft2).toFixed(2)+' lb/ft²';
+  document.getElementById('gw-weight-total').textContent = weightTotal;
+  document.getElementById('gw-weight-area').textContent  = weightArea;
   document.getElementById('gw-result').classList.add('visible');
 }
 
-function convertGwToUnit(){
+function convertGwToUnit() {
+  // Convert custom H/W dimension inputs
+  function convFtIn(ftId, inId, inWrapId, pairId, ftTagId, inTagId){
+    const ftEl=document.getElementById(ftId);
+    const inEl=document.getElementById(inId);
+    const inWrapEl=document.getElementById(inWrapId);
+    const pairEl=document.getElementById(pairId);
+    const ftTagEl=document.getElementById(ftTagId);
+    const inTagEl=document.getElementById(inTagId);
+    if(!ftEl) return;
+    const isM = pcUnit==='metric';
+    const prevIsM = ftTagEl && ftTagEl.textContent==='mm';
+    const cur_in = prevIsM
+      ? (parseFloat(ftEl.value)||0)/IN_TO_MM
+      : (parseFloat(ftEl.value)||0)*12 + (parseFloat(inEl?inEl.value:0)||0);
+    if(isM){
+      ftEl.value = parseFloat((cur_in*IN_TO_MM).toFixed(0));
+      if(inWrapEl) inWrapEl.style.display='none';
+      if(pairEl) pairEl.style.gridTemplateColumns='1fr';
+      if(ftTagEl) ftTagEl.textContent='mm';
+    } else {
+      const ft=Math.floor(cur_in/12);
+      const ins=Math.round((cur_in-ft*12)*8)/8;
+      ftEl.value=ft;
+      if(inEl) inEl.value=ins;
+      if(inWrapEl) inWrapEl.style.display='';
+      if(pairEl) pairEl.style.gridTemplateColumns='';
+      if(ftTagEl) ftTagEl.textContent='ft';
+      if(inTagEl) inTagEl.textContent='in';
+    }
+  }
+  convFtIn('gw-h-ft','gw-h-in','gw-h-in-wrap','gw-h-pair','gw-h-ft-tag','gw-h-in-tag');
+  convFtIn('gw-w-ft','gw-w-in','gw-w-in-wrap','gw-w-pair','gw-w-ft-tag','gw-w-in-tag');
   rebuildGwZoneDropdown(); onGwZoneSelect();
+  if(gwResult_data) renderGwResult(gwResult_data);
 }
 
-function copyGwResult(){
-  if(!gwResult) return;
-  navigator.clipboard.writeText('Glass Weight: '+gwResult.mass_kg.toFixed(1)+' kg / '+gwResult.mass_lb.toFixed(1)+' lb');
+function copyGwResult() {
+  if (!gwResult_data) return;
+  const isM = pcUnit === 'metric';
+  const r = gwResult_data;
+  let lines = ['Glass Sizing — ASTM E1300'];
+  r.results.forEach(res => {
+    const overall = res.strPass && res.deflPass;
+    lines.push(`${res.label}: ${overall?'PASS':'FAIL'}`);
+    lines.push(`  Strength: ${(res.w_psf/res.LR*100).toFixed(0)}% (${isM?(res.w_psf*PSF_TO_KPA).toFixed(2)+' kPa':res.w_psf.toFixed(1)+' psf'} / ${isM?(res.LR*PSF_TO_KPA).toFixed(2)+' kPa':res.LR.toFixed(1)+' psf'})`);
+    if(res.deflAllow_in < Infinity)
+      lines.push(`  Deflection: ${isM?(res.defl*25.4).toFixed(1)+' mm':res.defl.toFixed(3)+' in'} / ${isM?(res.deflAllow_in*25.4).toFixed(1)+' mm':res.deflAllow_in.toFixed(3)+' in'}`);
+  });
+  lines.push(`Weight: ${isM?r.mass_kg.toFixed(1)+' kg':r.mass_lb.toFixed(1)+' lb'} (${isM?r.kg_m2.toFixed(1)+' kg/m²':(r.lb_ft2).toFixed(2)+' lb/ft²'})`);
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>{
+    const btn=document.getElementById('gw-copy-btn');
+    if(!btn) return;
+    btn.classList.add('copied');
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Copied!';
+    setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy';},2000);
+  });
 }
 
-// Init glass weight
-rebuildGwLites();
+// Help content
+HELP_CONTENT['glass_sizing'] = { title: 'Glass Sizing — ASTM E1300', body:`
+  <div class="help-body">
+    <h3>Strength — ASTM E1300 Model</h3>
+    <p><code>LR = NFL × GTF</code></p>
+    <p>NFL (Non-Factored Load) is read from digitised E1300 Figure 1 tables with bilinear interpolation between panel sizes and cubic (t³) interpolation between thicknesses. Coverage: 1–6ft short side, 1–12ft long side.</p>
+    <p>Glass Type Factor (GTF): AN = 1.0 · HS = 2.0 · FT = 4.0</p>
+    <p>Edge reductions applied to NFL: 3-edge long free ×0.45 · 3-edge short free ×0.60 · 2-edge ×0.30</p>
+    <h3>IGU Load Share (E1300 X1/X2)</h3>
+    <p><code>LSF_i = t³_eff_i / Σ(t³_eff)</code> — each lite checked at its share of wind load.</p>
+    <h3>Laminated — Bennison-Stelzer</h3>
+    <p><code>t_eff = (t₁³ + t₂³ + 12·γ·t₁·t₂·h_s²)^(1/3)</code></p>
+    <p>h_s = (t₁ + t_pvb + t₂) / 2 — distance between lite centroids</p>
+    <p>Coupling factor γ (short-duration wind, 20°C):</p>
+    <ul>
+      <li>PVB: γ = 0.01 (≈ conservative formula)</li>
+      <li>Structural PVB: γ = 0.35</li>
+      <li>SentryGlas SGP: γ = 0.85 (conservative model understates actual LR)</li>
+    </ul>
+    <h3>Deflection — Timoshenko Plate Theory</h3>
+    <p><code>δ = α × w × a⁴ / (E × t³)</code></p>
+    <ul>
+      <li>α — plate coefficient from Timoshenko Table 8-1, interpolated by aspect ratio</li>
+      <li>a — short span · w — load (lb/in²) · E = 10,400,000 psi · t — thickness</li>
+    </ul>
+    <h3>Assumptions</h3>
+    <ul>
+      <li>Short-duration wind load — most favourable for glass strength</li>
+      <li>Vertical glazing — self-weight in-plane, not contributing to lateral deflection</li>
+      <li>Probability of breakage: 8/1000 (E1300 default)</li>
+      <li>Indicative values only — use certified data for formal submissions</li>
+    </ul>
+  </div>`
+};
+
+// Init
+rebuildGwLiteFields();
 rebuildGwZoneDropdown();
-onGwChange();
+setTimeout(()=>{ onGwZoneSelect(); onGwChange(); }, 0);
 
 /* ═══════════════════════════════════════════════════════════════
    SILICONE BITE TAB
@@ -2544,15 +3439,18 @@ function rebuildSiZoneDropdown(){
   sel.innerHTML='<option value="custom">Custom</option>'+
     zones.map(z=>`<option value="${z.key}">${z.label}</option>`).join('');
   if(zones.find(z=>z.key===cur)) sel.value=cur;
-  // Sync wind load from panel
-  const wl=pcGetWindPsf();
-  document.getElementById('si-wl-slider').value=Math.min(100,Math.max(10,wl));
-  onSiWlChange();
-}
+  }
 
 function onSiZoneSelect(){
   const sel=document.getElementById('si-zone');
-  if(sel.value==='custom'){onSiChange();return;}
+  const isCustom = sel.value==='custom';
+  const siLink = document.getElementById('si-edit-link');
+  if(siLink) siLink.style.display = isCustom ? 'none' : 'inline';
+  ['si-h-ft','si-h-in','si-w-ft','si-w-in'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.disabled=!isCustom; el.style.opacity=isCustom?'1':'0.5'; el.style.cursor=isCustom?'':'not-allowed'; }
+  });
+  if(isCustom){onSiChange();return;}
   const zones=getPanelZoneList();
   const z=zones.find(z=>z.key===sel.value);
   if(!z) return;
@@ -2576,12 +3474,6 @@ function onSiZoneSelect(){
   onSiChange();
 }
 
-function onSiWlChange(){
-  const v=parseFloat(document.getElementById('si-wl-slider').value);
-  const isM=pcUnit==='metric';
-  document.getElementById('si-wl-display').textContent=isM?(v*PSF_TO_KPA).toFixed(2)+' kPa':v+' psf';
-  onSiChange();
-}
 
 function onSiProductChange(){
   const val=document.getElementById('si-product').value;
@@ -2600,7 +3492,7 @@ function onSiChange(){
   const isM=pcUnit==='metric';
   const H_in=isM?(parseFloat(document.getElementById('si-h-ft').value)||0)/IN_TO_MM:(parseFloat(document.getElementById('si-h-ft').value)||0)*12+(parseFloat(document.getElementById('si-h-in').value)||0);
   const W_in=isM?(parseFloat(document.getElementById('si-w-ft').value)||0)/IN_TO_MM:(parseFloat(document.getElementById('si-w-ft').value)||0)*12+(parseFloat(document.getElementById('si-w-in').value)||0);
-  const w_psf=parseFloat(document.getElementById('si-wl-slider').value)||20;
+  const w_psf=pcGetWindPsf();
   const fs_raw=parseFloat(document.getElementById('si-fs').value)||20;
   const fs_psi=isM?fs_raw/6.89476:fs_raw;
   if(!H_in||!W_in||!fs_psi) return;
@@ -2619,13 +3511,27 @@ function onSiChange(){
   renderSiResult(siResult);
 }
 
+function decToFrac(in_val) {
+  // Round up to nearest 1/16"
+  const sixteenths = Math.ceil(in_val * 16);
+  const whole = Math.floor(sixteenths / 16);
+  const rem = sixteenths % 16;
+  if (rem === 0) return whole + '"';
+  // Simplify fraction
+  function gcd(a,b){return b===0?a:gcd(b,a%b);}
+  const g = gcd(rem, 16);
+  const num = rem/g, den = 16/g;
+  return (whole > 0 ? whole + ' ' : '') + num + '/' + den + '"';
+}
+
 function renderSiResult(r){
   const isM=pcUnit==='metric';
   const kpiLabel=r.min_governs?'Code Minimum':'Calculated Bite';
   document.getElementById('si-result-label').textContent=kpiLabel;
   const impEl=document.getElementById('si-val-imperial');
   const metEl=document.getElementById('si-val-metric');
-  impEl.innerHTML=r.gov_in.toFixed(3)+'<span class="result-val-unit">in</span>';
+  const fracStr = decToFrac(r.gov_in);
+  impEl.innerHTML=r.gov_in.toFixed(3)+'<span class="result-val-unit"> in</span> | '+fracStr;
   metEl.innerHTML=Math.ceil(r.gov_mm).toFixed(0)+'<span class="result-val-unit">mm</span>';
   ['imperial','metric'].forEach(u=>{
     const active=(!isM&&u==='imperial')||(isM&&u==='metric');
@@ -2654,13 +3560,52 @@ function renderSiResult(r){
 
 function convertSiToUnit(){
   const isM=pcUnit==='metric';
-  const wl=pcGetWindPsf();
-  document.getElementById('si-wl-display').textContent=isM?(wl*PSF_TO_KPA).toFixed(2)+' kPa':wl+' psf';
-  document.getElementById('si-wl-min').textContent=isM?(10*PSF_TO_KPA).toFixed(2)+' kPa':'10 psf';
-  document.getElementById('si-wl-max').textContent=isM?(100*PSF_TO_KPA).toFixed(2)+' kPa':'100 psf';
-  const fs_psi=parseFloat(document.getElementById('si-fs').value)/(isM?1:1/(6.89476))||20;
-  document.getElementById('si-fs').value=isM?parseFloat((fs_psi*6.89476).toFixed(1)):parseFloat(fs_psi.toFixed(1));
-  document.getElementById('si-fs-unit').textContent=isM?'kPa':'psi';
+
+  // Convert allowable stress
+  const fsEl = document.getElementById('si-fs');
+  const fsUnitEl = document.getElementById('si-fs-unit');
+  if(fsEl){
+    const curVal = parseFloat(fsEl.value)||20;
+    // Determine current unit before conversion
+    const wasMetric = fsUnitEl && fsUnitEl.textContent==='kPa';
+    const fs_psi = wasMetric ? curVal/6.89476 : curVal;
+    fsEl.value = isM ? parseFloat((fs_psi*6.89476).toFixed(1)) : parseFloat(fs_psi.toFixed(1));
+    if(fsUnitEl) fsUnitEl.textContent = isM?'kPa':'psi';
+  }
+
+  // Convert custom H/W dimension inputs
+  function convFtIn(ftId, inId, inWrapId, pairId, ftTagId, inTagId){
+    const ftEl=document.getElementById(ftId);
+    const inEl=document.getElementById(inId);
+    const inWrapEl=document.getElementById(inWrapId);
+    const pairEl=document.getElementById(pairId);
+    const ftTagEl=document.getElementById(ftTagId);
+    const inTagEl=document.getElementById(inTagId);
+    if(!ftEl) return;
+    // Read current value as inches
+    const prevIsM = ftTagEl && ftTagEl.textContent==='mm';
+    const cur_in = prevIsM
+      ? (parseFloat(ftEl.value)||0)/IN_TO_MM
+      : (parseFloat(ftEl.value)||0)*12 + (parseFloat(inEl?inEl.value:0)||0);
+    if(isM){
+      ftEl.value = parseFloat((cur_in*IN_TO_MM).toFixed(0));
+      if(inWrapEl) inWrapEl.style.display='none';
+      if(pairEl) pairEl.style.gridTemplateColumns='1fr';
+      if(ftTagEl) ftTagEl.textContent='mm';
+    } else {
+      const ft=Math.floor(cur_in/12);
+      const ins=Math.round((cur_in-ft*12)*8)/8;
+      ftEl.value=ft;
+      if(inEl) inEl.value=ins;
+      if(inWrapEl) inWrapEl.style.display='';
+      if(pairEl) pairEl.style.gridTemplateColumns='';
+      if(ftTagEl) ftTagEl.textContent='ft';
+      if(inTagEl) inTagEl.textContent='in';
+    }
+  }
+  convFtIn('si-h-ft','si-h-in','si-h-in-wrap','si-h-pair','si-h-ft-tag','si-h-in-tag');
+  convFtIn('si-w-ft','si-w-in','si-w-in-wrap','si-w-pair','si-w-ft-tag','si-w-in-tag');
+
   rebuildSiZoneDropdown(); onSiZoneSelect();
   if(siResult) renderSiResult(siResult);
 }
@@ -2668,9 +3613,50 @@ function convertSiToUnit(){
 function copySiResult(){
   if(!siResult) return;
   const isM=pcUnit==='metric';
-  const t=`Silicone Bite: ${isM?Math.ceil(siResult.gov_mm)+' mm':siResult.gov_in.toFixed(3)+' in'} (${siResult.min_governs?'code min':'calculated'})`;
-  navigator.clipboard.writeText(t);
+  const r=siResult;
+  const fracStr = decToFrac(r.gov_in);
+  const impVal = r.gov_in.toFixed(3)+' in | '+fracStr;
+  const metVal = Math.ceil(r.gov_mm)+'mm';
+  const t=[
+    'Silicone Bite Sizing',
+    `Result: ${impVal} | ${metVal}`,
+    `Basis: ${r.min_governs?'Code minimum (¼" / 6mm)':'Calculated'}`,
+    `Wind load: ${isM?(r.w_kpa).toFixed(2)+' kPa':r.w_psf+' psf'}`,
+    `Shortest side: ${isM?r.S_mm.toFixed(0)+'mm':(r.S_ft*12).toFixed(2)+' in'}`,
+    `Allowable stress: ${isM?r.fs_kpa.toFixed(1)+' kPa':r.fs_psi.toFixed(1)+' psi'}`,
+  ].join('\n');
+  navigator.clipboard.writeText(t).then(()=>{
+    const btn=document.getElementById('si-copy-btn');
+    if(!btn) return;
+    btn.classList.add('copied');
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Copied!';
+    setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy';},2000);
+  });
 }
+
+HELP_CONTENT['silicone'] = { title: 'Silicone Bite Sizing', body: `
+  <div class="help-body">
+    <h3>Formula</h3>
+    <p><code>Bite = (0.5 × S × W) / (12 × Fs)</code> — imperial</p>
+    <p><code>Bite = (0.5 × S_mm × W_kPa) / Fs_kPa</code> — metric</p>
+    <ul>
+      <li><b>S</b> — shortest glass edge (ft or mm). Wind load acts on the shorter dimension.</li>
+      <li><b>W</b> — design wind pressure (psf or kPa)</li>
+      <li><b>Fs</b> — allowable silicone tensile/shear stress (psi or kPa)</li>
+    </ul>
+    <h3>Code Minimum</h3>
+    <p>Per ASTM C1401 and most curtain wall specifications: minimum bite = <b>¼" (6mm)</b> regardless of calculation.</p>
+    <h3>Design Strength (Fs)</h3>
+    <ul>
+      <li><b>Dow 995 / Pecora 895</b>: 20 psi (138 kPa) — standard structural silicone</li>
+      <li><b>Momentive SSG4000</b>: 20 psi (138 kPa)</li>
+      <li><b>Sika SG-20</b>: 20 psi (138 kPa)</li>
+    </ul>
+    <p>Values are design allowables, not ultimate strength. Typically based on a factor of safety of ~6 on short-term ultimate strength per ASTM C1184.</p>
+    <h3>Tributary Width</h3>
+    <p>The shortest CL dimension of the glass lite is used as the tributary span for load transfer to the silicone joint. For a rectangular lite, this is always the shorter of width or height.</p>
+  </div>`
+};
 
 // Init silicone
 rebuildSiZoneDropdown();
