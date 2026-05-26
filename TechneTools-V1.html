@@ -1,0 +1,2680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>TechneTools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* ═══ RESET ═══════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overscroll-behavior:none}
+
+/* ═══ THEME TOKENS ══════════════════════════════════════════════ */
+:root {
+  --bg:          #F9F7F4;
+  --surface:     #ffffff;
+  --surface2:    #f0eeeb;
+  --surface3:    #e5e3e0;
+  --border:      #d0cec9;
+  --text:        #161615;
+  --text-muted:  #7a7870;
+  --text-soft:   #4a4845;
+  --danger:      #DC5B23;
+  --radius:      6px;
+  --accent:      #627FBF;
+  --accent2:     #4e6aa0;
+  --accent-text: #fff;
+  --input-bg:    #ffffff;
+}
+body[data-theme="dark"] {
+  --bg:          #2b2e35;
+  --surface:     #363a43;
+  --surface2:    #3f4450;
+  --surface3:    #474d59;
+  --border:      #505664;
+  --text:        #f0f0f0;
+  --text-muted:  #8a9099;
+  --text-soft:   #b8bec8;
+  --input-bg:    #3f4450;
+}
+body[data-theme="dark"] h2 { color: #f0f0f0; }
+body[data-tab="uv"]   { --accent:#627FBF; --accent2:#4e6aa0; --accent-text:#fff; }
+body[data-tab="beam"] { --accent:#DC5B23; --accent2:#b84a1c; --accent-text:#fff; }
+body[data-tab="gw"]   { --accent:#EFC455; --accent2:#d4a93a; --accent-text:#161615; }
+body[data-tab="si"]   { --accent:#DA7DA8; --accent2:#c0628e; --accent-text:#fff; }
+/* Panel strip always uses Earthy Green */
+:root {
+  --panel-accent:#595734; --panel-accent2:#474529; --panel-accent-text:#fff;
+  --windbar-bg:#2a2d36; --windbar-accent:#E07070; --windbar-text:#fff;
+  --windbar-surface:#3d4252; --windbar-label:#9aa0ab;
+}
+
+/* ═══ LAYOUT ═══════════════════════════════════════════════════ */
+#app { display:flex; flex-direction:column; min-height:100vh; }
+
+/* Panel configurator strip */
+#panel-strip {
+  background: var(--panel-accent);
+  border-bottom: 2px solid var(--panel-accent2);
+  position: sticky; top: 0; z-index: 110;
+}
+#panel-summary {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; cursor: pointer;
+}
+#panel-summary-text {
+  flex: 1; font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+  color: rgba(255,255,255,0.7); font-family: 'Lato', sans-serif;
+  text-transform: uppercase;
+}
+#panel-summary-badge {
+  font-size: 11px; background: rgba(255,255,255,0.2); color: #fff;
+  padding: 2px 8px; border-radius: 10px; font-weight: 700;
+  font-family: 'Lato', sans-serif; border: 1px solid rgba(255,255,255,0.3);
+}
+#panel-expand-btn {
+  background: none; border: none; cursor: pointer;
+  color: rgba(255,255,255,0.7); font-size: 18px; line-height: 1;
+  padding: 0 4px; transition: transform 0.2s;
+}
+#panel-expand-btn.open { transform: rotate(180deg); }
+
+#panel-body {
+  display: none; padding: 0 14px 14px;
+  border-top: 1px solid rgba(255,255,255,0.15);
+  background: var(--panel-accent);
+}
+#panel-body.open { display: block; }
+
+/* Tab bar */
+.tab-bar {
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+  background: var(--surface); border-bottom: 2px solid var(--border);
+  position: sticky; top: 48px; z-index: 100;
+  padding: 8px 10px; gap: 6px;
+}
+.tab-btn {
+  padding: 9px 6px; border: none; background: var(--surface2);
+  color: var(--text-muted); font-family: 'Lato', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
+  text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+  border-radius: 6px; display: flex; align-items: center;
+  justify-content: center; gap: 5px;
+}
+.tab-btn.active { background: var(--accent); color: var(--accent-text); }
+.tab-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+/* Content */
+.tab-content { display: none; padding: 14px 16px; }
+.tab-content.active { display: block; }
+
+/* ═══ COMPONENTS ════════════════════════════════════════════════ */
+.section {
+  background: var(--surface); border-radius: 8px;
+  padding: 14px; margin-bottom: 10px;
+  border: 1px solid var(--border);
+}
+.section-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text-muted);
+  font-family: 'Lato', sans-serif; margin-bottom: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.field { display: flex; flex-direction: column; flex: 1; min-width: 0; overflow: hidden; }
+.field label {
+  font-size: 11px; color: var(--text-muted); font-family: 'Lato', sans-serif;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  min-height: 2.4em; display: flex; align-items: flex-end; padding-bottom: 2px;
+}
+.field-row { display: flex; gap: 10px; align-items: flex-end; }
+.ftin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ftin-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.input-wrap {
+  display: flex; align-items: center; position: relative;
+  background: var(--input-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; min-width: 0; width: 100%;
+}
+.input-wrap input, .input-wrap select {
+  flex: 1; background: transparent; border: none; outline: none;
+  padding: 10px 12px; color: var(--text); font-family: 'Lato', sans-serif;
+  font-size: 16px; min-width: 0; width: 0; font-weight: 400; height: 42px; box-sizing: border-box;
+}
+.input-wrap select {
+  font-size: 14px; appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a9099' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+  padding-right: 30px;
+}
+.unit-tag {
+  padding: 0 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  color: var(--text-muted); white-space: nowrap; font-family: 'Lato', sans-serif;
+  border-left: 1px solid var(--border); height: 42px;
+  display: flex; align-items: center;
+}
+.input-wrap:focus-within { border-color: var(--accent); }
+
+/* Toggles */
+.sec-type-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.sec-type-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--text-muted); font-family: 'Lato', sans-serif;
+}
+.sec-type-toggle {
+  display: flex; background: var(--surface2); border-radius: 20px;
+  padding: 3px; gap: 2px;
+}
+.sec-type-btn {
+  padding: 5px 12px; border: none; background: transparent;
+  color: var(--text-muted); font-family: 'Lato', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase; cursor: pointer; border-radius: 16px;
+  transition: all 0.15s; white-space: nowrap;
+}
+.sec-type-btn.active { background: var(--accent); color: var(--accent-text); }
+
+/* Unit toggle */
+.unit-toggle { display: flex; background: var(--surface2); border-radius: 20px; padding: 3px; gap: 2px; }
+.unit-btn {
+  padding: 5px 10px; border: none; background: transparent;
+  color: var(--text-muted); font-family: 'Lato', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase; cursor: pointer; border-radius: 16px; transition: all 0.15s;
+}
+.unit-btn.active { background: var(--accent); color: var(--accent-text); }
+
+/* Tool header */
+.tool-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; padding-top: 2px;
+}
+.logo-line { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 28px; height: 28px; background: var(--accent);
+  border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.logo-icon svg { width: 15px; height: 15px; }
+h2 {
+  font-family: 'Lato', sans-serif; font-size: 16px; font-weight: 900;
+  letter-spacing: 0.5px; color: #161615; text-transform: uppercase;
+}
+
+/* Slider */
+.slider-row { display: flex; flex-direction: column; gap: 6px; }
+.slider-header { display: flex; justify-content: space-between; align-items: center; }
+.slider-val {
+  font-size: 16px; font-weight: 900; color: var(--accent);
+  font-family: 'Lato', sans-serif;
+}
+input[type=range] {
+  width: 100%; height: 4px; appearance: none; background: var(--surface3);
+  border-radius: 2px; outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  appearance: none; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+/* Results */
+.result {
+  background: var(--surface); border-radius: 8px; padding: 14px;
+  border: 1px solid var(--border); display: none; margin-bottom: 10px;
+}
+.result.visible { display: block; }
+.result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.result-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); font-family: 'Lato', sans-serif; }
+.result-values { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.result-col { padding: 12px; text-align: center; }
+.result-col.active { background: var(--surface2); }
+.result-col.inactive { background: var(--surface); }
+.result-col-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); font-family: 'Lato', sans-serif; margin-bottom: 4px; }
+.result-val { font-size: 26px; font-weight: 900; font-family: 'Lato', sans-serif; }
+.result-val.active { color: var(--accent); }
+.result-val.inactive { color: var(--text-soft); }
+.result-val-unit { font-size: 12px; font-weight: 700; margin-left: 3px; }
+.result-breakdown { margin-top: 8px; }
+.brow { display: flex; padding: 7px 0; border-bottom: 1px solid var(--border); align-items: baseline; }
+.brow:last-child { border-bottom: none; }
+.brow.area-brow { border-top: 2px solid var(--accent); border-bottom: none; margin-top: 4px; padding-top: 8px; }
+.brow.lite-brow {}
+.bl { flex: 1; font-size: 12px; color: var(--text-soft); font-family: 'Lato', sans-serif; }
+.bv { font-size: 12px; color: var(--text-soft); font-family: 'Lato', sans-serif; }
+.sep-above { border-top: 1px solid var(--accent); margin-top: 2px; }
+
+/* Copy button */
+.copy-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--accent); border: none; border-radius: 4px;
+  color: var(--accent-text); font-family: 'Lato', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase; padding: 6px 12px; cursor: pointer;
+}
+.copy-btn svg { width: 13px; height: 13px; }
+.copy-btn.copied { background: #4a9a6a; }
+
+/* Error */
+.error-msg {
+  font-size: 12px; color: var(--danger); font-family: 'Lato', sans-serif;
+  padding: 6px 0; display: none;
+}
+.error-msg.visible { display: block; }
+
+/* Add button */
+.add-btn {
+  width: 100%; padding: 11px; border: 1.5px dashed var(--border);
+  background: transparent; border-radius: var(--radius);
+  color: var(--text-muted); font-family: 'Lato', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; gap: 8px;
+  margin-bottom: 10px; transition: all 0.15s;
+}
+.add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Select accent */
+.select-accent {
+  background: var(--accent) !important; color: var(--accent-text) !important;
+  border-color: var(--accent) !important; font-weight: 700 !important;
+  background-image: none !important;
+}
+
+/* Help button */
+.help-btn {
+  background: var(--accent); border: none; cursor: pointer;
+  color: var(--accent-text); font-size: 15px; font-weight: 900;
+  font-family: 'Georgia', serif; line-height: 1;
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: opacity 0.15s; font-style: italic;
+}
+.help-btn:hover { opacity: 0.85; }
+.help-body h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 14px 0 6px; font-family: 'Lato', sans-serif; }
+.help-body p  { margin: 0 0 10px; }
+.help-body code { background: var(--surface2); padding: 2px 6px; border-radius: 3px; font-size: 12px; color: var(--text); font-family: monospace; }
+.help-body ul { margin: 0 0 10px; padding-left: 18px; }
+.help-body li { margin-bottom: 4px; }
+
+
+
+/* Drum picker (glass weight) */
+.drum-wrap {
+  flex: 1; background: var(--input-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; position: relative;
+  height: 42px;
+}
+.drum-wrap::after {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background: linear-gradient(to bottom, var(--input-bg) 0%, transparent 35%, transparent 65%, var(--input-bg) 100%);
+}
+.drum { height: 42px; overflow-y: scroll; scroll-snap-type: y mandatory;
+  scrollbar-width: none; -ms-overflow-style: none; }
+.drum::-webkit-scrollbar { display: none; }
+.drum-item { height: 42px; display: flex; align-items: center; justify-content: center;
+  scroll-snap-align: center; font-size: 14px; font-weight: 700;
+  font-family: 'Lato', sans-serif; color: var(--text); }
+
+/* Panel diagram modal */
+#uv-modal, #help-modal {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75); z-index: 200;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.modal-inner {
+  background: var(--surface); border-radius: 12px;
+  margin: 16px; padding: 16px; position: relative;
+}
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 14px;
+}
+.modal-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--text-muted); font-family: 'Lato', sans-serif;
+}
+.modal-close {
+  background: var(--accent); border: none; border-radius: 4px;
+  color: var(--accent-text); font-size: 18px; width: 28px; height: 28px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-family: 'Lato', sans-serif;
+}
+
+/* Panel strip inner sections */
+.pc-section { margin-bottom: 12px; }
+.pc-section:last-child { margin-bottom: 0; }
+
+/* Wind load bar */
+#wind-bar {
+  background: var(--windbar-bg);
+  padding: 8px 14px;
+  display: flex; align-items: stretch; gap: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+#wind-bar-left {
+  flex: 2; display: flex; flex-direction: column; gap: 4px;
+  padding-right: 14px; border-right: 1px solid rgba(255,255,255,0.15);
+}
+#wind-bar-right {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding-left: 14px; gap: 3px;
+  border-left-color: rgba(255,255,255,0.1);
+}
+#wind-bar label {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--windbar-label);
+  font-family: 'Lato', sans-serif; white-space: nowrap;
+}
+#wind-slider-row {
+  display: flex; align-items: center; gap: 10px;
+}
+#wind-bar input[type=range] {
+  flex: 1; height: 4px; background: var(--windbar-surface);
+  border-radius: 2px;
+}
+#wind-bar input[type=range]::-webkit-slider-thumb {
+  background: var(--windbar-accent);
+}
+#wind-bar .wind-val {
+  font-size: 16px; font-weight: 900; color: var(--windbar-accent);
+  font-family: 'Lato', sans-serif; white-space: nowrap; min-width: 54px;
+  text-align: right;
+}
+.wind-unit-toggle {
+  display: flex; background: var(--windbar-surface);
+  border-radius: 16px; padding: 3px; gap: 2px; width: 100%;
+}
+.wind-unit-btn {
+  flex: 1; padding: 5px 4px; border: none; background: transparent;
+  color: var(--windbar-label); font-family: 'Lato', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase; cursor: pointer; border-radius: 12px;
+  transition: all 0.15s; text-align: center;
+}
+.wind-unit-btn.active { background: var(--windbar-accent); color: #fff; }
+#wind-unit-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--windbar-label);
+  font-family: 'Lato', sans-serif;
+}
+/* Panel section labels in green strip */
+#panel-body .section-label {
+  color: rgba(255,255,255,0.6);
+}
+#panel-body .sec-type-label {
+  color: rgba(255,255,255,0.6);
+}
+#panel-body .input-wrap {
+  border-color: rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.25);
+}
+#panel-body .input-wrap input,
+#panel-body .input-wrap select {
+  color: #fff; background: transparent;
+  flex: 1; min-width: 0; width: auto;
+}
+#panel-body .input-wrap input::placeholder { color: rgba(255,255,255,0.3); }
+#panel-body .unit-tag {
+  color: rgba(255,255,255,0.6) !important;
+  border-left-color: rgba(255,255,255,0.2) !important;
+  background: transparent !important;
+  display: flex !important;
+}
+#panel-body .input-wrap select option { background: #474529; color: #fff; }
+#panel-body .sec-type-toggle {
+  background: rgba(0,0,0,0.2);
+}
+#panel-body .sec-type-btn {
+  color: rgba(255,255,255,0.6);
+}
+#panel-body .sec-type-btn.active {
+  background: rgba(255,255,255,0.25); color: #fff;
+}
+#panel-body .add-btn {
+  border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.6);
+}
+#panel-body .add-btn:hover {
+  border-color: #fff; color: #fff;
+}
+#panel-body .unit-toggle { background: rgba(0,0,0,0.2); }
+#panel-body .unit-btn { color: rgba(255,255,255,0.6); }
+#panel-body .unit-btn.active { background: rgba(255,255,255,0.25); color: #fff; }
+
+/* Inherited field display */
+.inherited-row {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;
+}
+.inherited-chip {
+  font-size: 11px; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 4px; padding: 4px 8px; color: var(--text-soft);
+  font-family: 'Lato', sans-serif; font-weight: 700;
+}
+.inherited-chip span { color: var(--accent); }
+</style>
+</head>
+<body data-tab="uv" data-theme="light">
+
+<div id="app">
+
+<!-- ══════════════════════ PANEL CONFIGURATOR STRIP ══════════════ -->
+<div id="panel-strip">
+  <!-- Wind pressure bar + unit toggle — always visible -->
+  <div id="wind-bar">
+    <div id="wind-bar-left">
+      <label>Design Windload</label>
+      <div id="wind-slider-row">
+        <input type="range" id="pc-wl-slider" min="10" max="100" step="1" value="35" oninput="onPcWlChange()">
+        <span class="wind-val" id="pc-wl-display">35 psf</span>
+      </div>
+    </div>
+    <div id="wind-bar-right">
+      <span id="wind-unit-label">Units</span>
+      <div class="wind-unit-toggle">
+        <button class="wind-unit-btn active" id="pc-btn-imperial" onclick="setPcUnit('imperial')">in/lb</button>
+        <button class="wind-unit-btn" id="pc-btn-metric" onclick="setPcUnit('metric')">mm/W</button>
+      </div>
+    </div>
+  </div>
+  <div id="panel-summary" onclick="togglePanelStrip()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.5" stroke-linecap="round">
+      <rect x="2" y="3" width="20" height="18" rx="2"/>
+      <line x1="2" y1="9" x2="22" y2="9"/>
+      <line x1="12" y1="9" x2="12" y2="21"/>
+    </svg>
+    <span id="panel-summary-text">Panel Configurator</span>
+    <span id="panel-summary-badge">Configure</span>
+    <button id="panel-expand-btn" class="open">&#8964;</button>
+  </div>
+  <div id="panel-body" class="open">
+
+
+    <!-- Panel Dimensions -->
+    <div class="pc-section">
+      <div class="section-label" style="margin-bottom:8px">Panel Dimensions (Centreline)</div>
+      <div class="ftin-grid">
+        <div class="field">
+          <label>Height</label>
+          <div class="ftin-pair" id="pc-h-pair">
+            <div class="input-wrap">
+              <input type="number" id="pc-h-ft" value="12" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
+              <span class="unit-tag" id="pc-h-ft-tag">ft</span>
+            </div>
+            <div class="input-wrap" id="pc-h-in-wrap">
+              <input type="number" id="pc-h-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
+              <span class="unit-tag" id="pc-h-in-tag">in</span>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Width</label>
+          <div class="ftin-pair" id="pc-w-pair">
+            <div class="input-wrap">
+              <input type="number" id="pc-w-ft" value="5" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
+              <span class="unit-tag" id="pc-w-ft-tag">ft</span>
+            </div>
+            <div class="input-wrap" id="pc-w-in-wrap">
+              <input type="number" id="pc-w-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
+              <span class="unit-tag" id="pc-w-in-tag">in</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- Transom 1 -->
+    <div class="pc-section">
+      <div class="sec-type-row" style="margin-bottom:0">
+        <span class="sec-type-label">Transom 1</span>
+        <div class="sec-type-toggle">
+          <button class="sec-type-btn active" id="pc-t1-off" onclick="setPcTransom(1,false)">None</button>
+          <button class="sec-type-btn" id="pc-t1-on" onclick="setPcTransom(1,true)">Add</button>
+        </div>
+      </div>
+      <div id="pc-t1-fields" style="display:none;margin-top:10px">
+        <div class="field-row">
+          <div class="field">
+            <label>From</label>
+            <div class="input-wrap">
+              <select id="pc-t1-from" onchange="onPcChange()" style="height:42px;box-sizing:border-box">
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Distance</label>
+            <div class="ftin-pair" id="pc-t1d-pair">
+              <div class="input-wrap">
+                <input type="number" id="pc-t1d-ft" value="3" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
+                <span class="unit-tag" id="pc-t1d-ft-tag">ft</span>
+              </div>
+              <div class="input-wrap" id="pc-t1d-in-wrap">
+                <input type="number" id="pc-t1d-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
+                <span class="unit-tag" id="pc-t1d-in-tag">in</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transom 2 -->
+    <div class="pc-section" id="pc-t2-section" style="display:none">
+      <div class="sec-type-row" style="margin-bottom:0">
+        <span class="sec-type-label">Transom 2</span>
+        <div class="sec-type-toggle">
+          <button class="sec-type-btn active" id="pc-t2-off" onclick="setPcTransom(2,false)">None</button>
+          <button class="sec-type-btn" id="pc-t2-on" onclick="setPcTransom(2,true)">Add</button>
+        </div>
+      </div>
+      <div id="pc-t2-fields" style="display:none;margin-top:10px">
+        <div class="field-row">
+          <div class="field">
+            <label>From</label>
+            <div class="input-wrap">
+              <select id="pc-t2-from" onchange="onPcChange()" style="height:42px;box-sizing:border-box">
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Distance</label>
+            <div class="ftin-pair" id="pc-t2d-pair">
+              <div class="input-wrap">
+                <input type="number" id="pc-t2d-ft" value="6" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
+                <span class="unit-tag" id="pc-t2d-ft-tag">ft</span>
+              </div>
+              <div class="input-wrap" id="pc-t2d-in-wrap">
+                <input type="number" id="pc-t2d-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onPcChange()">
+                <span class="unit-tag" id="pc-t2d-in-tag">in</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zones container -->
+    <div id="pc-zones-container"></div>
+
+    <!-- Diagram button -->
+    <button onclick="showPcDiagram()" style="
+      width:100%; padding:11px 14px; margin-top:4px;
+      background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.2);
+      border-radius:6px; color:#fff; font-family:'Lato',sans-serif;
+      font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/>
+      </svg>
+      Show Panel Diagram
+    </button>
+
+  </div><!-- end panel-body -->
+</div><!-- end panel-strip -->
+
+<!-- ══════════════════════ TAB BAR ══════════════════════════════ -->
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-uv" onclick="switchTab('uv')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>U-Value
+  </button>
+  <button class="tab-btn" id="tab-beam" onclick="switchTab('beam')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="12" y1="3" x2="12" y2="21"/>
+      <line x1="5" y1="6" x2="19" y2="6"/><line x1="5" y1="18" x2="19" y2="18"/>
+    </svg>Beam
+  </button>
+  <button class="tab-btn" id="tab-gw" onclick="switchTab('gw')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="9" x2="9" y2="21"/>
+    </svg>Glass Wt
+  </button>
+  <button class="tab-btn" id="tab-si" onclick="switchTab('si')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <line x1="8" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="16" y2="21"/>
+    </svg>Sil. Bite
+  </button>
+</div>
+
+<!-- ══════════════════════ TAB CONTENTS ═════════════════════════ -->
+<!-- ══════════════════════ U-VALUE TAB ══════════════════════════ -->
+<div class="tab-content active" id="content-uv">
+
+  <div class="tool-header">
+    <div class="logo-line">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <h2>U-Value</h2>
+    </div>
+
+  </div>
+
+  <!-- Inherited Panel Summary -->
+  <div class="section" id="uv-panel-inherited" style="margin-bottom:10px">
+    <div class="section-label">Panel (from configurator)
+      <button onclick="togglePanelStrip();document.getElementById('panel-body').classList.add('open');document.getElementById('panel-expand-btn').classList.add('open')"
+        style="font-size:10px;background:none;border:none;color:var(--accent);font-family:'Lato',sans-serif;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px">Edit ↑</button>
+    </div>
+    <div class="inherited-row" id="uv-inherited-chips"></div>
+  </div>
+
+  <!-- Frame Configuration -->
+  <div class="section">
+    <div class="section-label">Frame Configuration
+      <button class="help-btn" onclick="showHelp('frame')" title="Help">i</button>
+    </div>
+    <!-- Row 1: Frame Type (full width) -->
+    <div class="field" style="margin-bottom:10px">
+      <label>Frame Type</label>
+      <div class="input-wrap">
+        <select id="uv-frame-type" class="select-accent" onchange="onUvFrameConfig()">
+          <option value="1.10">Alum. — No Thermal Break</option>
+          <option value="0.70">Alum. — P &amp; D Thermal Break</option>
+          <option value="0.50" selected>Alum. — Isobar Thermal Break</option>
+          <option value="1.00">Steel — No Thermal Break</option>
+          <option value="0.62">Steel — Thermal Break</option>
+          <option value="0.38">Wood / Fibreglass</option>
+          <option value="0.40">uPVC</option>
+        </select>
+      </div>
+    </div>
+    <!-- Row 2: Frame Width + Spacer Bar -->
+    <div class="field-row" style="margin-bottom:10px">
+      <div class="field">
+        <label>Frame Width</label>
+        <div class="input-wrap">
+          <input type="number" id="uv-fw" value="3" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onUvFwChange()">
+          <span class="unit-tag" id="uv-fw-tag">in</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Spacer Bar</label>
+        <div class="input-wrap">
+          <select id="uv-spacer-bar" onchange="onUvFrameConfig()">
+            <option value="0.25">Aluminium (+0.25)</option>
+            <option value="0.12">Stainless (+0.12)</option>
+            <option value="0.05" selected>Warm-edge (+0.05)</option>
+            <option value="0.00">None (+0.00)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <!-- Row 3: U-Frame + U-EOG -->
+    <div class="field-row">
+      <div class="field">
+        <label>U-Frame <span style="font-size:10px;color:var(--accent)">(calc)</span></label>
+        <div class="input-wrap" style="border-color:var(--accent)">
+          <input type="number" id="uv-uf" min="0" step="0.01" inputmode="decimal" onfocus="this.select()" oninput="onUvChange()">
+          <span class="unit-tag" id="uv-uf-tag">BTU</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>U-EOG <span style="font-size:10px;color:var(--accent)">(calc)</span></label>
+        <div class="input-wrap" style="border-color:var(--accent)">
+          <input type="number" id="uv-eog-v" min="0" step="0.01" inputmode="decimal" onfocus="this.select()" oninput="onUvChange()">
+          <span class="unit-tag" id="uv-eogv-tag">BTU</span>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:8px;line-height:1.5">
+      U-Frame = frame base + spacer · U-EOG = (U-Frame + U-COG) / 2
+    </div>
+  </div>
+
+  <!-- Glass Configuration -->
+  <div class="section">
+    <div class="section-label">Glass Configuration (Vision)
+      <button class="help-btn" onclick="showHelp('glass')" title="Help">i</button>
+    </div>
+    <div class="field-row" style="margin-bottom:10px">
+      <div class="field">
+        <label>IGU Type</label>
+        <div class="input-wrap">
+          <select id="uv-igu" class="select-accent" onchange="onUvGlassConfig()">
+            <option value="double">Double</option>
+            <option value="triple">Triple</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Fill Gas</label>
+        <div class="input-wrap">
+          <select id="uv-fill" onchange="onUvGlassConfig()">
+            <option value="air">Air</option>
+            <option value="argon" selected>Argon</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Coatings</label>
+        <div class="input-wrap">
+          <select id="uv-coatings" onchange="onUvGlassConfig()">
+            <option value="0">None</option>
+            <option value="1" selected>1 Coating</option>
+            <option value="2">2 Coatings</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>U-COG <span id="uv-cog-source" style="font-size:10px;color:var(--accent)">(from config)</span></label>
+        <div class="input-wrap">
+          <input type="number" id="uv-cog-v" value="0.25" min="0" step="0.01" inputmode="decimal" onfocus="this.select()" oninput="onUvChange()" style="border-color:var(--accent)">
+          <span class="unit-tag" id="uv-cogv-tag">BTU</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spandrel Configuration (dynamic) -->
+  <div id="uv-spandrel-container"></div>
+
+  <div class="error-msg" id="uv-error"></div>
+
+  <!-- Result -->
+  <div class="result" id="uv-result">
+    <div class="result-header">
+      <div class="result-label">Area-Weighted U-Value</div>
+      <button class="copy-btn" id="uv-copy-btn" onclick="copyUvResult()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>Copy
+      </button>
+    </div>
+    <div class="result-values">
+      <div class="result-col active" id="uv-col-imperial">
+        <div class="result-col-label">Imperial</div>
+        <div class="result-val active" id="uv-val-imperial">—</div>
+      </div>
+      <div class="result-col inactive" id="uv-col-metric">
+        <div class="result-col-label">Metric</div>
+        <div class="result-val inactive" id="uv-val-metric">—</div>
+      </div>
+    </div>
+    <div id="uv-area-check" style="display:none;background:rgba(224,102,80,0.15);border:1px solid var(--accent);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--accent);margin-bottom:12px;font-family:'Lato',sans-serif"></div>
+    <div class="result-breakdown" id="uv-breakdown"></div>
+  </div>
+
+</div><!-- end content-uv -->
+
+<!-- ══════════════════════ BEAM DESIGN TAB ══════════════════════ -->
+<div class="tab-content" id="content-beam">
+  <div class="tool-header">
+    <div class="logo-line">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="12" y1="3" x2="12" y2="21"/>
+          <line x1="5" y1="6" x2="19" y2="6"/><line x1="5" y1="18" x2="19" y2="18"/>
+        </svg>
+      </div>
+      <h2>Beam Design</h2>
+    </div>
+
+  </div>
+
+  <!-- Member Selection -->
+  <div class="section">
+    <div class="section-label">Member Selection
+      <button class="help-btn" onclick="showHelp('beam_material')" title="Help">i</button>
+    </div>
+    <div class="field" style="margin-bottom:10px">
+      <label>Member</label>
+      <div class="input-wrap">
+        <select id="beam-member" class="select-accent" onchange="onBeamMemberSelect()">
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label id="beam-span-label">Span</label>
+        <div class="ftin-pair" id="beam-span-pair">
+          <div class="input-wrap">
+            <input type="number" id="beam-span-ft" value="10" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
+            <span class="unit-tag" id="beam-span-ft-tag">ft</span>
+          </div>
+          <div class="input-wrap" id="beam-span-in-wrap">
+            <input type="number" id="beam-span-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
+            <span class="unit-tag" id="beam-span-in-tag">in</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label id="beam-trib-label">Tributary Width</label>
+        <div class="ftin-pair" id="beam-trib-pair">
+          <div class="input-wrap">
+            <input type="number" id="beam-trib-ft" value="5" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
+            <span class="unit-tag" id="beam-trib-ft-tag">ft</span>
+          </div>
+          <div class="input-wrap" id="beam-trib-in-wrap">
+            <input type="number" id="beam-trib-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
+            <span class="unit-tag" id="beam-trib-in-tag">in</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Design Criteria -->
+  <div class="section">
+    <div class="section-label">Design Criteria
+      <button class="help-btn" onclick="showHelp('beam_material')" title="Help">i</button>
+    </div>
+    <div class="field-row" style="margin-bottom:10px">
+      <div class="field">
+        <label>Material</label>
+        <div class="input-wrap">
+          <select id="beam-mat" class="select-accent" onchange="onBeamChange()">
+            <option value="al6063">Al 6063-T5</option>
+            <option value="al6061">Al 6061-T6</option>
+            <option value="stA36">Steel A36</option>
+            <option value="stA500">Steel A500</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Deflection Limit</label>
+        <div class="input-wrap">
+          <select id="beam-defl" onchange="onBeamChange()">
+            <option value="175">L/175</option>
+            <option value="200">L/200</option>
+            <option value="240" selected>L/240</option>
+            <option value="360">L/360</option>
+            <option value="240q">L/240 + ¼"</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section Properties -->
+  <div class="section">
+    <div class="section-label">Section Properties</div>
+    <div class="sec-type-row" style="margin-bottom:10px">
+      <span class="sec-type-label" style="font-size:10px">Section type</span>
+      <div class="sec-type-toggle">
+        <button class="sec-type-btn active" id="beam-hollow-btn" onclick="setBeamSection('hollow')">Hollow</button>
+        <button class="sec-type-btn" id="beam-solid-btn" onclick="setBeamSection('solid')">Solid</button>
+      </div>
+    </div>
+    <div class="field-row" style="margin-bottom:10px">
+      <div class="field">
+        <label id="beam-b-label">Width B</label>
+        <div class="input-wrap">
+          <input type="number" id="beam-b" value="2" min="0.1" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
+          <span class="unit-tag" id="beam-b-tag">in</span>
+        </div>
+      </div>
+      <div class="field" id="beam-t-field">
+        <label id="beam-t-label">Wall t</label>
+        <div class="input-wrap">
+          <input type="number" id="beam-t" value="0.125" min="0.01" step="0.0625" inputmode="decimal" onfocus="this.select()" oninput="onBeamChange()">
+          <span class="unit-tag" id="beam-t-tag">in</span>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label id="beam-d-label">Depth D</label>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-family:'Lato',sans-serif">Depth</span>
+          <span class="slider-val" id="beam-d-display">3 in</span>
+        </div>
+        <input type="range" id="beam-d-slider" min="1" max="12" step="0.25" value="3" oninput="onBeamDepthSlide()">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px">
+          <span id="beam-d-min">1 in</span><span id="beam-d-max">12 in</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="error-msg" id="beam-error"></div>
+
+  <!-- Result -->
+  <div class="result" id="beam-result">
+    <div class="result-header">
+      <div class="result-label">Section Check</div>
+      <button class="copy-btn" id="beam-copy-btn" onclick="copyBeamResult()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>Copy
+      </button>
+    </div>
+    <div id="beam-status-row" style="margin-bottom:12px;text-align:center"></div>
+    <div id="beam-util-bar" style="background:var(--surface2);border-radius:4px;height:8px;margin-bottom:12px;overflow:hidden">
+      <div id="beam-util-fill" style="height:100%;border-radius:4px;transition:width 0.3s,background 0.3s"></div>
+    </div>
+    <div class="result-breakdown" id="beam-breakdown"></div>
+  </div>
+
+</div><!-- end content-beam -->
+
+<!-- ══════════════════════ GLASS WEIGHT TAB ═════════════════════ -->
+<div class="tab-content" id="content-gw">
+  <div class="tool-header">
+    <div class="logo-line">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="9" x2="9" y2="21"/>
+        </svg>
+      </div>
+      <h2>Glass Weight</h2>
+    </div>
+
+  </div>
+
+  <!-- Zone / Custom selector -->
+  <div class="section">
+    <div class="section-label">Panel Zone</div>
+    <div class="field" style="margin-bottom:10px">
+      <label>Select Zone</label>
+      <div class="input-wrap">
+        <select id="gw-zone" class="select-accent" onchange="onGwZoneSelect()">
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+    </div>
+    <div class="ftin-grid">
+      <div class="field">
+        <label id="gw-h-label">Height (CL)</label>
+        <div class="ftin-pair" id="gw-h-pair">
+          <div class="input-wrap">
+            <input type="number" id="gw-h-ft" value="10" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onGwChange()">
+            <span class="unit-tag" id="gw-h-ft-tag">ft</span>
+          </div>
+          <div class="input-wrap" id="gw-h-in-wrap">
+            <input type="number" id="gw-h-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onGwChange()">
+            <span class="unit-tag" id="gw-h-in-tag">in</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label id="gw-w-label">Width (CL)</label>
+        <div class="ftin-pair" id="gw-w-pair">
+          <div class="input-wrap">
+            <input type="number" id="gw-w-ft" value="5" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onGwChange()">
+            <span class="unit-tag" id="gw-w-ft-tag">ft</span>
+          </div>
+          <div class="input-wrap" id="gw-w-in-wrap">
+            <input type="number" id="gw-w-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onGwChange()">
+            <span class="unit-tag" id="gw-w-in-tag">in</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Glass Lites -->
+  <div class="section">
+    <div class="section-label">Glass Lites</div>
+    <div id="gw-lites-container"></div>
+    <button class="add-btn" onclick="gwAddLite()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>Add Lite
+    </button>
+  </div>
+
+  <div class="error-msg" id="gw-error"></div>
+
+  <!-- Result -->
+  <div class="result" id="gw-result">
+    <div class="result-header">
+      <div class="result-label">Glass Weight</div>
+      <button class="copy-btn" id="gw-copy-btn" onclick="copyGwResult()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>Copy
+      </button>
+    </div>
+    <div class="result-values">
+      <div class="result-col active" id="gw-col-imperial">
+        <div class="result-col-label">Imperial</div>
+        <div class="result-val active" id="gw-val-imperial">—</div>
+      </div>
+      <div class="result-col inactive" id="gw-col-metric">
+        <div class="result-col-label">Metric</div>
+        <div class="result-val inactive" id="gw-val-metric">—</div>
+      </div>
+    </div>
+    <div class="result-breakdown" id="gw-breakdown"></div>
+  </div>
+
+</div><!-- end content-gw -->
+
+<!-- ══════════════════════ SILICONE BITE TAB ════════════════════ -->
+<div class="tab-content" id="content-si">
+  <div class="tool-header">
+    <div class="logo-line">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="8" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="16" y2="21"/>
+        </svg>
+      </div>
+      <h2>Sil. Bite</h2>
+    </div>
+
+  </div>
+
+  <!-- Wind Load -->
+  <div class="section">
+    <div class="section-label">Wind Load</div>
+    <div class="slider-row">
+      <div class="slider-header">
+        <label style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-family:'Lato',sans-serif">Design Wind Pressure</label>
+        <span class="slider-val" id="si-wl-display">20 psf</span>
+      </div>
+      <input type="range" id="si-wl-slider" min="10" max="100" step="1" value="20" oninput="onSiWlChange()">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px">
+        <span id="si-wl-min">10 psf</span><span id="si-wl-max">100 psf</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zone / Custom -->
+  <div class="section">
+    <div class="section-label">Panel Zone</div>
+    <div class="field" style="margin-bottom:10px">
+      <label>Select Zone</label>
+      <div class="input-wrap">
+        <select id="si-zone" class="select-accent" onchange="onSiZoneSelect()">
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+    </div>
+    <div class="ftin-grid">
+      <div class="field">
+        <label>Height (CL)</label>
+        <div class="ftin-pair" id="si-h-pair">
+          <div class="input-wrap">
+            <input type="number" id="si-h-ft" value="10" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onSiChange()">
+            <span class="unit-tag" id="si-h-ft-tag">ft</span>
+          </div>
+          <div class="input-wrap" id="si-h-in-wrap">
+            <input type="number" id="si-h-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onSiChange()">
+            <span class="unit-tag" id="si-h-in-tag">in</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Width (CL)</label>
+        <div class="ftin-pair" id="si-w-pair">
+          <div class="input-wrap">
+            <input type="number" id="si-w-ft" value="5" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onSiChange()">
+            <span class="unit-tag" id="si-w-ft-tag">ft</span>
+          </div>
+          <div class="input-wrap" id="si-w-in-wrap">
+            <input type="number" id="si-w-in" value="0" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onSiChange()">
+            <span class="unit-tag" id="si-w-in-tag">in</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Design Strength -->
+  <div class="section">
+    <div class="section-label">Design Strength</div>
+    <div class="field-row" style="align-items:flex-end;gap:10px">
+      <div class="field">
+        <label>Product</label>
+        <div class="input-wrap">
+          <select id="si-product" class="select-accent" onchange="onSiProductChange()">
+            <option value="20">Dow 995 / Pecora 895 (20 psi)</option>
+            <option value="20">Momentive SSG4000 (20 psi)</option>
+            <option value="20">Sika SG-20 (20 psi)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label id="si-fs-label">S-Allow</label>
+        <div class="input-wrap">
+          <input type="number" id="si-fs" value="20" min="1" step="1" inputmode="decimal" onfocus="this.select()" oninput="onSiChange()" disabled style="opacity:0.5;cursor:not-allowed">
+          <span class="unit-tag" id="si-fs-unit">psi</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="error-msg" id="si-error"></div>
+
+  <!-- Result -->
+  <div class="result" id="si-result">
+    <div class="result-header">
+      <div class="result-label" id="si-result-label">Calculated Bite</div>
+      <button class="copy-btn" id="si-copy-btn" onclick="copySiResult()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>Copy
+      </button>
+    </div>
+    <div class="result-values">
+      <div class="result-col active" id="si-col-imperial">
+        <div class="result-col-label">Imperial</div>
+        <div class="result-val active" id="si-val-imperial">—</div>
+      </div>
+      <div class="result-col inactive" id="si-col-metric">
+        <div class="result-col-label">Metric</div>
+        <div class="result-val inactive" id="si-val-metric">—</div>
+      </div>
+    </div>
+    <div class="result-breakdown" id="si-breakdown"></div>
+  </div>
+
+</div><!-- end content-si -->
+
+<!-- ══════════════════════ DIAGRAM MODAL ════════════════════════ -->
+<div id="uv-modal" onclick="hidePcDiagram(event)">
+  <div class="modal-inner" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">Panel Diagram</span>
+      <button class="modal-close" onclick="hidePcDiagram()" style="background:var(--panel-accent)">&times;</button>
+    </div>
+    <canvas id="uv-canvas" style="width:100%;display:block;border-radius:6px"></canvas>
+    <div id="uv-legend" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;font-size:11px;font-family:'Lato',sans-serif"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ HELP MODAL ═══════════════════════════ -->
+<div id="help-modal" onclick="hideHelp(event)">
+  <div class="modal-inner" onclick="event.stopPropagation()" style="max-width:600px">
+    <div class="modal-header">
+      <span id="help-title" class="modal-title"></span>
+      <button class="modal-close" onclick="hideHelp()">&times;</button>
+    </div>
+    <div id="help-body" style="font-family:'Lato',sans-serif;font-size:14px;color:var(--text-soft);line-height:1.7"></div>
+  </div>
+</div>
+
+
+
+</div><!-- end app -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   TECHNETOOLS V1.0 — SHARED STATE ENGINE
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Constants ─────────────────────────────────────────────── */
+const IN_TO_MM   = 25.4;
+const FT_TO_M    = 0.3048;
+const PSF_TO_KPA = 0.047880;
+const BTU_TO_W   = 5.678;
+const IN2_TO_M2  = 1 / 1550.0031;
+const EOG_IN     = 2.5;
+const R_SI       = 0.68;
+const R_SE       = 0.17;
+const R_CAVITY   = 0.97;
+const MIN_ZONE   = 12; // inches
+const LB_TO_KG   = 0.453592;
+const GLASS_DENSITY = 2500; // kg/m³
+
+/* ── Panel Shared State ────────────────────────────────────── */
+let pcUnit = 'imperial';
+const pcTransoms = {
+  1: { active:false, from:'top' },
+  2: { active:false, from:'top' },
+};
+const pcZones = {
+  1: { type:'vision', split:false, splitFrom:'left', splitDistFt:2, splitDistIn:6, typeA:'vision', typeB:'vision' },
+  2: { type:'vision', split:false, splitFrom:'left', splitDistFt:2, splitDistIn:6, typeA:'vision', typeB:'vision' },
+  3: { type:'vision', split:false, splitFrom:'left', splitDistFt:2, splitDistIn:6, typeA:'vision', typeB:'vision' },
+};
+
+/* ── Panel reading helpers ─────────────────────────────────── */
+function pcGetDimIn(ftId, inId) {
+  if (pcUnit==='metric') return (parseFloat(document.getElementById(ftId).value)||0) / IN_TO_MM;
+  return (parseFloat(document.getElementById(ftId).value)||0)*12 +
+         (parseFloat(document.getElementById(inId).value)||0);
+}
+function pcGetTransomDist(n) {
+  if (pcUnit==='metric') return (parseFloat(document.getElementById('pc-t'+n+'d-ft').value)||0) / IN_TO_MM;
+  return (parseFloat(document.getElementById('pc-t'+n+'d-ft').value)||0)*12 +
+         (parseFloat(document.getElementById('pc-t'+n+'d-in').value)||0);
+}
+function pcGetSplitDist(n) {
+  const z = pcZones[n];
+  if (pcUnit==='metric') return z.splitDistFt / IN_TO_MM;
+  return z.splitDistFt*12 + z.splitDistIn;
+}
+function pcGetWindPsf() {
+  return parseFloat(document.getElementById('pc-wl-slider').value) || 20;
+}
+
+/* ── Compute panel geometry (in inches) ────────────────────── */
+function computePanelGeometry() {
+  const W = pcGetDimIn('pc-w-ft','pc-w-in');
+  const H = pcGetDimIn('pc-h-ft','pc-h-in');
+  if (!W || !H || W<=0 || H<=0) return null;
+
+  // Build transoms
+  const transomList = [];
+  for (let n=1; n<=2; n++) {
+    if (!pcTransoms[n].active) break;
+    const td = pcGetTransomDist(n);
+    const from = document.getElementById('pc-t'+n+'-from').value;
+    const yCL = from==='top' ? td : H-td;
+    transomList.push({ n, yCL, from, td });
+  }
+  transomList.sort((a,b)=>a.yCL-b.yCL);
+
+  // Build zones (CL heights — no frame deduction for shared use)
+  const zoneCLs = [0, ...transomList.map(t=>t.yCL), H];
+  const numZones = zoneCLs.length-1;
+  const zones = [];
+
+  for (let i=0; i<numZones; i++) {
+    const topCL = zoneCLs[i];
+    const botCL = zoneCLs[i+1];
+    const h = botCL - topCL; // CL height
+    const zn = i+1;
+    const zState = pcZones[zn] || { type:'vision', split:false };
+    let zoneObj = {
+      n:zn, topCL, botCL, h, w:W, type:zState.type,
+      label:'Zone '+zn, split:false
+    };
+
+    if (zState.split && h >= MIN_ZONE) {
+      const md = pcGetSplitDist(zn);
+      const mullionCL = zState.splitFrom==='left' ? md : W-md;
+      const wA = mullionCL;
+      const wB = W - mullionCL;
+      if (wA < MIN_ZONE || wB < MIN_ZONE) {
+        return { error: 'Zone '+zn+' vertical split results in a sub-zone less than 12" wide. Adjust split position.' };
+      }
+      zoneObj.split = true;
+      zoneObj.mullionCL = mullionCL;
+      zoneObj.wA = wA; zoneObj.wB = wB;
+      zoneObj.typeA = zState.typeA||'vision';
+      zoneObj.typeB = zState.typeB||'vision';
+      zoneObj.labelA = 'Zone '+zn+'A';
+      zoneObj.labelB = 'Zone '+zn+'B';
+    }
+    if (h <= 0) continue;
+    if (h < MIN_ZONE) {
+      return { error: 'Transom '+t.n+' position results in a zone less than 12" tall. Adjust transom position.' };
+    }
+    zones.push(zoneObj);
+  }
+
+  return { W, H, transoms:transomList, zones, windPsf:pcGetWindPsf() };
+}
+
+/* ── Zone list helpers ─────────────────────────────────────── */
+function getPanelZoneList() {
+  const geom = computePanelGeometry();
+  if (!geom) return [];
+  const list = [];
+  for (const z of geom.zones) {
+    if (z.split) {
+      list.push({ key:'z'+z.n+'a', label:z.labelA, w:z.wA, h:z.h, type:z.typeA, topCL:z.topCL });
+      list.push({ key:'z'+z.n+'b', label:z.labelB, w:z.wB, h:z.h, type:z.typeB, topCL:z.topCL });
+    } else {
+      list.push({ key:'z'+z.n, label:z.label, w:z.w, h:z.h, type:z.type, topCL:z.topCL });
+    }
+  }
+  return list;
+}
+
+function getPanelMemberList() {
+  const geom = computePanelGeometry();
+  if (!geom) return [];
+  const {W, H, transoms, zones} = geom;
+  const list = [
+    { key:'jamb', label:'Jamb', span:H, trib:W/2, desc:'Vertical edge member' },
+    { key:'head', label:'Head', span:W, trib:H/2, desc:'Top horizontal member' },
+    { key:'sill', label:'Sill', span:W, trib:H/2, desc:'Bottom horizontal member' },
+  ];
+  for (const t of transoms) {
+    const above = zones.find(z=>z.botCL===t.yCL);
+    const below = zones.find(z=>z.topCL===t.yCL);
+    const tribH = ((above?above.h:0) + (below?below.h:0)) / 2;
+    list.push({ key:'t'+t.n, label:'Transom '+t.n, span:W, trib:tribH, desc:'Horizontal intermediate member' });
+  }
+  for (const z of zones) {
+    if (z.split) {
+      list.push({ key:'mull'+z.n, label:'Mullion Zone '+z.n, span:z.h, trib:(z.wA+z.wB)/2, desc:'Vertical intermediate member' });
+    }
+  }
+  return list;
+}
+
+/* ── Panel summary text ────────────────────────────────────── */
+function updatePanelSummary() {
+  const geom = computePanelGeometry();
+  if (!geom) { document.getElementById('panel-summary-badge').textContent='Configure'; return; }
+  const {W, H, transoms, windPsf} = geom;
+  const isM = pcUnit==='metric';
+  function dim(v) {
+    if (isM) return Math.round(v*IN_TO_MM)+'mm';
+    const ft=Math.floor(v/12), ins=parseFloat((v-ft*12).toFixed(0));
+    return ft>0 ? ft+"'"+( ins>0?ins+'"':'' ) : ins+'"';
+  }
+  document.getElementById('panel-summary-badge').textContent =
+    dim(H)+' × '+dim(W);
+}
+
+/* ── Panel UI ──────────────────────────────────────────────── */
+function togglePanelStrip() {
+  const body = document.getElementById('panel-body');
+  const btn  = document.getElementById('panel-expand-btn');
+  const open = body.classList.toggle('open');
+  btn.classList.toggle('open', open);
+}
+
+function onPcWlChange() {
+  const v = parseFloat(document.getElementById('pc-wl-slider').value);
+  const isM = pcUnit==='metric';
+  document.getElementById('pc-wl-display').textContent =
+    isM ? (v*PSF_TO_KPA).toFixed(2)+' kPa' : v+' psf';
+  onPcChange();
+}
+
+function setPcTransom(n, active) {
+  pcTransoms[n].active = active;
+  document.getElementById('pc-t'+n+'-on').classList.toggle('active', active);
+  document.getElementById('pc-t'+n+'-off').classList.toggle('active', !active);
+  document.getElementById('pc-t'+n+'-fields').style.display = active ? 'block' : 'none';
+  document.getElementById('pc-t2-section').style.display = pcTransoms[1].active ? 'block' : 'none';
+  if (!active && n===1) { pcTransoms[2].active=false; setPcTransom(2,false); }
+  rebuildPcZones();
+  onPcChange();
+}
+
+function setPcZoneType(n, type) { pcZones[n].type=type; rebuildPcZones(); onPcChange(); }
+function setPcZoneSplit(n, split) {
+  if (split) {
+    const W = pcGetDimIn('pc-w-ft','pc-w-in');
+    const centre = W/2;
+    const curDist = pcZones[n].splitDistFt*12 + pcZones[n].splitDistIn;
+    if (curDist < 6 || curDist > W-6) {
+      pcZones[n].splitDistFt = Math.floor(centre/12);
+      pcZones[n].splitDistIn = parseFloat((centre - pcZones[n].splitDistFt*12).toFixed(2));
+    }
+  }
+  pcZones[n].split=split; rebuildPcZones(); onPcChange();
+}
+
+function onPcSplitFt(n,val) {
+  const v=parseFloat(val)||0;
+  if(pcUnit==='metric') pcZones[n].splitDistFt=v*IN_TO_MM/12;
+  else pcZones[n].splitDistFt=v;
+  onPcChange();
+}
+function onPcSplitIn(n,val) { pcZones[n].splitDistIn=parseFloat(val)||0; onPcChange(); }
+
+function rebuildPcZones() {
+  const geom = computePanelGeometry();
+  const numZ = geom ? geom.zones.length :
+    1+(pcTransoms[1].active?1:0)+(pcTransoms[2].active?1:0);
+  const c = document.getElementById('pc-zones-container');
+  c.innerHTML='';
+  const isM = pcUnit==='metric';
+  for (let n=1; n<=numZ; n++) {
+    const z = pcZones[n];
+    const distVal = isM ? (z.splitDistFt*12*IN_TO_MM).toFixed(0) : z.splitDistFt;
+    const div = document.createElement('div');
+    div.className='pc-section';
+    div.innerHTML=`
+      <div class="sec-type-row" ${z.split?'style="display:none"':''}>
+        <span class="sec-type-label">Zone ${n}</span>
+        <div class="sec-type-toggle">
+          <button class="sec-type-btn ${z.type==='vision'?'active':''}" onclick="setPcZoneType(${n},'vision')">Vision</button>
+          <button class="sec-type-btn ${z.type==='spandrel'?'active':''}" onclick="setPcZoneType(${n},'spandrel')">Spandrel</button>
+        </div>
+      </div>
+      <div class="sec-type-row" style="margin-top:${z.split?'0':'8px'}">
+        <span class="sec-type-label" style="font-size:10px">Zone ${n} — Vertical Split</span>
+        <div class="sec-type-toggle">
+          <button class="sec-type-btn ${!z.split?'active':''}" onclick="setPcZoneSplit(${n},false)">None</button>
+          <button class="sec-type-btn ${z.split?'active':''}" onclick="setPcZoneSplit(${n},true)">Add Split</button>
+        </div>
+      </div>
+      ${z.split ? `
+      <div style="margin-top:10px">
+        <div class="field-row" style="margin-bottom:8px">
+          <div class="field">
+            <label>Measure from</label>
+            <div class="input-wrap">
+              <select id="pc-z${n}-split-from" onchange="pcZones[${n}].splitFrom=this.value;onPcChange()" style="height:42px;box-sizing:border-box">
+                <option value="left" ${z.splitFrom==='left'?'selected':''}>Left CL</option>
+                <option value="right" ${z.splitFrom==='right'?'selected':''}>Right CL</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Distance</label>
+            <div class="ftin-pair" id="pc-z${n}-split-pair">
+              <div class="input-wrap">
+                <input type="number" id="pc-z${n}-split-ft" value="${distVal}" min="0" step="${isM?10:1}" inputmode="decimal"
+                  onfocus="this.select()" oninput="onPcSplitFt(${n},this.value)">
+                <span class="unit-tag" id="pc-z${n}-split-ft-tag">${isM?'mm':'ft'}</span>
+              </div>
+              <div class="input-wrap" id="pc-z${n}-split-in-wrap" style="${isM?'display:none':''}">
+                <input type="number" id="pc-z${n}-split-in" value="${z.splitDistIn}" min="0" step="0.125" inputmode="decimal"
+                  onfocus="this.select()" oninput="onPcSplitIn(${n},this.value)">
+                <span class="unit-tag">in</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Zone ${n}A</label>
+            <div class="sec-type-toggle" style="margin-top:4px">
+              <button class="sec-type-btn ${z.typeA==='vision'?'active':''}" onclick="pcZones[${n}].typeA='vision';rebuildPcZones();onPcChange()">Vision</button>
+              <button class="sec-type-btn ${z.typeA==='spandrel'?'active':''}" onclick="pcZones[${n}].typeA='spandrel';rebuildPcZones();onPcChange()">Spandrel</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Zone ${n}B</label>
+            <div class="sec-type-toggle" style="margin-top:4px">
+              <button class="sec-type-btn ${z.typeB==='vision'?'active':''}" onclick="pcZones[${n}].typeB='vision';rebuildPcZones();onPcChange()">Vision</button>
+              <button class="sec-type-btn ${z.typeB==='spandrel'?'active':''}" onclick="pcZones[${n}].typeB='spandrel';rebuildPcZones();onPcChange()">Spandrel</button>
+            </div>
+          </div>
+        </div>
+      </div>` : ''}`;
+    c.appendChild(div);
+  }
+}
+
+function onPcChange() {
+  const geom = computePanelGeometry();
+  if (geom && geom.error) {
+    document.getElementById('panel-summary-badge').textContent = '⚠ ' + geom.error;
+    document.getElementById('panel-summary-badge').style.background = 'rgba(220,91,35,0.8)';
+    return;
+  }
+  document.getElementById('panel-summary-badge').style.background = '';
+  updatePanelSummary();
+  // Notify all active tool tabs to refresh
+  if (typeof onUvPanelChange  === 'function') onUvPanelChange();
+  if (typeof onBeamPanelChange === 'function') onBeamPanelChange();
+  if (typeof onGwPanelChange   === 'function') onGwPanelChange();
+  if (typeof onSiPanelChange   === 'function') onSiPanelChange();
+}
+
+/* ── Unit switching for panel ──────────────────────────────── */
+function setPcUnit(u) {
+  if (u===pcUnit) return;
+  const W_in = pcGetDimIn('pc-w-ft','pc-w-in');
+  const H_in = pcGetDimIn('pc-h-ft','pc-h-in');
+  const t1d_in = pcGetTransomDist(1);
+  const t2d_in = pcGetTransomDist(2);
+  const wl_psf = pcGetWindPsf();
+  pcUnit = u;
+  const isM = u==='metric';
+  document.getElementById('pc-btn-imperial').classList.toggle('active',!isM);
+  document.getElementById('pc-btn-metric').classList.toggle('active', isM);
+
+  function setFtIn(ftId,inId,pairId,val,ftTag,inTag) {
+    if(isM){
+      document.getElementById(ftId).value=parseFloat((val*IN_TO_MM).toFixed(0));
+      document.getElementById(inId+'-wrap').style.display='none';
+      document.getElementById(pairId).style.gridTemplateColumns='1fr';
+      document.getElementById(ftTag).textContent='mm';
+    } else {
+      const ft=Math.floor(val/12);
+      // Round to nearest 1/8" to avoid floating point drift
+      const ins=Math.round((val-ft*12)*8)/8;
+      document.getElementById(ftId).value=ft;
+      document.getElementById(inId).value=ins;
+      document.getElementById(inId+'-wrap').style.display='';
+      document.getElementById(pairId).style.gridTemplateColumns='';
+      document.getElementById(ftTag).textContent='ft';
+      document.getElementById(inTag).textContent='in';
+    }
+  }
+  setFtIn('pc-h-ft','pc-h-in','pc-h-pair',H_in,'pc-h-ft-tag','pc-h-in-tag');
+  setFtIn('pc-w-ft','pc-w-in','pc-w-pair',W_in,'pc-w-ft-tag','pc-w-in-tag');
+  setFtIn('pc-t1d-ft','pc-t1d-in','pc-t1d-pair',t1d_in,'pc-t1d-ft-tag','pc-t1d-in-tag');
+  setFtIn('pc-t2d-ft','pc-t2d-in','pc-t2d-pair',t2d_in,'pc-t2d-ft-tag','pc-t2d-in-tag');
+
+  // Wind load labels
+  document.getElementById('pc-wl-display').textContent =
+    isM ? (wl_psf*PSF_TO_KPA).toFixed(2)+' kPa' : wl_psf+' psf';
+
+  rebuildPcZones();
+  onPcChange();
+  // Convert all tool inputs to new unit
+  convertUvToUnit();
+  convertBeamToUnit();
+  convertGwToUnit();
+  convertSiToUnit();
+}
+
+/* ── Tab switching ─────────────────────────────────────────── */
+const TAB_IDS = ['uv','beam','gw','si'];
+function switchTab(id) {
+  TAB_IDS.forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active', t===id);
+    document.getElementById('content-'+t).classList.toggle('active', t===id);
+  });
+  document.body.setAttribute('data-tab', id);
+}
+// Swipe
+(function(){
+  let sx=0,sy=0,st=0;
+  document.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now();},{passive:true});
+  document.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy,dt=Date.now()-st;
+    const angle=Math.abs(Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI);
+    if(Math.abs(dx)<50||angle>35||dt>400) return;
+    const cur=TAB_IDS.indexOf(document.body.getAttribute('data-tab'));
+    if(cur===-1) return;
+    const next=dx<0?Math.min(cur+1,TAB_IDS.length-1):Math.max(cur-1,0);
+    if(next!==cur) switchTab(TAB_IDS[next]);
+  },{passive:true});
+})();
+
+/* ── Theme ─────────────────────────────────────────────────── */
+
+
+/* ── Help modal ────────────────────────────────────────────── */
+const HELP_CONTENT = {};
+function showHelp(key){
+  const h=HELP_CONTENT[key]; if(!h) return;
+  document.getElementById('help-title').textContent=h.title;
+  document.getElementById('help-body').innerHTML=h.body;
+  document.getElementById('help-modal').style.display='block';
+}
+function hideHelp(e){
+  if(!e||e.target===document.getElementById('help-modal'))
+    document.getElementById('help-modal').style.display='none';
+}
+
+/* ── Diagram (shared) ──────────────────────────────────────── */
+function showPcDiagram(){ document.getElementById('uv-modal').style.display='block'; drawPcDiagram(); }
+function hidePcDiagram(e){
+  if(!e||e.target===document.getElementById('uv-modal'))
+    document.getElementById('uv-modal').style.display='none';
+}
+
+/* ── Init ──────────────────────────────────────────────────── */
+rebuildPcZones();
+updatePanelSummary();
+
+
+/* ═══ PANEL DIAGRAM ═══════════════════════════════════════════ */
+function drawPcDiagram() {
+  const canvas = document.getElementById('uv-canvas');
+  const CW = canvas.parentElement.clientWidth - 32;
+  const geom = computePanelGeometry();
+  if (!geom) return;
+  const {W, H, transoms, zones} = geom;
+
+  const isLight = document.body.getAttribute('data-theme') === 'light';
+  const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#627FBF';
+  const C = isLight ? {
+    frameFill:'#b8b0a5', frameStroke:accentColor,
+    eogVFill:'#c8d8e8', eogSFill:'#d8cfa8',
+    cogVFill:'#e8f0f8', spandrelFill:'#e8dfc0',
+    clLine:'#4a6a9a', dimLine:'#666', dimText:'#333',
+  } : {
+    frameFill:'#3a3a3a', frameStroke:accentColor,
+    eogVFill:'#2a3545', eogSFill:'#3a3020',
+    cogVFill:'#1a2535', spandrelFill:'#2a2808',
+    clLine:'#a0b8d8', dimLine:'#777', dimText:'#bbb',
+  };
+
+  // For diagram, use a notional frame width for display only
+  const f_disp = W * 0.04; // ~4% of width for display
+
+  const hasSplit = zones.some(z=>z.split);
+  const MARGIN = hasSplit ? 68 : 52;
+  const scale = (CW - MARGIN*2) / W;
+  const fp = f_disp/2 * scale;
+  const CH = Math.round(H * scale + MARGIN*2);
+  canvas.width  = Math.round(CW * window.devicePixelRatio);
+  canvas.height = Math.round(CH * window.devicePixelRatio);
+  canvas.style.height = CH + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const ox=MARGIN, oy=MARGIN;
+  function px(x){return ox+x*scale;}
+  function py(y){return oy+y*scale;}
+  function sc(v){return v*scale;}
+
+  const panelLeft=px(0)-fp, panelRight=px(W)+fp;
+  const panelTop=py(0)-fp,  panelBottom=py(H)+fp;
+  const panelFW=panelRight-panelLeft, panelFH=panelBottom-panelTop;
+
+  // Panel bg + frame fill
+  ctx.fillStyle=isLight?'#e8e5e0':'#1a1a20';
+  ctx.fillRect(panelLeft,panelTop,panelFW,panelFH);
+  ctx.fillStyle=C.frameFill;
+  ctx.fillRect(panelLeft,panelTop,panelFW,panelFH);
+
+  // Draw zones
+  function drawZone(zx,zy,zw,zh,type) {
+    const e=sc(EOG_IN);
+    ctx.fillStyle=type==='spandrel'?C.spandrelFill:C.cogVFill;
+    ctx.fillRect(zx,zy,zw,zh);
+    if(zw>2*e&&zh>2*e){
+      ctx.fillStyle=type==='spandrel'?C.eogSFill:C.eogVFill;
+      ctx.fillRect(zx,zy,zw,e); ctx.fillRect(zx,zy+zh-e,zw,e);
+      ctx.fillRect(zx,zy+e,e,zh-2*e); ctx.fillRect(zx+zw-e,zy+e,e,zh-2*e);
+    }
+  }
+
+  const f2=sc(f_disp/2);
+  // Transom fills
+  for(const t of transoms){
+    ctx.fillStyle=C.frameFill;
+    ctx.fillRect(panelLeft,py(t.yCL)-f2,panelFW,f2*2);
+  }
+
+  for(const z of zones){
+    const zt=py(z.topCL)+f2;
+    const zh_px=sc(z.h)-f2*2-(transoms.some(t=>t.yCL===z.botCL)?f2:0);
+    if(z.split){
+      const mCL=px(z.mullionCL);
+      ctx.fillStyle=C.frameFill;
+      ctx.fillRect(mCL-f2,zt,f2*2,zh_px);
+      drawZone(px(0)+f2,zt,sc(z.wA)-f2*2,zh_px,z.typeA);
+      drawZone(mCL+f2,zt,sc(z.wB)-f2*2,zh_px,z.typeB);
+    } else {
+      drawZone(px(0)+f2,zt,sc(z.w)-f2*2,zh_px,z.type);
+    }
+  }
+
+  // Outer dashed edge
+  ctx.strokeStyle=isLight?'#777370':'#8888aa';
+  ctx.lineWidth=1.2; ctx.setLineDash([5,3]);
+  ctx.strokeRect(panelLeft+0.6,panelTop+0.6,panelFW-1.2,panelFH-1.2);
+  for(const t of transoms){
+    ctx.beginPath();ctx.moveTo(panelLeft,py(t.yCL)-f2);ctx.lineTo(panelRight,py(t.yCL)-f2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(panelLeft,py(t.yCL)+f2);ctx.lineTo(panelRight,py(t.yCL)+f2);ctx.stroke();
+  }
+  for(const z of zones){
+    if(!z.split) continue;
+    const mCL=px(z.mullionCL);
+    const zt=py(z.topCL)+f2, zb=py(z.botCL)-f2;
+    ctx.beginPath();ctx.moveTo(mCL-f2,zt);ctx.lineTo(mCL-f2,zb);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(mCL+f2,zt);ctx.lineTo(mCL+f2,zb);ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Sight-line borders
+  ctx.strokeStyle=C.frameStroke; ctx.lineWidth=1;
+  ctx.strokeRect(px(0),py(0),sc(W),sc(H));
+  for(const t of transoms){
+    ctx.beginPath();ctx.moveTo(px(0),py(t.yCL)-f2);ctx.lineTo(px(W),py(t.yCL)-f2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(px(0),py(t.yCL)+f2);ctx.lineTo(px(W),py(t.yCL)+f2);ctx.stroke();
+  }
+  for(const z of zones){
+    if(!z.split) continue;
+    const mCL=px(z.mullionCL);
+    const zt=py(z.topCL)+f2, zb=py(z.botCL)-f2;
+    ctx.beginPath();ctx.moveTo(mCL-f2,zt);ctx.lineTo(mCL-f2,zb);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(mCL+f2,zt);ctx.lineTo(mCL+f2,zb);ctx.stroke();
+  }
+
+  // EOG dashed lines
+  const e=sc(EOG_IN);
+  function drawEog(zx,zy,zw,zh){
+    if(zw<=2*e||zh<=2*e) return;
+    ctx.strokeStyle=isLight?'#7090b0':'#4a6080';
+    ctx.lineWidth=0.6; ctx.setLineDash([3,3]);
+    ctx.strokeRect(zx+e,zy+e,zw-2*e,zh-2*e);
+    ctx.setLineDash([]);
+  }
+  for(const z of zones){
+    const zt=py(z.topCL)+f2, zh_px=sc(z.h)-f2*2;
+    if(z.split){
+      drawEog(px(0)+f2,zt,sc(z.wA)-f2*2,zh_px);
+      drawEog(px(z.mullionCL)+f2,zt,sc(z.wB)-f2*2,zh_px);
+    } else {
+      drawEog(px(0)+f2,zt,sc(z.w)-f2*2,zh_px);
+    }
+  }
+
+  // Centrelines — dot-dash
+  const EXT=14;
+  ctx.strokeStyle=C.clLine; ctx.lineWidth=1.5; ctx.setLineDash([10,3,2,3]);
+  function drawCL(x1,y1,x2,y2){
+    const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+    if(len<1) return;
+    const ux=dx/len,uy=dy/len;
+    ctx.beginPath();ctx.moveTo(x1-ux*EXT,y1-uy*EXT);ctx.lineTo(x2+ux*EXT,y2+uy*EXT);ctx.stroke();
+  }
+  drawCL(px(0),py(0),px(W),py(0));
+  drawCL(px(0),py(H),px(W),py(H));
+  drawCL(px(0),py(0),px(0),py(H));
+  drawCL(px(W),py(0),px(W),py(H));
+  for(const t of transoms) drawCL(px(0),py(t.yCL),px(W),py(t.yCL));
+  for(const z of zones){ if(z.split) drawCL(px(z.mullionCL),py(z.topCL),px(z.mullionCL),py(z.botCL)); }
+  ctx.setLineDash([]);
+
+  // Zone labels
+  const FONT_SZ=Math.max(9,Math.round(10*scale/4));
+  ctx.font='bold '+FONT_SZ+'px Lato,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  function zLabel(zx,zy,zw,zh,type,name){
+    ctx.fillStyle=type==='spandrel'?(isLight?'#8a6a20':'#c8a060'):(isLight?'#2a5a8a':'#6ab0e0');
+    ctx.fillText(name,zx+zw/2,zy+zh/2);
+  }
+  for(const z of zones){
+    const zt=py(z.topCL)+f2, zh_px=sc(z.h)-f2*2;
+    if(z.split){
+      zLabel(px(0)+f2,zt,sc(z.wA)-f2*2,zh_px,z.typeA,z.labelA);
+      zLabel(px(z.mullionCL)+f2,zt,sc(z.wB)-f2*2,zh_px,z.typeB,z.labelB);
+    } else {
+      zLabel(px(0)+f2,zt,sc(z.w)-f2*2,zh_px,z.type,z.label);
+    }
+  }
+
+  // Dimensions
+  const DOT_R=2.5, DIM_OFF=20;
+  const isM=pcUnit==='metric';
+  function dimStr(val_in){
+    if(isM) return Math.round(val_in*IN_TO_MM)+'mm';
+    const ft=Math.floor(val_in/12),ins=parseFloat((val_in-ft*12).toFixed(1));
+    if(ft>0&&ins>0) return ft+"' - "+ins+'"';
+    if(ft>0) return ft+"' - 0\"";
+    return ins+'"';
+  }
+  function drawDimLine(x1,y1,x2,y2,label){
+    ctx.strokeStyle=C.dimLine; ctx.lineWidth=0.8; ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    ctx.fillStyle=C.dimLine;
+    ctx.beginPath();ctx.arc(x1,y1,DOT_R,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x2,y2,DOT_R,0,Math.PI*2);ctx.fill();
+    const isVert=Math.abs(x2-x1)<1;
+    const mx=(x1+x2)/2,my=(y1+y2)/2;
+    ctx.font='bold '+FONT_SZ+'px Lato,sans-serif'; ctx.textBaseline='middle';
+    const tw=ctx.measureText(label).width;
+    if(isVert){
+      ctx.save();ctx.translate(mx,my);ctx.rotate(-Math.PI/2);ctx.textAlign='center';
+      ctx.fillStyle=isLight?'rgba(249,247,244,0.85)':'rgba(43,46,53,0.85)';
+      ctx.fillRect(-tw/2-3,-FONT_SZ/2-2,tw+6,FONT_SZ+4);
+      ctx.fillStyle=C.dimText;ctx.fillText(label,0,0);ctx.restore();
+    } else {
+      ctx.textAlign='center';
+      ctx.fillStyle=isLight?'rgba(249,247,244,0.85)':'rgba(43,46,53,0.85)';
+      ctx.fillRect(mx-tw/2-3,my-FONT_SZ/2-2,tw+6,FONT_SZ+4);
+      ctx.fillStyle=C.dimText;ctx.fillText(label,mx,my);
+    }
+  }
+
+  const wDimY = hasSplit ? py(0)-DIM_OFF*2 : py(0)-DIM_OFF;
+  drawDimLine(px(0),wDimY,px(W),wDimY,dimStr(W));
+  const hDimX = transoms.length>0||hasSplit ? px(0)-DIM_OFF*2 : px(0)-DIM_OFF;
+  drawDimLine(hDimX,py(0),hDimX,py(H),dimStr(H));
+
+  if(transoms.length>0){
+    const zDimX=px(0)-DIM_OFF;
+    let prevY=py(0);
+    const clYs=[0,...transoms.map(t=>t.yCL),H];
+    for(let i=0;i<clYs.length-1;i++){
+      drawDimLine(zDimX,py(clYs[i]),zDimX,py(clYs[i+1]),dimStr(clYs[i+1]-clYs[i]));
+    }
+  }
+
+  for(const z of zones){
+    if(!z.split) continue;
+    const yDim=hasSplit?py(0)-DIM_OFF:py(0)-DIM_OFF;
+    drawDimLine(px(0),wDimY-DIM_OFF,px(z.mullionCL),wDimY-DIM_OFF,dimStr(z.mullionCL));
+    drawDimLine(px(z.mullionCL),wDimY-DIM_OFF,px(W),wDimY-DIM_OFF,dimStr(W-z.mullionCL));
+  }
+
+  // Legend
+  const legendEl=document.getElementById('uv-legend');
+  const items=[
+    {color:C.frameFill,label:'Frame'},{color:C.eogVFill,label:'EOG — Vision'},
+    {color:C.cogVFill,label:'COG — Vision'},{color:C.spandrelFill,label:'Spandrel'},
+  ];
+  legendEl.innerHTML=items.map(i=>`<div style="display:flex;align-items:center;gap:5px">
+    <div style="width:14px;height:14px;border-radius:2px;background:${i.color};border:1px solid #444;flex-shrink:0"></div>
+    <span style="color:var(--text-soft);font-family:'Lato',sans-serif">${i.label}</span></div>`).join('');
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   U-VALUE TAB
+   ═══════════════════════════════════════════════════════════════ */
+// pcUnit now references pcUnit
+let uvResult = null;
+let uvSpandrelSync = true;
+
+const UV_ZONES_THERMAL = {
+  1: { ins:4, rpi:4.2, spandrelType:'opaque' },
+  2: { ins:4, rpi:4.2, spandrelType:'opaque' },
+  3: { ins:4, rpi:4.2, spandrelType:'opaque' },
+};
+
+const UV_GLASS_COG = {
+  double:{ 0:{air:0.48,argon:0.42}, 1:{air:0.30,argon:0.25}, 2:{air:0.26,argon:0.22} },
+  triple:{ 0:{air:0.28,argon:0.23}, 1:{air:0.20,argon:0.17}, 2:{air:0.17,argon:0.14} },
+};
+
+function getU_uv(id) {
+  const v=parseFloat(document.getElementById(id).value)||0;
+  return pcUnit==='metric' ? v/BTU_TO_W : v;
+}
+function getSingleIn_uv(id) {
+  const v=parseFloat(document.getElementById(id).value)||0;
+  return pcUnit==='metric' ? v/IN_TO_MM : v;
+}
+
+function onUvPanelChange() {
+  updateUvInheritedChips();
+  rebuildUvSpandrelUI();
+  onUvChange();
+}
+function onUvUnitChange() {
+  // Mirror the panel unit to uv unit for frame width
+  // (U-value has its own separate unit toggle)
+}
+
+function updateUvInheritedChips() {
+  const geom = computePanelGeometry();
+  const el = document.getElementById('uv-inherited-chips');
+  if (!geom) { el.innerHTML='<span style="font-size:12px;color:var(--text-muted);font-family:Lato,sans-serif">No panel configured</span>'; return; }
+  const {W,H,transoms,zones,windPsf} = geom;
+  const isM = pcUnit==='metric';
+  function dim(v){ if(isM) return Math.round(v*IN_TO_MM)+'mm'; const ft=Math.floor(v/12),ins=parseFloat((v-ft*12).toFixed(0)); return ft>0?ft+"'"+(ins>0?ins+'"':''):ins+'"'; }
+  const chips = [
+    ['H', dim(H)], ['W', dim(W)],
+    ...transoms.map(t=>['T'+t.n, dim(t.yCL)+' from '+(t.from==='top'?'top':'btm')]),
+    ...zones.filter(z=>z.split).map(z=>['Z'+z.n+' split', dim(z.mullionCL)]),
+  ];
+  el.innerHTML = chips.map(([k,v])=>`<div class="inherited-chip">${k}: <span>${v}</span></div>`).join('');
+}
+
+function onUvFwChange() { onUvFrameConfig(); }
+
+function onUvFrameConfig() {
+  const frameBase=parseFloat(document.getElementById('uv-frame-type').value)||0.50;
+  const spacerAdd=parseFloat(document.getElementById('uv-spacer-bar').value)||0.05;
+  const U_frame_btu=frameBase+spacerAdd;
+  const U_cog_btu=getU_uv('uv-cog-v');
+  const U_eog_btu=(U_frame_btu+U_cog_btu)/2;
+  const isM=pcUnit==='metric';
+  document.getElementById('uv-uf').value=isM?(U_frame_btu*BTU_TO_W).toFixed(2):U_frame_btu.toFixed(2);
+  document.getElementById('uv-eog-v').value=isM?(U_eog_btu*BTU_TO_W).toFixed(2):U_eog_btu.toFixed(2);
+  rebuildUvSpandrelUI();
+  onUvChange();
+}
+
+function onUvGlassConfig() {
+  const igu=document.getElementById('uv-igu').value;
+  const coatings=parseInt(document.getElementById('uv-coatings').value)||0;
+  const fill=document.getElementById('uv-fill').value;
+  const cog=UV_GLASS_COG[igu][coatings][fill];
+  document.getElementById('uv-cog-v').value=pcUnit==='metric'?(cog*BTU_TO_W).toFixed(2):cog.toFixed(2);
+  document.getElementById('uv-cog-source').textContent='(from config)';
+  onUvFrameConfig();
+}
+
+function calcSpandrelU_full(zt) {
+  const ins_in = pcUnit==='metric' ? zt.ins/IN_TO_MM : zt.ins;
+  const R_ins = ins_in * zt.rpi;
+  if (zt.spandrelType==='shadowbox') {
+    const U_cog_v = getU_uv('uv-cog-v');
+    return 1/(R_SE + 1/U_cog_v + R_CAVITY + R_ins + R_SI);
+  }
+  return 1/(R_SE + R_ins + R_SI);
+}
+
+function getUvSpandrelZoneList() {
+  const geom = computePanelGeometry(); if(!geom) return [];
+  const list=[];
+  for(const z of geom.zones){
+    if(z.split){
+      if(pcZones[z.n].typeA==='spandrel') list.push({n:z.n,sub:'A',label:z.labelA});
+      if(pcZones[z.n].typeB==='spandrel') list.push({n:z.n,sub:'B',label:z.labelB});
+    } else {
+      if(z.type==='spandrel') list.push({n:z.n,sub:null,label:z.label});
+    }
+  }
+  return list;
+}
+
+function rebuildUvSpandrelUI() {
+  const container=document.getElementById('uv-spandrel-container');
+  if(!container) return;
+  const spList=getUvSpandrelZoneList();
+  if(spList.length===0){container.innerHTML='';return;}
+
+  const isM=pcUnit==='metric';
+  const insTag=isM?'mm':'in';
+  const uTag=isM?'W/m²K':'BTU';
+
+  function spBlock(sp,showToggle){
+    const zt=UV_ZONES_THERMAL[sp.n];
+    const insVal=isM?(zt.ins*IN_TO_MM).toFixed(0):zt.ins;
+    const uCogBtu=calcSpandrelU_full(zt);
+    const uFrameBtu=getU_uv('uv-uf');
+    const uEogBtu=(uFrameBtu+uCogBtu)/2;
+    const uCogDisp=isM?(uCogBtu*BTU_TO_W).toFixed(2):uCogBtu.toFixed(2);
+    const uEogDisp=isM?(uEogBtu*BTU_TO_W).toFixed(2):uEogBtu.toFixed(2);
+    return `
+      <div class="sec-type-row" style="margin-bottom:10px">
+        <span class="sec-type-label" style="font-size:10px">${sp.label}</span>
+        <div class="sec-type-toggle">
+          <button class="sec-type-btn ${zt.spandrelType==='opaque'?'active':''}" onclick="UV_ZONES_THERMAL[${sp.n}].spandrelType='opaque';rebuildUvSpandrelUI();onUvChange()">Opaque</button>
+          <button class="sec-type-btn ${zt.spandrelType==='shadowbox'?'active':''}" onclick="UV_ZONES_THERMAL[${sp.n}].spandrelType='shadowbox';rebuildUvSpandrelUI();onUvChange()">Shadowbox</button>
+        </div>
+      </div>
+      <div class="field-row" style="margin-bottom:10px">
+        <div class="field">
+          <label>Insulation</label>
+          <div class="input-wrap">
+            <input type="number" id="uv-sp-${sp.n}-ins" value="${insVal}" min="0" step="${isM?5:0.25}" inputmode="decimal"
+              onfocus="this.select()" oninput="UV_ZONES_THERMAL[${sp.n}].ins=pcUnit==='metric'?parseFloat(this.value)/IN_TO_MM:parseFloat(this.value)||0;rebuildUvSpandrelUI();onUvChange()">
+            <span class="unit-tag">${insTag}</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>R per inch</label>
+          <div class="input-wrap">
+            <input type="number" id="uv-sp-${sp.n}-rpi" value="${UV_ZONES_THERMAL[sp.n].rpi}" min="0" step="0.1" inputmode="decimal"
+              onfocus="this.select()" oninput="UV_ZONES_THERMAL[${sp.n}].rpi=parseFloat(this.value)||4.2;rebuildUvSpandrelUI();onUvChange()">
+            <span class="unit-tag">—</span>
+          </div>
+        </div>
+      </div>
+      <div class="field-row" ${showToggle&&spList.length>1?'':'style="margin-bottom:0"'}>
+        <div class="field">
+          <label>U-COG <span style="font-size:10px;color:var(--accent)">(calc)</span></label>
+          <div class="input-wrap">
+            <input type="number" value="${uCogDisp}" disabled style="opacity:0.7;border-color:var(--accent)">
+            <span class="unit-tag">${uTag}</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>U-EOG <span style="font-size:10px;color:var(--accent)">(calc)</span></label>
+          <div class="input-wrap">
+            <input type="number" value="${uEogDisp}" disabled style="opacity:0.7;border-color:var(--accent)">
+            <span class="unit-tag">${uTag}</span>
+          </div>
+        </div>
+      </div>
+      ${showToggle&&spList.length>1?`
+      <div class="sec-type-row" style="margin-top:12px">
+        <span class="sec-type-label" style="font-size:10px">Apply to all spandrels</span>
+        <div class="sec-type-toggle">
+          <button class="sec-type-btn ${uvSpandrelSync?'active':''}" onclick="uvSpandrelSync=true;rebuildUvSpandrelUI();onUvChange()">On</button>
+          <button class="sec-type-btn ${!uvSpandrelSync?'active':''}" onclick="uvSpandrelSync=false;rebuildUvSpandrelUI();onUvChange()">Off</button>
+        </div>
+      </div>`:''}`;
+  }
+
+  let html=`<div class="section"><div class="section-label">Spandrel Configuration<button class="help-btn" onclick="showHelp('spandrel')" title="Help">i</button></div>`;
+  if(uvSpandrelSync||spList.length===1){
+    html+=spBlock(spList[0],true);
+  } else {
+    spList.forEach((sp,i)=>{
+      if(i>0) html+='<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px"></div>';
+      html+=spBlock(sp,i===0);
+    });
+  }
+  html+='</div>';
+  container.innerHTML=html;
+}
+
+function eogArea(w,h,e){if(w<=2*e||h<=2*e) return w*h; return 2*e*(w+h)-4*e*e;}
+function cogArea(w,h,e){if(w<=2*e||h<=2*e) return 0; return (w-2*e)*(h-2*e);}
+
+function onUvChange() {
+  if(document.body.getAttribute('data-tab')!=='uv') return;
+  const errEl=document.getElementById('uv-error'); errEl.classList.remove('visible');
+  const geom=computePanelGeometry(); if(!geom){return;}
+
+  const f=getSingleIn_uv('uv-fw');
+  const {W,H,transoms,zones}=geom;
+  if(!f||f<=0||f>=W/2||f>=H/2){errEl.textContent='Frame width invalid for this panel size.';errEl.classList.add('visible');return;}
+
+  const gl_W=W-f, gl_H=H-f;
+  const A_frame = W*H - gl_W*gl_H;
+  const A_transoms = transoms.reduce((s,t)=>s+gl_W*t.yCL*0,0); // calculated below
+  let A_frame_total = A_frame;
+
+  const U_frame=getU_uv('uv-uf'), U_eog=getU_uv('uv-eog-v'), U_cog=getU_uv('uv-cog-v');
+  let sumUA=0, sumA=0;
+  const bkRows=[];
+
+  // Process each zone
+  for(const z of geom.zones){
+    const topHalf = z.topCL===0 ? f/2 : f/2; // simplified: all members same width
+    const botHalf = z.botCL===H ? f/2 : f/2;
+    const zH = z.h - topHalf - botHalf;
+    if(zH <= 0) continue;
+
+    // Add transom area to frame
+    if(z.botCL<H) { A_frame_total += gl_W * f; } // transom between zones
+
+    const subZones = z.split
+      ? [
+          {w:z.wA-f, h:zH, type:pcZones[z.n].typeA, label:z.labelA, n:z.n},
+          {w:z.wB-f, h:zH, type:pcZones[z.n].typeB, label:z.labelB, n:z.n},
+        ]
+      : [{w:gl_W, h:zH, type:z.type, label:z.label, n:z.n}];
+
+    if(z.split) A_frame_total += f * zH; // vertical mullion
+
+    for(const sz of subZones){
+      if(sz.w<=0||sz.h<=0) continue;
+      const A_e=eogArea(sz.w,sz.h,EOG_IN);
+      const A_c=cogArea(sz.w,sz.h,EOG_IN);
+      const zt=UV_ZONES_THERMAL[sz.n];
+      let u_cog,u_eog;
+      if(sz.type==='spandrel'){
+        const src=uvSpandrelSync?UV_ZONES_THERMAL[getUvSpandrelZoneList()[0]?.n||1]:zt;
+        u_cog=calcSpandrelU_full(src);
+        u_eog=(getU_uv('uv-uf')+u_cog)/2;
+      } else { u_cog=U_cog; u_eog=U_eog; }
+      sumUA+=A_e*u_eog+(A_c>0?A_c*u_cog:0);
+      sumA+=sz.w*sz.h;
+      bkRows.push({label:sz.label+' EOG ('+sz.type+')',area:A_e,u:u_eog});
+      if(A_c>0) bkRows.push({label:sz.label+' COG ('+sz.type+')',area:A_c,u:u_cog});
+    }
+  }
+
+  sumUA+=A_frame_total*U_frame;
+  const A_panel=W*H;
+  const checkDiff=Math.abs(A_frame_total+sumA-A_panel);
+  const U_weighted=sumUA/A_panel;
+  bkRows.unshift({label:'Frame & members',area:A_frame_total,u:U_frame});
+
+  uvResult={U_weighted,A_panel,bkRows,checkPass:checkDiff<0.1,checkDiff};
+  renderUvResult(uvResult);
+}
+
+function renderUvResult(r){
+  const isM=pcUnit==='metric';
+  const impEl=document.getElementById('uv-val-imperial');
+  const metEl=document.getElementById('uv-val-metric');
+  impEl.innerHTML=r.U_weighted.toFixed(2)+'<span class="result-val-unit">BTU</span>';
+  metEl.innerHTML=(r.U_weighted*BTU_TO_W).toFixed(2)+'<span class="result-val-unit">W/m²K</span>';
+  ['imperial','metric'].forEach(u=>{
+    const active=(!isM&&u==='imperial')||(isM&&u==='metric');
+    document.getElementById('uv-val-'+u).classList.toggle('active',active);
+    document.getElementById('uv-val-'+u).classList.toggle('inactive',!active);
+    document.getElementById('uv-col-'+u).classList.toggle('active',active);
+    document.getElementById('uv-col-'+u).classList.toggle('inactive',!active);
+  });
+  const chk=document.getElementById('uv-area-check');
+  chk.style.display=r.checkPass?'none':'block';
+  if(!r.checkPass) chk.textContent='⚠ Area check failed (diff: '+r.checkDiff.toFixed(2)+' in²)';
+  function aD(a){return isM?(a*IN2_TO_M2*1e6).toFixed(1)+' mm²':a.toFixed(1)+' in²';}
+  function uD(u){return isM?(u*BTU_TO_W).toFixed(2)+' W/m²K':u.toFixed(2)+' BTU';}
+  function pct(a){return (a/r.A_panel*100).toFixed(1)+'%';}
+  const bEl=document.getElementById('uv-breakdown');
+  bEl.innerHTML='<div class="brow area-brow" style="font-size:11px"><span class="bl" style="flex:2">Zone</span><span class="bv" style="flex:1;text-align:right">Area</span><span class="bv" style="flex:0.6;text-align:right">%</span><span class="bv" style="flex:1;text-align:right">U-val</span></div>';
+  r.bkRows.forEach(row=>{
+    bEl.innerHTML+='<div class="brow lite-brow"><span class="bl" style="flex:2">'+row.label+'</span><span class="bv" style="flex:1;text-align:right">'+aD(row.area)+'</span><span class="bv" style="flex:0.6;text-align:right">'+pct(row.area)+'</span><span class="bv" style="flex:1;text-align:right">'+uD(row.u)+'</span></div>';
+  });
+  bEl.innerHTML+='<div class="brow area-brow"><span class="bl" style="flex:2;color:var(--accent)">Total</span><span class="bv" style="flex:1;text-align:right">'+aD(r.A_panel)+'</span><span class="bv" style="flex:0.6;text-align:right">100%</span><span class="bv" style="flex:1;text-align:right;color:var(--accent)">'+uD(r.U_weighted)+'</span></div>';
+  document.getElementById('uv-result').classList.add('visible');
+}
+
+function convertUvToUnit(){
+  const U_fr=getU_uv('uv-uf'), U_cogv=getU_uv('uv-cog-v'), U_eogv=getU_uv('uv-eog-v');
+  const fw_in=getSingleIn_uv('uv-fw');
+  const isM=pcUnit==='metric';
+  function setU(id,tagId,u_btu){
+    document.getElementById(id).value=isM?(u_btu*BTU_TO_W).toFixed(2):u_btu.toFixed(2);
+    document.getElementById(tagId).textContent=isM?'W/m²K':'BTU';
+  }
+  document.getElementById('uv-fw').value=isM?parseFloat((fw_in*IN_TO_MM).toFixed(1)):parseFloat(fw_in.toFixed(2));
+  document.getElementById('uv-fw-tag').textContent=isM?'mm':'in';
+  setU('uv-uf','uv-uf-tag',U_fr);
+  setU('uv-cog-v','uv-cogv-tag',U_cogv);
+  setU('uv-eog-v','uv-eogv-tag',U_eogv);
+  rebuildUvSpandrelUI();
+  if(uvResult) renderUvResult(uvResult);
+  onUvChange();
+}
+
+function copyUvResult(){
+  if(!uvResult) return;
+  const isM=pcUnit==='metric';
+  let t='U-Value: '+(isM?(uvResult.U_weighted*BTU_TO_W).toFixed(2)+' W/m²K\n':uvResult.U_weighted.toFixed(2)+' BTU/hr·ft²·°F\n');
+  navigator.clipboard.writeText(t).then(()=>{
+    const btn=document.getElementById('uv-copy-btn');btn.classList.add('copied');
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Copied!';
+    setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy';},2000);
+  });
+}
+
+// Help content
+HELP_CONTENT['frame']={title:'Frame Configuration',body:`<div class="help-body">
+<h3>Frame Types — Typical U-Frame (BTU/hr·ft²·°F)</h3>
+<ul>
+  <li><b>Alum. No Thermal Break</b>: 1.10 — continuous extrusion, no insulation</li>
+  <li><b>Alum. P &amp; D Thermal Break</b>: 0.70 — polyurethane pour, 10–20mm break</li>
+  <li><b>Alum. Isobar Thermal Break</b>: 0.50 — polyamide bar, 24–34mm break</li>
+  <li><b>Steel No Thermal Break</b>: 1.00</li>
+  <li><b>Steel Thermal Break</b>: 0.62</li>
+  <li><b>Wood / Fibreglass</b>: 0.38 — inherently low conductivity</li>
+  <li><b>uPVC</b>: 0.40 — multi-chamber polymer profile</li>
+</ul>
+<h3>Spacer Bar Adders</h3>
+<ul>
+  <li>Aluminium: +0.25 · Stainless: +0.12 · Warm-edge: +0.05</li>
+</ul>
+<h3>U-Frame &amp; U-EOG</h3>
+<p><code>U-Frame = base + spacer adder</code></p>
+<p><code>U-EOG = (U-Frame + U-COG) / 2</code></p>
+<p>Values are indicative. Use THERM simulation for certified NFRC 100 submissions.</p>
+</div>`};
+HELP_CONTENT['glass']={title:'Glass Configuration',body:`<div class="help-body"><h3>U-COG Typical Values (BTU/hr·ft²·°F)</h3><ul><li>Double, no coating: air 0.48 · argon 0.42</li><li>Double, 1 coating: air 0.30 · argon 0.25</li><li>Double, 2 coatings: air 0.26 · argon 0.22</li><li>Triple, no coating: air 0.28 · argon 0.23</li><li>Triple, 1 coating: air 0.20 · argon 0.17</li><li>Triple, 2 coatings: air 0.17 · argon 0.14</li></ul><p>Values are indicative. Use certified manufacturer data for submissions.</p></div>`};
+HELP_CONTENT['spandrel']={title:'Spandrel Configuration',body:`<div class="help-body"><h3>Opaque</h3><p><code>U = 1 / (R-se + R-ins + R-si)</code></p><ul><li>R-se = 0.17 · R-si = 0.68 hr·ft²·°F/BTU</li><li>R-ins (insulation) = thickness × R per inch</li></ul><h3>Shadowbox</h3><p><code>U = 1 / (R-se + 1/U-cog-vision + R-cavity + R-ins + R-si)</code></p><ul><li>R-cavity = 0.97 (2" sealed air space, ASHRAE)</li></ul><h3>Default R/inch = 4.2</h3><p>Typical for mineral wool batts.</p></div>`};
+
+// Init
+onUvFrameConfig();
+onUvGlassConfig();
+updateUvInheritedChips();
+
+
+/* ═══════════════════════════════════════════════════════════════
+   BEAM DESIGN TAB
+   ═══════════════════════════════════════════════════════════════ */
+// pcUnit now references pcUnit
+let beamSection = 'hollow';
+let beamResult = null;
+
+const BEAM_MATS = {
+  al6063: { name:'Al 6063-T5', E:10100, Fy:22 },
+  al6061: { name:'Al 6061-T6', E:10000, Fy:35 },
+  stA36:  { name:'Steel A36',  E:29000, Fy:36 },
+  stA500: { name:'Steel A500', E:29000, Fy:46 },
+};
+
+function onBeamPanelChange() { rebuildBeamMemberDropdown(); syncBeamFromPanel(); }
+
+function rebuildBeamMemberDropdown() {
+  const sel = document.getElementById('beam-member');
+  const cur = sel.value;
+  const members = getPanelMemberList();
+  sel.innerHTML = '<option value="custom">Custom</option>' +
+    members.map(m=>`<option value="${m.key}">${m.label} (L=${dimStr_beam(m.span)}, trib=${dimStr_beam(m.trib)})</option>`).join('');
+  if (members.find(m=>m.key===cur)) sel.value=cur;
+}
+
+function syncBeamFromPanel() {
+  const sel = document.getElementById('beam-member');
+  if (sel.value==='custom') return;
+  const members = getPanelMemberList();
+  const m = members.find(m=>m.key===sel.value);
+  if (!m) return;
+  const isM=pcUnit==='metric';
+  function setFtIn(ftId,inId,pairId,val_in,ftTag,inTag){
+    if(isM){
+      document.getElementById(ftId).value=parseFloat((val_in*IN_TO_MM).toFixed(0));
+      document.getElementById(inId+'-wrap').style.display='none';
+      document.getElementById(pairId).style.gridTemplateColumns='1fr';
+      document.getElementById(ftTag).textContent='mm';
+    } else {
+      const ft=Math.floor(val_in/12),ins=parseFloat((val_in-ft*12).toFixed(2));
+      document.getElementById(ftId).value=ft; document.getElementById(inId).value=ins;
+      document.getElementById(inId+'-wrap').style.display='';
+      document.getElementById(pairId).style.gridTemplateColumns='';
+      document.getElementById(ftTag).textContent='ft';
+      document.getElementById(inTag).textContent='in';
+    }
+  }
+  setFtIn('beam-span-ft','beam-span-in','beam-span-pair',m.span,'beam-span-ft-tag','beam-span-in-tag');
+  setFtIn('beam-trib-ft','beam-trib-in','beam-trib-pair',m.trib,'beam-trib-ft-tag','beam-trib-in-tag');
+  onBeamChange();
+}
+
+function onBeamMemberSelect() { syncBeamFromPanel(); onBeamChange(); }
+
+function dimStr_beam(val_in){
+  if(pcUnit==='metric') return Math.round(val_in*IN_TO_MM)+'mm';
+  const ft=Math.floor(val_in/12),ins=parseFloat((val_in-ft*12).toFixed(1));
+  if(ft>0&&ins>0) return ft+"'-"+ins+'"'; if(ft>0) return ft+"'"; return ins+'"';
+}
+
+function getBeamDimIn(ftId,inId){
+  if(pcUnit==='metric') return (parseFloat(document.getElementById(ftId).value)||0)/IN_TO_MM;
+  return (parseFloat(document.getElementById(ftId).value)||0)*12+(parseFloat(document.getElementById(inId).value)||0);
+}
+
+
+function onBeamDepthSlide(){
+  const v=parseFloat(document.getElementById('beam-d-slider').value);
+  const isM=pcUnit==='metric';
+  document.getElementById('beam-d-display').textContent=isM?Math.round(v*IN_TO_MM)+'mm':v+' in';
+  onBeamChange();
+}
+
+function setBeamSection(type){
+  beamSection=type;
+  document.getElementById('beam-hollow-btn').classList.toggle('active',type==='hollow');
+  document.getElementById('beam-solid-btn').classList.toggle('active',type==='solid');
+  document.getElementById('beam-t-field').style.display=type==='hollow'?'':'none';
+  onBeamChange();
+}
+
+function onBeamChange(){
+  const errEl=document.getElementById('beam-error'); errEl.classList.remove('visible');
+  const L_in=getBeamDimIn('beam-span-ft','beam-span-in');
+  const trib_in=getBeamDimIn('beam-trib-ft','beam-trib-in');
+  const w_psf=pcGetWindPsf();
+  const mat=BEAM_MATS[document.getElementById('beam-mat').value];
+  const deflStr=document.getElementById('beam-defl').value;
+  const isM=pcUnit==='metric';
+
+  if(!L_in||!trib_in||L_in<=0||trib_in<=0){return;}
+
+  const B_in = isM?(parseFloat(document.getElementById('beam-b').value)||0)/IN_TO_MM:(parseFloat(document.getElementById('beam-b').value)||0);
+  const D_in = parseFloat(document.getElementById('beam-d-slider').value)||3;
+  const t_in = beamSection==='hollow'?(isM?(parseFloat(document.getElementById('beam-t').value)||0)/IN_TO_MM:(parseFloat(document.getElementById('beam-t').value)||0)):0;
+
+  if(B_in<=0||D_in<=0){return;}
+  if(beamSection==='hollow'&&(t_in<=0||2*t_in>=B_in||2*t_in>=D_in)){
+    errEl.textContent='Wall thickness too large for section dimensions.'; errEl.classList.add('visible'); return;
+  }
+
+  // Section properties (in⁴, in³)
+  let I_in4, Sx_in3;
+  if(beamSection==='hollow'){
+    I_in4=(B_in*D_in*D_in*D_in-(B_in-2*t_in)*Math.pow(D_in-2*t_in,3))/12;
+    Sx_in3=I_in4/(D_in/2);
+  } else {
+    I_in4=B_in*D_in*D_in*D_in/12;
+    Sx_in3=I_in4/(D_in/2);
+  }
+
+  // Line load (lb/in)
+  const w_lbin = w_psf * (trib_in/12) / 12; // psf × trib_ft / 12
+
+  // Required I (deflection)
+  let delta_allow_in;
+  if(deflStr==='240q') delta_allow_in=Math.min(L_in/240,0.25);
+  else delta_allow_in=L_in/parseFloat(deflStr);
+  const I_req=5*w_lbin*Math.pow(L_in,4)/(384*mat.E*delta_allow_in);
+
+  // Required Sx (bending)
+  const M_max=w_lbin*L_in*L_in/8; // lb·in
+  const F_allow=0.6*mat.Fy*1000; // psi
+  const Sx_req=M_max/F_allow;
+
+  const I_util=I_req/I_in4;
+  const Sx_util=Sx_req/Sx_in3;
+  const util=Math.max(I_util,Sx_util);
+  const governs=I_util>Sx_util?'Deflection':'Bending';
+  const pass=util<=1.0;
+
+  beamResult={I_in4,Sx_in3,I_req,Sx_req,I_util,Sx_util,util,pass,governs,L_in,w_psf,trib_in,mat,B_in,D_in,t_in};
+  renderBeamResult(beamResult);
+}
+
+function renderBeamResult(r){
+  const isM=pcUnit==='metric';
+  function iD(v){return isM?(v*Math.pow(25.4,4)/1e6).toFixed(0)+' cm⁴':v.toFixed(3)+' in⁴';}
+  function sD(v){return isM?(v*Math.pow(25.4,3)/1e3).toFixed(1)+' cm³':v.toFixed(3)+' in³';}
+
+  const pct=Math.round(r.util*100);
+  const color=r.pass?(pct<70?'#4a9a6a':'#d4a93a'):'#DC5B23';
+
+  document.getElementById('beam-status-row').innerHTML=
+    `<span style="font-size:20px;font-weight:900;font-family:'Lato',sans-serif;color:${color}">${r.pass?'✓ PASS':'✗ FAIL'}</span>
+     <span style="font-size:12px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-left:8px">${pct}% utilisation — ${r.governs} governs</span>`;
+
+  document.getElementById('beam-util-fill').style.width=Math.min(100,pct)+'%';
+  document.getElementById('beam-util-fill').style.background=color;
+
+  const bEl=document.getElementById('beam-breakdown');
+  const rows=[
+    ['Span', dimStr_beam(r.L_in)],
+    ['Wind load', isM?(r.w_psf*PSF_TO_KPA).toFixed(2)+' kPa':r.w_psf+' psf'],
+    ['Trib. width', dimStr_beam(r.trib_in)],
+    ['Material', r.mat.name+' (E='+r.mat.E.toLocaleString()+' ksi, Fy='+r.mat.Fy+' ksi)'],
+    ['Section I', sD(r.I_in4).replace('cm³','cm⁴').replace('in³','in⁴')+'  (provided)'],
+    ['Required I', iD(r.I_req)+' → '+(r.I_util*100).toFixed(0)+'%'],
+    ['Section Sx', sD(r.Sx_in3)+'  (provided)'],
+    ['Required Sx', sD(r.Sx_req)+' → '+(r.Sx_util*100).toFixed(0)+'%'],
+  ];
+  bEl.innerHTML=rows.map((row,i)=>`<div class="brow ${i===rows.length-1?'area-brow':'lite-brow'}">
+    <span class="bl">${row[0]}</span><span class="bv">${row[1]}</span></div>`).join('');
+  document.getElementById('beam-result').classList.add('visible');
+}
+
+function convertBeamToUnit(){
+  rebuildBeamMemberDropdown();
+  syncBeamFromPanel();
+}
+
+function copyBeamResult(){
+  if(!beamResult) return;
+  const r=beamResult;
+  const t=`Beam Design Check: ${r.pass?'PASS':'FAIL'} (${Math.round(r.util*100)}%)\nGoverns: ${r.governs}\n`;
+  navigator.clipboard.writeText(t);
+}
+
+HELP_CONTENT['beam_material']={title:'Beam Design — Material & Formula',body:`
+  <div class="help-body">
+    <h3>Materials</h3><ul>
+      <li>Al 6063-T5: E=10,100 ksi · Fy=22 ksi</li>
+      <li>Al 6061-T6: E=10,000 ksi · Fy=35 ksi</li>
+      <li>Steel A36: E=29,000 ksi · Fy=36 ksi</li>
+      <li>Steel A500: E=29,000 ksi · Fy=46 ksi</li>
+    </ul>
+    <h3>Required I (deflection)</h3>
+    <p><code>I_req = 5wL⁴ / (384EΔ)</code></p>
+    <h3>Required Sx (bending)</h3>
+    <p><code>Sx_req = wL²/8 / (0.6Fy)</code></p>
+    <h3>Section (hollow rectangular)</h3>
+    <p><code>I = (BD³ - (B-2t)(D-2t)³) / 12</code></p>
+  </div>`};
+
+// Init beam
+rebuildBeamMemberDropdown();
+onBeamDepthSlide();
+
+/* ═══════════════════════════════════════════════════════════════
+   GLASS WEIGHT TAB
+   ═══════════════════════════════════════════════════════════════ */
+// pcUnit now references pcUnit
+let gwLites = [6, 6]; // mm thicknesses
+let gwResult = null;
+const GW_THICKNESSES = [3,4,5,6,8,10,12,15,19,22,25];
+const GW_FRACTIONS = ['1/8"','5/32"','3/16"','1/4"','5/16"','3/8"','1/2"','19/32"','3/4"','7/8"','1"'];
+const GLASS_DENSITY_KG_M3 = 2500;
+
+function onGwPanelChange() { rebuildGwZoneDropdown(); onGwZoneSelect(); }
+
+function rebuildGwZoneDropdown() {
+  const sel=document.getElementById('gw-zone');
+  const cur=sel.value;
+  const zones=getPanelZoneList();
+  sel.innerHTML='<option value="custom">Custom</option>'+
+    zones.map(z=>`<option value="${z.key}">${z.label}</option>`).join('');
+  if(zones.find(z=>z.key===cur)) sel.value=cur;
+}
+
+function onGwZoneSelect() {
+  const sel=document.getElementById('gw-zone');
+  if(sel.value==='custom'){onGwChange();return;}
+  const zones=getPanelZoneList();
+  const z=zones.find(z=>z.key===sel.value);
+  if(!z) return;
+  const isM=pcUnit==='metric';
+  function setFtIn(ftId,inId,pairId,val_in,ftTag,inTag){
+    if(isM){
+      document.getElementById(ftId).value=parseFloat((val_in*IN_TO_MM).toFixed(0));
+      document.getElementById(inId+'-wrap').style.display='none';
+      document.getElementById(pairId).style.gridTemplateColumns='1fr';
+      document.getElementById(ftTag).textContent='mm';
+    } else {
+      const ft=Math.floor(val_in/12),ins=parseFloat((val_in-ft*12).toFixed(2));
+      document.getElementById(ftId).value=ft; document.getElementById(inId).value=ins;
+      document.getElementById(inId+'-wrap').style.display='';
+      document.getElementById(pairId).style.gridTemplateColumns='';
+      document.getElementById(ftTag).textContent='ft'; document.getElementById(inTag).textContent='in';
+    }
+  }
+  setFtIn('gw-h-ft','gw-h-in','gw-h-pair',z.h,'gw-h-ft-tag','gw-h-in-tag');
+  setFtIn('gw-w-ft','gw-w-in','gw-w-pair',z.w,'gw-w-ft-tag','gw-w-in-tag');
+  onGwChange();
+}
+
+function gwAddLite(){
+  gwLites.push(6);
+  rebuildGwLites();
+  onGwChange();
+}
+function gwRemoveLite(i){
+  if(gwLites.length<=1) return;
+  gwLites.splice(i,1);
+  rebuildGwLites();
+  onGwChange();
+}
+function gwSetThickness(i,mm){
+  gwLites[i]=mm;
+  onGwChange();
+}
+
+function rebuildGwLites(){
+  const c=document.getElementById('gw-lites-container');
+  c.innerHTML='';
+  gwLites.forEach((t,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:8px';
+    row.innerHTML=`
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);font-family:'Lato',sans-serif;min-width:40px">Lite ${i+1}</div>
+      <div class="drum-wrap" style="flex:1">
+        <div class="drum" id="gw-drum-${i}">
+          ${GW_THICKNESSES.map((th,j)=>`<div class="drum-item" data-mm="${th}">${th}mm | ${GW_FRACTIONS[j]}</div>`).join('')}
+        </div>
+      </div>
+      ${gwLites.length>1?`<button onclick="gwRemoveLite(${i})" style="background:var(--danger);border:none;border-radius:4px;color:#fff;width:28px;height:28px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>`:''}`;
+    c.appendChild(row);
+    // Set drum to current thickness
+    const drum=document.getElementById('gw-drum-'+i);
+    if(!drum) return;
+    const idx=GW_THICKNESSES.indexOf(t);
+    if(idx>=0) drum.scrollTop=idx*42;
+    drum.addEventListener('scroll',()=>{
+      const scrolled=Math.round(drum.scrollTop/42);
+      const mm=GW_THICKNESSES[Math.max(0,Math.min(GW_THICKNESSES.length-1,scrolled))];
+      gwLites[i]=mm; onGwChange();
+    });
+  });
+}
+
+function onGwChange(){
+  const isM=pcUnit==='metric';
+  const H_in=isM?(parseFloat(document.getElementById('gw-h-ft').value)||0)/IN_TO_MM:(parseFloat(document.getElementById('gw-h-ft').value)||0)*12+(parseFloat(document.getElementById('gw-h-in').value)||0);
+  const W_in=isM?(parseFloat(document.getElementById('gw-w-ft').value)||0)/IN_TO_MM:(parseFloat(document.getElementById('gw-w-ft').value)||0)*12+(parseFloat(document.getElementById('gw-w-in').value)||0);
+  if(!H_in||!W_in) return;
+  const A_m2=H_in*W_in*IN2_TO_M2;
+  const totalThick_m=gwLites.reduce((s,t)=>s+t/1000,0);
+  const mass_kg=A_m2*totalThick_m*GLASS_DENSITY_KG_M3;
+  const mass_lb=mass_kg/LB_TO_KG;
+  gwResult={mass_kg,mass_lb,A_m2,gwLites,H_in,W_in};
+  const impEl=document.getElementById('gw-val-imperial');
+  const metEl=document.getElementById('gw-val-metric');
+  impEl.innerHTML=mass_lb.toFixed(1)+'<span class="result-val-unit">lb</span>';
+  metEl.innerHTML=mass_kg.toFixed(1)+'<span class="result-val-unit">kg</span>';
+  ['imperial','metric'].forEach(u=>{
+    const active=(!isM&&u==='imperial')||(isM&&u==='metric');
+    document.getElementById('gw-val-'+u).classList.toggle('active',active);
+    document.getElementById('gw-val-'+u).classList.toggle('inactive',!active);
+    document.getElementById('gw-col-'+u).classList.toggle('active',active);
+    document.getElementById('gw-col-'+u).classList.toggle('inactive',!active);
+  });
+  const bEl=document.getElementById('gw-breakdown');
+  const A_ft2=A_m2/0.0929, A_m2_disp=A_m2.toFixed(2);
+  bEl.innerHTML=`
+    <div class="brow lite-brow"><span class="bl">Area</span><span class="bv">${A_ft2.toFixed(2)} ft² | ${A_m2_disp} m²</span></div>
+    ${gwLites.map((t,i)=>`<div class="brow lite-brow"><span class="bl">Lite ${i+1}</span><span class="bv">${t}mm | ${GW_FRACTIONS[GW_THICKNESSES.indexOf(t)]}</span></div>`).join('')}
+    <div class="brow area-brow"><span class="bl" style="color:var(--accent)">Total thickness</span><span class="bv">${gwLites.reduce((s,t)=>s+t,0)}mm</span></div>`;
+  document.getElementById('gw-result').classList.add('visible');
+}
+
+function convertGwToUnit(){
+  rebuildGwZoneDropdown(); onGwZoneSelect();
+}
+
+function copyGwResult(){
+  if(!gwResult) return;
+  navigator.clipboard.writeText('Glass Weight: '+gwResult.mass_kg.toFixed(1)+' kg / '+gwResult.mass_lb.toFixed(1)+' lb');
+}
+
+// Init glass weight
+rebuildGwLites();
+rebuildGwZoneDropdown();
+onGwChange();
+
+/* ═══════════════════════════════════════════════════════════════
+   SILICONE BITE TAB
+   ═══════════════════════════════════════════════════════════════ */
+// pcUnit now references pcUnit
+let siResult = null;
+
+function onSiPanelChange() { rebuildSiZoneDropdown(); onSiZoneSelect(); }
+
+function rebuildSiZoneDropdown(){
+  const sel=document.getElementById('si-zone');
+  const cur=sel.value;
+  const zones=getPanelZoneList();
+  sel.innerHTML='<option value="custom">Custom</option>'+
+    zones.map(z=>`<option value="${z.key}">${z.label}</option>`).join('');
+  if(zones.find(z=>z.key===cur)) sel.value=cur;
+  // Sync wind load from panel
+  const wl=pcGetWindPsf();
+  document.getElementById('si-wl-slider').value=Math.min(100,Math.max(10,wl));
+  onSiWlChange();
+}
+
+function onSiZoneSelect(){
+  const sel=document.getElementById('si-zone');
+  if(sel.value==='custom'){onSiChange();return;}
+  const zones=getPanelZoneList();
+  const z=zones.find(z=>z.key===sel.value);
+  if(!z) return;
+  const isM=pcUnit==='metric';
+  function setFtIn(ftId,inId,pairId,val_in,ftTag,inTag){
+    if(isM){
+      document.getElementById(ftId).value=parseFloat((val_in*IN_TO_MM).toFixed(0));
+      document.getElementById(inId+'-wrap').style.display='none';
+      document.getElementById(pairId).style.gridTemplateColumns='1fr';
+      document.getElementById(ftTag).textContent='mm';
+    } else {
+      const ft=Math.floor(val_in/12),ins=parseFloat((val_in-ft*12).toFixed(2));
+      document.getElementById(ftId).value=ft; document.getElementById(inId).value=ins;
+      document.getElementById(inId+'-wrap').style.display='';
+      document.getElementById(pairId).style.gridTemplateColumns='';
+      document.getElementById(ftTag).textContent='ft'; document.getElementById(inTag).textContent='in';
+    }
+  }
+  setFtIn('si-h-ft','si-h-in','si-h-pair',z.h,'si-h-ft-tag','si-h-in-tag');
+  setFtIn('si-w-ft','si-w-in','si-w-pair',z.w,'si-w-ft-tag','si-w-in-tag');
+  onSiChange();
+}
+
+function onSiWlChange(){
+  const v=parseFloat(document.getElementById('si-wl-slider').value);
+  const isM=pcUnit==='metric';
+  document.getElementById('si-wl-display').textContent=isM?(v*PSF_TO_KPA).toFixed(2)+' kPa':v+' psf';
+  onSiChange();
+}
+
+function onSiProductChange(){
+  const val=document.getElementById('si-product').value;
+  const fsEl=document.getElementById('si-fs');
+  if(val==='custom'){fsEl.disabled=false;fsEl.style.opacity='1';fsEl.style.cursor='';}
+  else{
+    const psi=parseFloat(val);
+    fsEl.value=pcUnit==='metric'?(psi*6.89476).toFixed(2):psi;
+    fsEl.disabled=true;fsEl.style.opacity='0.5';fsEl.style.cursor='not-allowed';
+    onSiChange();
+  }
+}
+
+function onSiChange(){
+  const errEl=document.getElementById('si-error'); errEl.classList.remove('visible');
+  const isM=pcUnit==='metric';
+  const H_in=isM?(parseFloat(document.getElementById('si-h-ft').value)||0)/IN_TO_MM:(parseFloat(document.getElementById('si-h-ft').value)||0)*12+(parseFloat(document.getElementById('si-h-in').value)||0);
+  const W_in=isM?(parseFloat(document.getElementById('si-w-ft').value)||0)/IN_TO_MM:(parseFloat(document.getElementById('si-w-ft').value)||0)*12+(parseFloat(document.getElementById('si-w-in').value)||0);
+  const w_psf=parseFloat(document.getElementById('si-wl-slider').value)||20;
+  const fs_raw=parseFloat(document.getElementById('si-fs').value)||20;
+  const fs_psi=isM?fs_raw/6.89476:fs_raw;
+  if(!H_in||!W_in||!fs_psi) return;
+  const S_ft=Math.min(H_in,W_in)/12;
+  const S_mm=Math.min(H_in,W_in)*IN_TO_MM;
+  const w_kpa=w_psf*PSF_TO_KPA;
+  const fs_kpa=fs_psi*6.89476;
+  const bite_in=(0.5*S_ft*w_psf)/(12*fs_psi);
+  const bite_mm_calc=(0.5*S_mm*w_kpa)/fs_kpa;
+  const bite_mm=Math.ceil(bite_mm_calc*10)/10;
+  const min_bite_in=0.25, min_bite_mm=6.0;
+  const gov_in=Math.max(bite_in,min_bite_in);
+  const gov_mm=Math.max(bite_mm,min_bite_mm);
+  const min_governs=min_bite_mm>bite_mm;
+  siResult={bite_in,bite_mm,gov_in,gov_mm,min_governs,w_psf,fs_psi,S_ft,S_mm,w_kpa,fs_kpa};
+  renderSiResult(siResult);
+}
+
+function renderSiResult(r){
+  const isM=pcUnit==='metric';
+  const kpiLabel=r.min_governs?'Code Minimum':'Calculated Bite';
+  document.getElementById('si-result-label').textContent=kpiLabel;
+  const impEl=document.getElementById('si-val-imperial');
+  const metEl=document.getElementById('si-val-metric');
+  impEl.innerHTML=r.gov_in.toFixed(3)+'<span class="result-val-unit">in</span>';
+  metEl.innerHTML=Math.ceil(r.gov_mm).toFixed(0)+'<span class="result-val-unit">mm</span>';
+  ['imperial','metric'].forEach(u=>{
+    const active=(!isM&&u==='imperial')||(isM&&u==='metric');
+    document.getElementById('si-val-'+u).classList.toggle('active',active);
+    document.getElementById('si-val-'+u).classList.toggle('inactive',!active);
+    document.getElementById('si-col-'+u).classList.toggle('active',active);
+    document.getElementById('si-col-'+u).classList.toggle('inactive',!active);
+  });
+  const inC=isM?'var(--text-muted)':'var(--accent)';
+  const mmC=isM?'var(--accent)':'var(--text-muted)';
+  function dualVal(inV,mmV){return `<span style="color:${inC}">${inV} in</span><span style="color:var(--text-muted);font-size:13px"> | </span><span style="color:${mmC}">${mmV} mm</span>`;}
+  const wDual=`<span style="color:${inC}">${r.w_psf} psf</span> | <span style="color:${mmC}">${r.w_kpa.toFixed(2)} kPa</span>`;
+  const fsDual=`<span style="color:${inC}">${r.fs_psi.toFixed(1)} psi</span> | <span style="color:${mmC}">${r.fs_kpa.toFixed(1)} kPa</span>`;
+  const bEl=document.getElementById('si-breakdown');
+  const rows=[
+    ['Shortest side',dualVal((r.S_ft*12).toFixed(2),r.S_mm.toFixed(0))],
+    ['Wind pressure',wDual],
+    ['Allowable strength',fsDual],
+    ['Formula bite',dualVal(r.bite_in.toFixed(3),Math.ceil(r.bite_mm_calc||r.bite_mm).toFixed(0))],
+    ['Code minimum','0.25 in | 6 mm'],
+  ];
+  bEl.innerHTML=rows.map((row,i)=>`<div class="brow ${i===4?'lite-brow sep-above':'lite-brow'}">
+    <span class="bl">${row[0]}</span><span class="bv" style="color:var(--text-soft)">${row[1]}</span></div>`).join('');
+  document.getElementById('si-result').classList.add('visible');
+}
+
+function convertSiToUnit(){
+  const isM=pcUnit==='metric';
+  const wl=pcGetWindPsf();
+  document.getElementById('si-wl-display').textContent=isM?(wl*PSF_TO_KPA).toFixed(2)+' kPa':wl+' psf';
+  document.getElementById('si-wl-min').textContent=isM?(10*PSF_TO_KPA).toFixed(2)+' kPa':'10 psf';
+  document.getElementById('si-wl-max').textContent=isM?(100*PSF_TO_KPA).toFixed(2)+' kPa':'100 psf';
+  const fs_psi=parseFloat(document.getElementById('si-fs').value)/(isM?1:1/(6.89476))||20;
+  document.getElementById('si-fs').value=isM?parseFloat((fs_psi*6.89476).toFixed(1)):parseFloat(fs_psi.toFixed(1));
+  document.getElementById('si-fs-unit').textContent=isM?'kPa':'psi';
+  rebuildSiZoneDropdown(); onSiZoneSelect();
+  if(siResult) renderSiResult(siResult);
+}
+
+function copySiResult(){
+  if(!siResult) return;
+  const isM=pcUnit==='metric';
+  const t=`Silicone Bite: ${isM?Math.ceil(siResult.gov_mm)+' mm':siResult.gov_in.toFixed(3)+' in'} (${siResult.min_governs?'code min':'calculated'})`;
+  navigator.clipboard.writeText(t);
+}
+
+// Init silicone
+rebuildSiZoneDropdown();
+onSiProductChange();
+onSiChange();
+
+</script>
