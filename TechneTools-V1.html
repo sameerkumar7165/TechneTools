@@ -471,6 +471,18 @@ input[type=range]::-webkit-slider-thumb {
   font-family: 'Lato', sans-serif; font-weight: 700;
 }
 .inherited-chip span { color: var(--accent); }
+
+/* Calculated / locked fields — light accent tint */
+.input-locked {
+  background: rgba(98, 127, 191, 0.12) !important;
+  border-color: rgba(98, 127, 191, 0.55) !important;
+}
+.input-locked input, .input-locked select {
+  background: transparent !important;
+  color: var(--text-soft) !important;
+  cursor: default !important;
+  pointer-events: none;
+}
 </style>
 </head>
 <body data-tab="uv" data-theme="light">
@@ -708,15 +720,15 @@ window.addEventListener('unhandledrejection', function(e){
     <div class="field-row">
       <div class="field">
         <label>U-Frame <span style="font-size:10px;color:var(--accent)">(calc)</span></label>
-        <div class="input-wrap" style="border-color:var(--accent)">
-          <input type="number" id="uv-uf" min="0" step="0.01" inputmode="decimal" onfocus="this.select()" oninput="onUvChange()">
+        <div class="input-wrap input-locked">
+          <input type="number" id="uv-uf" readonly min="0" step="0.01" inputmode="decimal" onfocus="this.select()" oninput="onUvChange()">
           <span class="unit-tag" id="uv-uf-tag">BTU</span>
         </div>
       </div>
       <div class="field">
         <label>U-EOG <span style="font-size:10px;color:var(--accent)">(calc)</span></label>
-        <div class="input-wrap" style="border-color:var(--accent)">
-          <input type="number" id="uv-eog-v" min="0" step="0.01" inputmode="decimal" onfocus="this.select()" oninput="onUvChange()">
+        <div class="input-wrap input-locked">
+          <input type="number" id="uv-eog-v" readonly min="0" step="0.01" inputmode="decimal" onfocus="this.select()" oninput="onUvChange()">
           <span class="unit-tag" id="uv-eogv-tag">BTU</span>
         </div>
       </div>
@@ -764,8 +776,8 @@ window.addEventListener('unhandledrejection', function(e){
       </div>
       <div class="field">
         <label>U-COG <span id="uv-cog-source" style="font-size:10px;color:var(--accent)">(from config)</span></label>
-        <div class="input-wrap">
-          <input type="number" id="uv-cog-v" value="0.25" min="0" step="0.01" inputmode="decimal" onfocus="this.select()" oninput="onUvChange()" style="border-color:var(--accent)">
+        <div class="input-wrap input-locked">
+          <input type="number" id="uv-cog-v" readonly value="0.25" min="0" step="0.01" inputmode="decimal" onfocus="this.select()" oninput="onUvChange()" style="border-color:var(--accent)">
           <span class="unit-tag" id="uv-cogv-tag">BTU</span>
         </div>
       </div>
@@ -1558,9 +1570,11 @@ function transomHTML(n, isM) {
 
 function rebuildPcZones() {
   const geom = computePanelGeometry();
-  const numZ = geom ? geom.zones.length :
+  // geom can be: null (invalid dims), {error:...} (constraint violation), or valid geometry
+  const numZ = (geom && geom.zones) ? geom.zones.length :
     1+(pcTransoms[1].active?1:0)+(pcTransoms[2].active?1:0);
   const c = document.getElementById('pc-zones-container');
+  if(!c) return;
   c.innerHTML='';
   const isM = pcUnit==='metric';
   for (let n=1; n<=numZ; n++) {
