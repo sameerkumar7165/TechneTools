@@ -4133,8 +4133,14 @@ function generatePrintPage() {
   .panel-config { background: #f9f6f0; border: 1px solid #e0d8cc; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
   .panel-config-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #888; margin-bottom: 10px; }
 
+  .action-bar {
+    position: sticky; top: 0; background: white; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0 10px; border-bottom: 2px solid #f0f0f0; margin-bottom: 16px;
+  }
   @media print {
     body { padding: 0; }
+    .no-print { display: none !important; }
     section + section { page-break-before: always; border-top: none; padding-top: 20px; }
     .no-break { page-break-inside: avoid; }
     @page { margin: 15mm 15mm; }
@@ -4143,15 +4149,35 @@ function generatePrintPage() {
 </head>
 <body>
 
+<!-- Action bar — visible on screen, hidden when printing -->
+<div class="action-bar no-print">
+  <div style="font-size:13px;font-weight:900;color:#D4829A;letter-spacing:2px">TECHNE TOOLS</div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <button onclick="window.print()" style="background:#D4829A;color:white;border:none;
+      border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;
+      font-family:Arial,sans-serif;cursor:pointer;letter-spacing:0.5px">
+      🖨 Print / Save PDF
+    </button>
+    <button onclick="window.close()" style="background:transparent;color:#888;border:1.5px solid #ddd;
+      border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;
+      font-family:Arial,sans-serif;cursor:pointer">
+      ✕ Close
+    </button>
+  </div>
+</div>
+<div style="font-size:11px;color:#aaa;text-align:center;padding:8px 0 4px;font-family:Arial,sans-serif" class="no-print">
+  On iPhone: tap <strong>Print / Save PDF</strong> above, or use Safari's Share button (□↑) → Print
+</div>
+
 <div class="page-header">
   <div>
     <div class="page-title">TECHNE TOOLS</div>
     <div style="font-size:11px;color:#888;margin-top:4px">Engineering Calculations — Indicative</div>
   </div>
   <div class="page-meta">
-    ${dateStr}<br>
-    Wind Load: <strong>${wlStr}</strong><br>
-    Panel: <strong>${panelSummary}</strong>
+    \${dateStr}<br>
+    Wind Load: <strong>\${wlStr}</strong><br>
+    Panel: <strong>\${panelSummary}</strong>
   </div>
 </div>
 
@@ -4175,11 +4201,13 @@ ${siHTML}
 </div>
 
 <script>
-  window.onload = function() {
-    window.print();
-    window.onafterprint = function() { window.close(); };
-    setTimeout(function(){ window.close(); }, 5000);
-  };
+  // Don't auto-print on iOS — user taps the button instead
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (!isIOS) {
+    window.onload = function() {
+      setTimeout(function(){ window.print(); }, 300);
+    };
+  }
 </' + 'script>
 </body>
 </html>`;
