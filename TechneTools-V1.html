@@ -3347,6 +3347,18 @@ function rebuildGwLiteFields() {
 }
 
 /* ── Main calculation ────────────────────────────────────────── */
+/* ── Bennison-Stelzer (global — used by both onGwChange and generatePrintPage) ── */
+const GW_GAMMA        = { pvb:0.01, pvb_str:0.35, sgp:0.85 };
+const GW_TPVB_DEFAULT = { pvb:0.76, pvb_str:0.76, sgp:1.52 };
+function effThick(l) {
+  if(!l.lam) return l.thickMM;
+  const h1 = l.thickMM, h2 = l.thickMM2||l.thickMM;
+  const tpvb = l.tPvbMM || GW_TPVB_DEFAULT[l.interlayer] || 0.76;
+  const gamma = GW_GAMMA[l.interlayer] || 0.01;
+  const Is = h1*h2*Math.pow(h1+h2+2*tpvb, 2) / (4*(h1+h2));
+  return Math.pow(h1**3 + h2**3 + 12*gamma*Is, 1/3);
+}
+
 function onGwPanelChange() { rebuildGwZoneDropdown(); onGwZoneSelect(); }
 
 function rebuildGwZoneDropdown() {
@@ -3404,21 +3416,7 @@ function onGwChange() {
   const isM = pcUnit === 'metric';
   const results = [];
 
-  // Bennison-Stelzer effective thickness per ASTM E1300 Appendix X9
-  // I_s = h1·h2·(h1+h2+2·t_pvb)² / (4·(h1+h2))
-  // t_eff = (h1³ + h2³ + 12·Γ·I_s)^(1/3)
-  // Gamma: interlayer coupling factor (short-duration wind load, 20°C)
-  const GW_GAMMA = { pvb:0.01, pvb_str:0.35, sgp:0.85 };
-  const GW_TPVB_DEFAULT = { pvb:0.76, pvb_str:0.76, sgp:1.52 };
-  function effThick(l) {
-    if(!l.lam) return l.thickMM;
-    const h1 = l.thickMM, h2 = l.thickMM2||l.thickMM;
-    const tpvb = l.tPvbMM || GW_TPVB_DEFAULT[l.interlayer] || 0.76;
-    const gamma = GW_GAMMA[l.interlayer] || 0.01;
-    // E1300 X9 I_s formula
-    const Is = h1*h2*Math.pow(h1+h2+2*tpvb, 2) / (4*(h1+h2));
-    return Math.pow(h1**3 + h2**3 + 12*gamma*Is, 1/3);
-  }
+  // effThick defined globally below
   function liteLabel(l, prefix) {
     if(!l.lam) return prefix+' ('+l.type+', '+l.thickMM+'mm)';
     const iLabel = l.interlayer==='sgp'?'SGP':l.interlayer==='pvb_str'?'Str. PVB':'PVB';
