@@ -868,12 +868,13 @@ window.addEventListener('unhandledrejection', function(e){
           <option value="0.62">Steel — Thermal Break</option>
           <option value="0.38">Wood / Fibreglass</option>
           <option value="0.40">uPVC</option>
+          <option value="frameless">Frameless / Channel-glazed</option>
         </select>
       </div>
     </div>
     <!-- Row 2: Frame Width + Spacer Bar -->
     <div class="field-row" style="margin-bottom:10px">
-      <div class="field">
+      <div class="field" id="uv-fw-row">
         <label>Frame Width</label>
         <div class="input-wrap">
           <input type="number" id="uv-fw" value="3" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onUvFwChange()">
@@ -893,8 +894,7 @@ window.addEventListener('unhandledrejection', function(e){
       </div>
     </div>
     <!-- Row 3: U-Frame + U-EOG -->
-    <div class="field-row">
-      <div class="field">
+    <div class="field-row" id="uv-uf-row"><div class="field">
         <label>U-Frame <span style="font-size:10px;color:var(--accent)">(calc)</span></label>
         <div class="input-wrap input-locked">
           <input type="number" id="uv-uf" readonly min="0" step="0.01" inputmode="decimal" onfocus="this.select()" oninput="onUvChange()">
@@ -2313,15 +2313,36 @@ function updateUvInheritedChips() {
 
 function onUvFwChange() { onUvFrameConfig(); }
 
+function isFrameless() {
+  return document.getElementById('uv-frame-type').value === 'frameless';
+}
+
 function onUvFrameConfig() {
-  const frameBase=parseFloat(document.getElementById('uv-frame-type').value)||0.50;
-  const spacerAdd=parseFloat(document.getElementById('uv-spacer-bar').value)||0.05;
-  const U_frame_btu=frameBase+spacerAdd;
-  const U_cog_btu=getU_uv('uv-cog-v');
-  const U_eog_btu=(U_frame_btu+U_cog_btu)/2;
-  const isM=pcUnit==='metric';
-  document.getElementById('uv-uf').value=isM?(U_frame_btu*BTU_TO_W).toFixed(2):U_frame_btu.toFixed(2);
-  document.getElementById('uv-eog-v').value=isM?(U_eog_btu*BTU_TO_W).toFixed(2):U_eog_btu.toFixed(2);
+  const frameless = isFrameless();
+  // Show/hide frame-specific fields
+  const fwRow = document.getElementById('uv-fw-row');
+  const ufRow = document.getElementById('uv-uf-row');
+  if(fwRow) fwRow.style.display = frameless ? 'none' : '';
+  if(ufRow) ufRow.style.display = frameless ? 'none' : '';
+
+  if(!frameless) {
+    const frameBase=parseFloat(document.getElementById('uv-frame-type').value)||0.50;
+    const spacerAdd=parseFloat(document.getElementById('uv-spacer-bar').value)||0.05;
+    const U_frame_btu=frameBase+spacerAdd;
+    const U_cog_btu=getU_uv('uv-cog-v');
+    const U_eog_btu=(U_frame_btu+U_cog_btu)/2;
+    const isM=pcUnit==='metric';
+    document.getElementById('uv-uf').value=isM?(U_frame_btu*BTU_TO_W).toFixed(2):U_frame_btu.toFixed(2);
+    document.getElementById('uv-eog-v').value=isM?(U_eog_btu*BTU_TO_W).toFixed(2):U_eog_btu.toFixed(2);
+  } else {
+    // Frameless: U-Frame = 0, U-EOG based on spacer + COG only
+    const spacerAdd=parseFloat(document.getElementById('uv-spacer-bar').value)||0.05;
+    const U_cog_btu=getU_uv('uv-cog-v');
+    // For frameless IGU, EOG = spacer contribution approximated as COG + edge penalty
+    const U_eog_btu = U_cog_btu + spacerAdd;
+    const isM=pcUnit==='metric';
+    document.getElementById('uv-eog-v').value=isM?(U_eog_btu*BTU_TO_W).toFixed(2):U_eog_btu.toFixed(2);
+  }
   rebuildUvSpandrelUI();
   onUvChange();
 }
@@ -2451,16 +2472,20 @@ function onUvChange() {
   const errEl=document.getElementById('uv-error'); errEl.classList.remove('visible');
   const geom=computePanelGeometry(); if(!geom){return;}
 
-  const f=getSingleIn_uv('uv-fw');
+  const frameless = isFrameless();
+  // For frameless: f=0 (no frame), use EOG_W for edge zone width
+  const f = frameless ? 0 : getSingleIn_uv('uv-fw');
   const {W,H,transoms,zones}=geom;
-  if(!f||f<=0||f>=W/2||f>=H/2){errEl.textContent='Frame width invalid for this panel size.';errEl.classList.add('visible');return;}
+  if(!frameless && (!f||f<=0||f>=W/2||f>=H/2)){errEl.textContent='Frame width invalid for this panel size.';errEl.classList.add('visible');return;}
 
-  const gl_W=W-f, gl_H=H-f;
-  const A_frame = W*H - gl_W*gl_H;
+  const gl_W = frameless ? W : W-f;
+  const gl_H = frameless ? H : H-f;
+  const A_frame = frameless ? 0 : W*H - gl_W*gl_H;
   const A_transoms = transoms.reduce((s,t)=>s+gl_W*t.yCL*0,0); // calculated below
   let A_frame_total = A_frame;
 
-  const U_frame=getU_uv('uv-uf'), U_eog=getU_uv('uv-eog-v'), U_cog=getU_uv('uv-cog-v');
+  const U_frame = frameless ? 0 : getU_uv('uv-uf');
+  const U_eog=getU_uv('uv-eog-v'), U_cog=getU_uv('uv-cog-v');
   let sumUA=0, sumA=0;
   const bkRows=[];
 
@@ -2471,8 +2496,8 @@ function onUvChange() {
     const zH = z.h - topHalf - botHalf;
     if(zH <= 0) continue;
 
-    // Add transom area to frame
-    if(z.botCL<H) { A_frame_total += gl_W * f; } // transom between zones
+    // Add transom area to frame (zero for frameless)
+    if(!frameless && z.botCL<H) { A_frame_total += gl_W * f; }
 
     const subZones = z.split
       ? [
@@ -2481,7 +2506,7 @@ function onUvChange() {
         ]
       : [{w:gl_W, h:zH, type:z.type, label:z.label, n:z.n}];
 
-    if(z.split) A_frame_total += f * zH; // vertical mullion
+    if(!frameless && z.split) A_frame_total += f * zH; // vertical mullion
 
     for(const sz of subZones){
       if(sz.w<=0||sz.h<=0) continue;
@@ -2505,7 +2530,7 @@ function onUvChange() {
   const A_panel=W*H;
   const checkDiff=Math.abs(A_frame_total+sumA-A_panel);
   const U_weighted=sumUA/A_panel;
-  bkRows.unshift({label:'Frame & members',area:A_frame_total,u:U_frame});
+  if(!frameless && A_frame_total>0) bkRows.unshift({label:'Frame & members',area:A_frame_total,u:U_frame});
 
   uvResult={U_weighted,A_panel,bkRows,checkPass:checkDiff<0.1,checkDiff};
   renderUvResult(uvResult);
