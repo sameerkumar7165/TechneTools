@@ -687,7 +687,7 @@ input[type=range]::-webkit-slider-thumb {
   white-space:pre-wrap;word-break:break-all"></div>
 
 <script>
-const APP_VERSION = '1.004';
+const APP_VERSION = '1.007';
 // GITHUB-DIFF-TEST: 2026-06-08
 
 function applyAppVersion() {
@@ -711,7 +711,7 @@ window.onerror = function(msg, src, line, col, err) {
     b.style.display='block';
     b.textContent = (b.textContent ? b.textContent + '\n---\n' : '') +
       'ERROR: ' + msg + '\nLine: ' + line + ':' + col +
-      (err && err.stack ? '\nStack: ' + err.stack : '');
+      (err && err.stack ? '\nStack: ' + err.stack : '\n(no stack — likely cross-origin or promise)');
   }
   return false;
 };
@@ -722,6 +722,16 @@ window.addEventListener('unhandledrejection', function(e){
     b.textContent += '\nPROMISE: ' + (e.reason && e.reason.stack ? e.reason.stack : e.reason);
   }
 });
+window.addEventListener('error', function(e) {
+  // Catches resource load failures (img, script src, etc.)
+  if (e.target && e.target !== window) {
+    const b = document.getElementById('err-banner');
+    if (b) {
+      b.style.display = 'block';
+      b.textContent += '\nRESOURCE ERROR: ' + (e.target.src || e.target.href || e.target.tagName);
+    }
+  }
+}, true); // capture phase catches resource errors
 </script>
 
 <!-- ══════════════════════ PANEL CONFIGURATOR STRIP ══════════════ -->
@@ -1667,7 +1677,9 @@ function getPanelZoneList() {
 function getPanelMemberList() {
   const geom = computePanelGeometry();
   if (!geom) return [];
-  const {W, H, transoms, zones} = geom;
+  const {W, H, transoms: geomTransoms, zones: geomZones} = geom;
+  const transoms = Array.isArray(geomTransoms) ? geomTransoms : [];
+  const zones    = Array.isArray(geomZones)    ? geomZones    : [];
   const list = [];
   // Mullion — uses panel height as span, half panel width as tributary
   list.push({ key:'mullion', label:'Mullion', span:H, trib:W, desc:'Vertical glazing member' });
@@ -1687,7 +1699,8 @@ function getPanelMemberList() {
 function updatePanelSummary() {
   const geom = computePanelGeometry();
   if (!geom) { document.getElementById('panel-summary-badge').textContent='Configure'; return; }
-  const {W, H, transoms, windPsf} = geom;
+  const {W, H, transoms: geomTransoms, windPsf} = geom;
+  const transoms = Array.isArray(geomTransoms) ? geomTransoms : [];
   const isM = pcUnit==='metric';
   function dim(v) {
     if (isM) return Math.round(v*IN_TO_MM)+'mm';
@@ -2099,10 +2112,15 @@ setTimeout(updateTabBarTop, 100);
 /* ═══ PANEL DIAGRAM ═══════════════════════════════════════════ */
 function drawPcDiagram() {
   const canvas = document.getElementById('uv-canvas');
-  const CW = canvas.parentElement.clientWidth - 32;
+  if (!canvas) return;
+  const CW = canvas.parentElement ? canvas.parentElement.clientWidth - 32 : 0;
+  if (CW <= 0) return; // layout not ready yet — caller should retry after paint
   const geom = computePanelGeometry();
   if (!geom) return;
-  const {W, H, transoms, zones} = geom;
+  const {W, H, transoms: geomTransoms, zones: geomZones} = geom;
+  const transoms = Array.isArray(geomTransoms) ? geomTransoms : [];
+  const zones    = Array.isArray(geomZones)    ? geomZones    : [];
+  if (!zones.length) return;
 
   const isLight = document.body.getAttribute('data-theme') === 'light';
   const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#627FBF';
@@ -2570,7 +2588,9 @@ function onUvChange() {
   const frameless = isFrameless();
   // For frameless: f=0 (no frame), use EOG_W for edge zone width
   const f = frameless ? 0 : getSingleIn_uv('uv-fw');
-  const {W,H,transoms,zones}=geom;
+  const {W,H,transoms: geomTransoms,zones: geomZones}=geom;
+  const transoms = Array.isArray(geomTransoms) ? geomTransoms : [];
+  const zones    = Array.isArray(geomZones)    ? geomZones    : [];
   if(!frameless && (!f||f<=0||f>=W/2||f>=H/2)){errEl.textContent='Frame width invalid for this panel size.';errEl.classList.add('visible');return;}
 
   const gl_W = frameless ? W : W-f;
@@ -3316,9 +3336,19 @@ function calcDeflection_in(t_mm, W_in, H_in, w_psf, edges) {
   return alpha * w_psi * Math.pow(a,4) / (GLASS_E_PSI * Math.pow(t_in,3));
 }
 
+/* ── Governing span for deflection ───────────────────────────── */
+// Returns the span dimension that governs deflection, matching the beam
+// analogy used in calcDeflection_in. For 2/3-edge with long edges free,
+// glass spans the LONG dimension; all other cases use the SHORT dimension.
+function getDeflSpan_in(W_in, H_in) {
+  if (gwSupport === 2 && gwUnsupported === 'long') return Math.max(W_in, H_in);
+  if (gwSupport === 3 && gwUnsupported === 'short') return Math.max(W_in, H_in);
+  return Math.min(W_in, H_in);
+}
+
 /* ── Deflection allowable ────────────────────────────────────── */
 function getDeflAllow_in(W_in, H_in) {
-  const a = Math.min(W_in, H_in);
+  const a = getDeflSpan_in(W_in, H_in);
   const deflEl = document.getElementById('gw-defl');
   const deflOpt = deflEl ? deflEl.value : '175'; // default L/175 if element absent
   if (deflOpt === 'none')   return Infinity;
@@ -3546,6 +3576,7 @@ function onGwChange() {
 
   const w_psf = pcGetWindPsf();
   const deflAllow_in = getDeflAllow_in(W_in, H_in);
+  const deflGovDim_in = getDeflSpan_in(W_in, H_in); // governing span for deflection label
   const isM = pcUnit === 'metric';
   const results = [];
 
@@ -3566,7 +3597,7 @@ function onGwChange() {
     const deflPass = defl <= deflAllow_in;
     const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w_psf, gwSupport) : null;
     const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w_psf, gwSupport) : null;
-    results.push({ label:liteLabel(l,'Lite'), t:te, LR, w_psf, strPass, defl, deflAllow_in, deflPass, minT, suggestT, sgp:sgpNote(l) });
+    results.push({ label:liteLabel(l,'Lite'), t:te, LR, w_psf, strPass, defl, deflAllow_in, deflGovDim_in, deflPass, minT, suggestT, sgp:sgpNote(l) });
 
   } else if (gwAssembly === 'igu' || gwAssembly === 'triple') {
     const lites = gwAssembly === 'triple'
@@ -3588,7 +3619,7 @@ function onGwChange() {
       const deflPass = defl <= deflAllow_in;
       const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w, gwSupport) : null;
       const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w, gwSupport) : null;
-      results.push({ label:liteLabel(l, labels[i]), t:te, LR, w_psf:w, strPass, defl, deflAllow_in, deflPass, minT, suggestT, lsf, sgp:sgpNote(l) });
+      results.push({ label:liteLabel(l, labels[i]), t:te, LR, w_psf:w, strPass, defl, deflAllow_in, deflGovDim_in, deflPass, minT, suggestT, lsf, sgp:sgpNote(l) });
     });
 
   }
@@ -3687,7 +3718,20 @@ function renderGwResult(r) {
 
     // Deflection card
     if(res.deflAllow_in < Infinity){
-      const deflLabel = getSelectedOptionText('gw-defl', 'L/175').split('(')[0].trim();
+      const deflLimitText = getSelectedOptionText('gw-defl', 'L/175').split('(')[0].trim();
+      // Describe which dimension governs and why
+      const govDim_in = res.deflGovDim_in;
+      const isM = pcUnit === 'metric';
+      const govDimStr = isM
+        ? Math.round(govDim_in * 25.4) + ' mm'
+        : (function(){ const ft=Math.floor(govDim_in/12), ins=parseFloat((govDim_in-ft*12).toFixed(0)); return ft>0?ft+"'"+( ins>0?ins+'"':''):ins+'"'; })();
+      const isLongDim = govDim_in >= Math.max(W_in, H_in) - 0.01;
+      const govEdgeLabel = gwSupport === 4
+        ? 'short dim (4-edge)'
+        : isLongDim
+          ? 'long dim — unsupported edge governs'
+          : 'short dim — spanning between free edges';
+      const deflLabel = deflLimitText + ' · ' + govDimStr + ' ' + govEdgeLabel;
       html += twoColCard(
         'Deflection',
         'Allowable', dD(res.deflAllow_in), 'var(--text-soft)', deflLabel,
