@@ -1614,7 +1614,12 @@ function computePanelGeometry() {
     }
     if (h <= 0) continue;
     if (h < MIN_ZONE) {
-      return { error: 'Transom '+t.n+' position results in a zone less than 12" tall. Adjust transom position.' };
+      // Identify which transom(s) bound this zone for a useful error message.
+      // zoneCLs = [0, transom1.yCL, transom2.yCL, H], so zone i sits between
+      // zoneCLs[i] and zoneCLs[i+1]. If i > 0, zoneCLs[i] is transom i's yCL.
+      const nearTransom = transomList[i] || transomList[i-1];
+      const tLabel = nearTransom ? 'Transom '+nearTransom.n : 'A transom';
+      return { error: tLabel+' position results in a zone less than 12" tall. Adjust transom position.' };
     }
     zones.push(zoneObj);
   }
@@ -2534,7 +2539,6 @@ function onUvChange() {
   const gl_W = frameless ? W : W-f;
   const gl_H = frameless ? H : H-f;
   const A_frame = frameless ? 0 : W*H - gl_W*gl_H;
-  const A_transoms = transoms.reduce((s,t)=>s+gl_W*t.yCL*0,0); // calculated below
   let A_frame_total = A_frame;
 
   const U_frame = frameless ? 0 : getU_uv('uv-uf');
@@ -2542,14 +2546,17 @@ function onUvChange() {
   let sumUA=0, sumA=0;
   const bkRows=[];
 
-  // Process each zone
+  // Process each zone.
+  // A_frame already accounts for the perimeter border (top + bottom rails consume f total
+  // in height; left + right jambs consume f total in width). Each transom strip (gl_W × f)
+  // and each vertical mullion (f × zH) are added separately inside the loop.
+  // Sub-zone glass height = z.h − f/2 (member above) − f/2 (member below) = z.h − f.
   for(const z of geom.zones){
-    const topHalf = z.topCL===0 ? f/2 : f/2; // simplified: all members same width
-    const botHalf = z.botCL===H ? f/2 : f/2;
-    const zH = z.h - topHalf - botHalf;
+    const zH = z.h - f; // deduct half-member above + half-member below
     if(zH <= 0) continue;
 
-    // Add transom area to frame (zero for frameless)
+    // Add this zone's bounding transom strip to frame area (skip top/bottom perimeter rails
+    // which are already included in A_frame, and skip frameless).
     if(!frameless && z.botCL<H) { A_frame_total += gl_W * f; }
 
     const subZones = z.split
@@ -2942,10 +2949,6 @@ function convertBeamToUnit(){
     tEl.dataset.unit = isM ? 'metric' : 'imperial';
     if (tTagEl) tTagEl.textContent = isM ? 'mm' : 'in';
   }
-  // Update depth slider labels
-  if (dMinEl) dMinEl.textContent = isM ? Math.round(1*IN_TO_MM)+'mm' : '1 in';
-  if (dMaxEl) dMaxEl.textContent = isM ? Math.round(20*IN_TO_MM)+'mm' : '20 in';
-
   // Convert custom span/trib inputs (only when custom selected)
   const memberSel = document.getElementById('beam-member');
   if(memberSel && memberSel.value==='custom'){
@@ -2981,14 +2984,10 @@ function convertBeamToUnit(){
     convBeamFtIn('beam-trib-ft','beam-trib-in','beam-trib-in-wrap','beam-trib-pair','beam-trib-ft-tag','beam-trib-in-tag');
   }
 
-  // Update depth slider display value
-  const dSlider = document.getElementById('beam-d-slider');
-  if(dSlider){
-    const d_in = pcUnit==='metric'
-      ? (parseFloat(dSlider.value)||0)/IN_TO_MM  // was metric, convert back
-      : (parseFloat(dSlider.value)||0);           // was imperial
-    // slider stores in inches always — just update display
-  }
+  // Depth slider: value always stored in inches. Update range endpoint labels only.
+  // onBeamDepthSlide() will re-render the current-value display in the correct unit.
+  if (dMinEl) dMinEl.textContent = isM ? Math.round(1  * IN_TO_MM) + 'mm' : '1 in';
+  if (dMaxEl) dMaxEl.textContent = isM ? Math.round(20 * IN_TO_MM) + 'mm' : '20 in';
 
   rebuildBeamMemberDropdown();
   syncBeamFromPanel();
@@ -3814,7 +3813,7 @@ function onSiChange(){
   const gov_in=Math.max(bite_in,min_bite_in);
   const gov_mm=Math.max(bite_mm,min_bite_mm);
   const min_governs=min_bite_mm>bite_mm;
-  siResult={bite_in,bite_mm,gov_in,gov_mm,min_governs,w_psf,fs_psi,S_ft,S_mm,w_kpa,fs_kpa};
+  siResult={bite_in,bite_mm,bite_mm_calc,gov_in,gov_mm,min_governs,w_psf,fs_psi,S_ft,S_mm,w_kpa,fs_kpa};
   renderSiResult(siResult);
 }
 
@@ -4370,7 +4369,8 @@ function generatePrintPage() {
       font-family:Arial,sans-serif;cursor:pointer;letter-spacing:0.5px">
       🖨 Print / Save PDF
     </button>
-    <button onclick="window.close()" style="background:transparent;color:#888;border:1.5px solid #ddd;
+    <button onclick="var w=window;w.close();setTimeout(function(){if(!w.closed)w.history.back();},150);"
+      style="background:transparent;color:#888;border:1.5px solid #ddd;
       border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;
       font-family:Arial,sans-serif;cursor:pointer">
       ✕ Close
