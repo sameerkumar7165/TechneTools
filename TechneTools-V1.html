@@ -4383,11 +4383,10 @@ function generatePrintPage() {
 
 <!-- TITLE BLOCK -->
 <div style="margin-bottom:0">
-  <!-- TECHNE wordmark image -->
-  <img src="${TECHNE_LOGO_URI}" alt="TECHNE" style="height:52px;width:auto;margin-bottom:10px;display:block">
-
-  <!-- Project / author info block — indented -->
-  <div style="padding-left:160px;font-family:Arial,sans-serif;font-size:12px;color:#444;line-height:1.9">
+  <!-- Logo -->
+  <img src="${TECHNE_LOGO_URI}" alt="TECHNE" style="height:56px;width:auto;display:block;margin-bottom:12px">
+  <!-- Project info — indented to align with logo text body -->
+  <div style="padding-left:32px;font-family:Arial,sans-serif;font-size:12px;color:#444;line-height:1.9">
     ${projName ? '<div>Project Name: <strong>'+projName+'</strong></div>' : ''}
     ${projNum  ? '<div>Project Number: <strong>'+projNum+'</strong></div>' : ''}
     ${panelLabel ? '<div>Panel Type: <strong>'+panelLabel+'</strong></div>' : ''}
