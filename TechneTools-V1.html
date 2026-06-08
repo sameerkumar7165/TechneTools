@@ -2804,10 +2804,13 @@ function getBeamDimIn(ftId,inId){
 
 
 function onBeamDepthSlide(){
-  const v=parseFloat(document.getElementById('beam-d-slider').value);
+  const slider=document.getElementById('beam-d-slider');
+  const display=document.getElementById('beam-d-display');
+  if(!slider||!display) return;
+  const v=parseFloat(slider.value);
   const isM=pcUnit==='metric';
   // Slider value is always in the current display unit (inches or mm).
-  document.getElementById('beam-d-display').textContent=isM?Math.round(v)+'mm':v+' in';
+  display.textContent=isM?Math.round(v)+'mm':v+' in';
   onBeamChange();
 }
 
@@ -2820,11 +2823,16 @@ function setBeamSection(type){
 }
 
 function onBeamChange(){
-  const errEl=document.getElementById('beam-error'); errEl.classList.remove('visible');
+  const errEl=document.getElementById('beam-error');
+  if(!errEl) return; // not in a context with the beam tab DOM
+  errEl.classList.remove('visible');
   const L_in=getBeamDimIn('beam-span-ft','beam-span-in');
   const trib_in=getBeamDimIn('beam-trib-ft','beam-trib-in');
   const w_psf=pcGetWindPsf();
-  const mat=BEAM_MATS[document.getElementById('beam-mat').value];
+  const matEl=document.getElementById('beam-mat');
+  if(!matEl) return;
+  const mat=BEAM_MATS[matEl.value];
+  if(!mat) return; // unrecognised material key
   const deflStr=document.getElementById('beam-defl').value;
   const isM=pcUnit==='metric';
 
