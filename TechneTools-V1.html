@@ -4128,17 +4128,17 @@ function generatePrintPage() {
     const uvImp = r ? r.U_weighted.toFixed(2)+' BTU/hr·ft²·°F' : '—';
     const uvMet = r ? (r.U_weighted*BTU_TO_W).toFixed(2)+' W/m²K' : '—';
     const frame = document.getElementById('uv-frame-type');
-    const frameVal = frame ? frame.options[frame.selectedIndex].text : '—';
+    const frameVal = getSelectedOptionText('uv-frame-type', '—');
     const spacer = document.getElementById('uv-spacer-bar');
-    const spacerVal = spacer ? spacer.options[spacer.selectedIndex].text : '—';
+    const spacerVal = getSelectedOptionText('uv-spacer-bar', '—');
     const fw = document.getElementById('uv-fw'); const fwTag = document.getElementById('uv-fw-tag');
     const fwVal = fw ? fw.value + ' ' + (fwTag?fwTag.textContent:'') : '—';
     const igu = document.getElementById('uv-igu'); 
     const iguVal = igu ? (igu.value==='triple'?'Triple IGU':'Double IGU') : '—';
     const fill = document.getElementById('uv-fill');
-    const fillVal = fill ? fill.options[fill.selectedIndex].text : '—';
+    const fillVal = getSelectedOptionText('uv-fill', '—');
     const coatings = document.getElementById('uv-coatings');
-    const coatVal = coatings ? coatings.options[coatings.selectedIndex].text : '—';
+    const coatVal = getSelectedOptionText('uv-coatings', '—');
     const uf = document.getElementById('uv-uf'); const ufTag = document.getElementById('uv-uf-tag');
     const ufVal = uf ? uf.value + ' ' + (ufTag?ufTag.textContent:'') : '—';
     const eog = document.getElementById('uv-eog-v'); const eogTag = document.getElementById('uv-eogv-tag');
@@ -4193,11 +4193,11 @@ function generatePrintPage() {
   if (inc.beam) {
     const r = beamResult;
     const matEl = document.getElementById('beam-mat');
-    const matVal = matEl ? matEl.options[matEl.selectedIndex].text : '—';
+    const matVal = getSelectedOptionText('beam-mat', '—');
     const deflEl = document.getElementById('beam-defl');
-    const deflVal = deflEl ? deflEl.options[deflEl.selectedIndex].text : '—';
+    const deflVal = getSelectedOptionText('beam-defl', '—');
     const memberEl = document.getElementById('beam-member');
-    const memberVal = memberEl ? memberEl.options[memberEl.selectedIndex].text : '—';
+    const memberVal = getSelectedOptionText('beam-member', '—');
     function dimStr(v_in) { return isM ? (v_in*IN_TO_MM).toFixed(0)+' mm' : (Math.floor(v_in/12))+"' "+(v_in%12).toFixed(2)+'"'; }
     const spanVal = r ? dimStr(r.L_in) : '—';
     const tribVal = r ? dimStr(r.trib_in) : '—';
@@ -4343,7 +4343,7 @@ function generatePrintPage() {
     const fsEl = document.getElementById('si-fs'); const fsUnit = document.getElementById('si-fs-unit');
     const fsVal = fsEl ? fsEl.value + ' ' + (fsUnit?fsUnit.textContent:'psi') : '—';
     const prodEl = document.getElementById('si-product');
-    const prodVal = prodEl ? prodEl.options[prodEl.selectedIndex].text : '—';
+    const prodVal = getSelectedOptionText('si-product', '—');
     const shortSide = isM ? (Math.min(r.W_in,r.H_in)*IN_TO_MM).toFixed(0)+' mm' 
                           : (Math.min(r.W_in,r.H_in)/12).toFixed(2)+" ft";
 
