@@ -754,7 +754,7 @@ window.addEventListener('unhandledrejection', function(e){
       </div>
     </div>
     <div id="wind-bar-right">
-      <span style="font-size:9px;font-weight:700;letter-spacing:0.5px;color:rgba(255,255,255,0.5);font-family:'Lato',sans-serif;align-self:flex-end">V 1.002</span>
+      <span style="font-size:9px;font-weight:700;letter-spacing:0.5px;color:rgba(255,255,255,0.5);font-family:'Lato',sans-serif;align-self:flex-end">V 1.003</span>
       <span id="wind-unit-label">Units</span>
       <div class="wind-unit-toggle">
         <button class="wind-unit-btn active" id="pc-btn-imperial" onclick="setPcUnit('imperial')">Imp</button>
@@ -3317,6 +3317,15 @@ function getDeflAllow_in(W_in, H_in) {
   return a / 175;
 }
 
+function getSelectedOptionText(selectId, fallback) {
+  const el = document.getElementById(selectId);
+  if (!el || !el.options || el.options.length === 0) return fallback;
+  const opt = el.selectedOptions && el.selectedOptions[0]
+    ? el.selectedOptions[0]
+    : el.options[Math.max(0, el.selectedIndex)];
+  return opt && opt.text ? opt.text : fallback;
+}
+
 /* ── Find minimum passing thickness ─────────────────────────── */
 function findMinThickness(type, W_in, H_in, w_psf, edges) {
   const deflAllow = getDeflAllow_in(W_in, H_in);
@@ -3665,8 +3674,7 @@ function renderGwResult(r) {
 
     // Deflection card
     if(res.deflAllow_in < Infinity){
-      const deflEl2 = document.getElementById('gw-defl');
-      const deflLabel = deflEl2 ? deflEl2.options[deflEl2.selectedIndex].text.split('(')[0].trim() : 'L/175';
+      const deflLabel = getSelectedOptionText('gw-defl', 'L/175').split('(')[0].trim();
       html += twoColCard(
         'Deflection',
         'Allowable', dD(res.deflAllow_in), 'var(--text-soft)', deflLabel,
@@ -4224,8 +4232,7 @@ function generatePrintPage() {
   let gwHTML = '';
   if (inc.gw && gwResult_data) {
     const r = gwResult_data;
-    const deflEl = document.getElementById('gw-defl');
-    const deflVal = deflEl ? deflEl.options[deflEl.selectedIndex].text : '—';
+    const deflVal = getSelectedOptionText('gw-defl', '—');
     const supMap = {4:'4-Edge Supported', 3:'3-Edge Supported', 2:'2-Edge Supported'};
     const unsupMap = {long:'Long edges unsupported', short:'Short edges unsupported'};
     const supVal = supMap[gwSupport] + (gwSupport<4 ? ' — '+unsupMap[gwUnsupported] : '');
