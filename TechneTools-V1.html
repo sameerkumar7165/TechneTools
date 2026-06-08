@@ -592,8 +592,57 @@ input[type=range]::-webkit-slider-thumb {
                 color:var(--text-soft);font-family:'Lato',sans-serif;margin-bottom:16px">
       Print / Export PDF
     </div>
-    <div style="font-size:12px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:14px">
-      Select sections to include:
+
+    <!-- Project info fields -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+            color:var(--text-muted);font-family:'Lato',sans-serif;display:block;margin-bottom:4px">Project Name</label>
+          <input id="print-project-name" type="text" placeholder="e.g. The Best Project"
+            style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:6px;
+              background:var(--surface2);color:var(--text-soft);font-family:'Lato',sans-serif;
+              font-size:13px;outline:none">
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+            color:var(--text-muted);font-family:'Lato',sans-serif;display:block;margin-bottom:4px">Project Number</label>
+          <input id="print-project-num" type="text" placeholder="e.g. 25002"
+            style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:6px;
+              background:var(--surface2);color:var(--text-soft);font-family:'Lato',sans-serif;
+              font-size:13px;outline:none">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+          color:var(--text-muted);font-family:'Lato',sans-serif;display:block;margin-bottom:4px">Panel Type / Name</label>
+        <input id="print-panel-name" type="text" placeholder="e.g. WT-01"
+          style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:6px;
+            background:var(--surface2);color:var(--text-soft);font-family:'Lato',sans-serif;
+            font-size:13px;outline:none">
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+          color:var(--text-muted);font-family:'Lato',sans-serif;display:block;margin-bottom:4px">Prepared By</label>
+        <input id="print-author" type="text" placeholder="e.g. Sameer Kumar"
+          style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:6px;
+            background:var(--surface2);color:var(--text-soft);font-family:'Lato',sans-serif;
+            font-size:13px;outline:none">
+      </div>
+      <div>
+        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+          color:var(--text-muted);font-family:'Lato',sans-serif;display:block;margin-bottom:4px">Comments</label>
+        <textarea id="print-comments" placeholder="Optional notes or assumptions..."
+          rows="3"
+          style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:6px;
+            background:var(--surface2);color:var(--text-soft);font-family:'Lato',sans-serif;
+            font-size:13px;outline:none;resize:vertical"></textarea>
+      </div>
+    </div>
+
+    <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+      color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:10px">
+      Sections to include:
     </div>
     <!-- Checkboxes -->
     <div id="print-checks" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
@@ -3920,6 +3969,13 @@ onSiChange();
 
 /* ══ PRINT ══════════════════════════════════════════════════ */
 function showPrintModal() {
+  // Load saved fields from localStorage
+  const saved = ['print-project-name','print-project-num','print-panel-name','print-author','print-comments'];
+  saved.forEach(id => {
+    const el = document.getElementById(id);
+    const val = localStorage.getItem('techne_' + id);
+    if(el && val) el.value = val;
+  });
   document.getElementById('print-modal').style.display = 'block';
 }
 function hidePrintModal() {
@@ -3928,10 +3984,23 @@ function hidePrintModal() {
 
 function generatePrintPage() {
   hidePrintModal();
+  // Save fields to localStorage
+  const printFields = ['print-project-name','print-project-num','print-panel-name','print-author','print-comments'];
+  printFields.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) localStorage.setItem('techne_' + id, el.value);
+  });
+  // Read values
+  const projName   = document.getElementById('print-project-name').value.trim();
+  const projNum    = document.getElementById('print-project-num').value.trim();
+  const panelLabel = document.getElementById('print-panel-name').value.trim();
+  const author     = document.getElementById('print-author').value.trim();
+  const comments   = document.getElementById('print-comments').value.trim();
+
   const isM = pcUnit === 'metric';
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'});
-  const wlStr = isM ? (pcGetWindPsf()*PSF_TO_KPA).toFixed(2)+' kPa' : pcGetWindPsf()+' psf';
+  const wlStr = isM ? (pcGetWindPsf()*PSF_TO_KPA).toFixed(2)+' kPa (ASD)' : pcGetWindPsf()+' psf (ASD)';
 
   const inc = {
     diagram: document.getElementById('pch-diagram').checked,
@@ -4237,7 +4306,7 @@ function generatePrintPage() {
   body { font-family: 'Arial', sans-serif; color: #1a1a1a; background: white; padding: 20px 24px; max-width: 800px; margin: 0 auto; }
   
   /* Header */
-  .page-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #D4829A; padding-bottom: 12px; margin-bottom: 24px; }
+  .page-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #D4829A; padding-bottom: 10px; margin-bottom: 14px; }
   .page-title { font-size: 26px; font-weight: 900; color: #D4829A; letter-spacing: 3px; }
   .page-meta { text-align: right; font-size: 11px; color: #666; line-height: 1.6; }
   
@@ -4280,6 +4349,7 @@ function generatePrintPage() {
     body { padding: 0; }
     .no-print { display: none !important; }
     section + section { page-break-before: always; border-top: none; padding-top: 20px; }
+    section:first-of-type { page-break-before: avoid; }
     .no-break { page-break-inside: avoid; }
     @page { margin: 15mm 15mm; }
   }
@@ -4307,23 +4377,34 @@ function generatePrintPage() {
   On iPhone: tap <strong>Print / Save PDF</strong> above, or use Safari's Share button (□↑) → Print
 </div>
 
-<div class="page-header">
-  <div>
-    <div class="page-title">TECHNE TOOLS</div>
-    <div style="font-size:11px;color:#888;margin-top:4px">Engineering Calculations — Indicative</div>
+<!-- TITLE BLOCK -->
+<div style="margin-bottom:0">
+  <!-- TECHNE wordmark -->
+  <div style="font-family:'Arial Black',Arial,sans-serif;font-weight:900;font-size:36px;
+    color:#1a1a1a;letter-spacing:3px;margin-bottom:14px">TECHNE</div>
+
+  <!-- Project / author info block — indented -->
+  <div style="padding-left:160px;font-family:Arial,sans-serif;font-size:12px;color:#444;line-height:1.9">
+    ${projName ? '<div>Project Name: <strong>'+projName+'</strong></div>' : ''}
+    ${projNum  ? '<div>Project Number: <strong>'+projNum+'</strong></div>' : ''}
+    ${panelLabel ? '<div>Panel Type: <strong>'+panelLabel+'</strong></div>' : ''}
+    <div style="margin-top:6px">By: <strong>${author||'—'}</strong></div>
+    <div>Date: <strong>${dateStr}</strong></div>
   </div>
-  <div class="page-meta">
-    ${dateStr}<br>Panel: <strong>${panelSummary}</strong>
-  </div>
-</div>
-<!-- Wind load banner -->
-<div style="background:#2a2d36;border-radius:8px;padding:14px 18px;margin-bottom:20px;
-  display:flex;align-items:center;justify-content:space-between;gap:16px">
-  <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.55);font-family:Arial,sans-serif">
-    Design Wind Load
-  </div>
-  <div style="font-size:32px;font-weight:900;color:#E07070;font-family:Arial,sans-serif;letter-spacing:1px">
-    ${wlStr}
+
+  <!-- Horizontal rule -->
+  <div style="border-top:2px solid #999;margin:16px 0 12px"></div>
+
+  <!-- Wind load + comments below rule -->
+  <div style="font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;line-height:1.8">
+    <div><strong>Design Wind Load: ${wlStr}</strong>
+    ${(() => {
+      const lrfdPsf = pcGetWindPsf() / 0.6;
+      const lrfdStr = isM ? (lrfdPsf*PSF_TO_KPA).toFixed(2)+' kPa (LRFD)' : lrfdPsf.toFixed(1)+' psf (LRFD)';
+      return '&nbsp;&nbsp;·&nbsp;&nbsp;' + lrfdStr;
+    })()}
+    </div>
+    <div><strong>Comments:</strong> ${comments||''}</div>
   </div>
 </div>
 
