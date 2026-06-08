@@ -2831,7 +2831,7 @@ function onBeamChange(){
   const w_psf=pcGetWindPsf();
   const matEl=document.getElementById('beam-mat');
   if(!matEl) return;
-  const mat=BEAM_MATS[matEl.value];
+  const mat=BEAM_MATS[matEl.value] || BEAM_MATS['al6063'];
   if(!mat) return; // unrecognised material key
   const deflStr=document.getElementById('beam-defl').value;
   const isM=pcUnit==='metric';
