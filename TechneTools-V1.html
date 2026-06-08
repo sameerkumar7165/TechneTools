@@ -687,7 +687,7 @@ input[type=range]::-webkit-slider-thumb {
   white-space:pre-wrap;word-break:break-all"></div>
 
 <script>
-const APP_VERSION = '1.011';
+const APP_VERSION = '1.017';
 // GITHUB-DIFF-TEST: 2026-06-08
 
 function applyAppVersion() {
@@ -3151,58 +3151,68 @@ let gwResult_data = null;
    Digitised from ASTM E1300 Figure 1. NFL in psf.
    GTF multiplied for glass type. ───────────────────────────── */
 const NFL_TABLE = {
-  // Extended down to 1ft for narrow sub-zones (extrapolated using plate scaling NFL ∝ 1/a²)
-  '1x1':  {3:155,4:252,5:415,6:650,8:1300,10:2200},
-  '1x2':  {3:95, 4:155,5:255,6:400,8:800, 10:1350},
-  '1x3':  {3:65, 4:106,5:175,6:272,8:545, 10:920},
-  '1x4':  {3:52, 4: 85,5:140,6:218,8:436, 10:736},
-  '1x5':  {3:49, 4: 80,5:131,6:205,8:410, 10:693},
-  '1x6':  {3:42, 4: 68,5:112,6:175,8:350, 10:590},
-  '1x8':  {3:38, 4: 62,5:102,6:160,8:320, 10:541},
-  '1x9':  {3:36, 4: 59,5: 96,6:150,8:300, 10:508},
-  '1x10': {3:34, 4: 56,5: 92,6:143,8:287, 10:485},
-  '1x12': {3:33, 4: 54,5: 89,6:139,8:278, 10:470},
-  '2x2':  {3:38, 4: 63,5:103,6:162,8:325, 10:550},
-  '2x3':  {3:26, 4: 43,5: 71,6:111,8:222, 10:375},
-  '2x4':  {3:21, 4: 34,5: 57,6: 89,8:178, 10:300},
-  '2x5':  {3:20, 4: 32,5: 53,6: 83,8:167, 10:282},
-  '2x6':  {3:17, 4: 27,5: 45,6: 71,8:142, 10:240},
-  '2x8':  {3:15, 4: 24,5: 40,6: 63,8:126, 10:213},
-  '2x9':  {3:14, 4: 23,5: 38,6: 60,8:120, 10:203},
-  '2x10': {3:13, 4: 22,5: 36,6: 57,8:114, 10:193},
-  '2x12': {3:13, 4: 21,5: 35,6: 55,8:110, 10:187},
-  '3x3':  {3:17,4:28,5:46,6:72,8:145,10:245},
-  '3x4':  {3:13,4:22,5:36,6:56,8:112,10:190},
-  '3x5':  {3:11,4:18,5:30,6:47,8: 94,10:160},
-  '3x6':  {3: 9,4:15,5:25,6:40,8: 80,10:135},
-  '3x8':  {3: 8,4:13,5:21,6:33,8: 67,10:113},
-  '3x9':  {3: 7,4:12,5:20,6:31,8: 62,10:105},
-  '3x10': {3: 7,4:11,5:18,6:29,8: 58,10: 98},
-  '3x12': {3: 6,4:10,5:17,6:26,8: 53,10: 89},
-  '4x4':  {4:15,5:26,6:42,8: 85,10:145},
-  '4x5':  {4:12,5:21,6:33,8: 67,10:114},
-  '4x6':  {4:10,5:17,6:28,8: 56,10: 95},
-  '4x8':  {5:13,6:21,8: 43,10: 73,12:115},
-  '4x9':  {5:12,6:19,8: 37,10: 63,12:100},
-  '4x10': {5:11,6:17,8: 34,10: 58,12: 92},
-  '4x12': {5:10,6:15,8: 30,10: 51,12: 81},
-  '5x5':  {5:17,6:27,8: 55,10: 93,12:145},
-  '5x6':  {5:14,6:22,8: 45,10: 76,12:120},
-  '5x8':  {6:16,8: 33,10: 56,12: 88,15:155},
-  '5x9':  {6:14,8: 28,10: 48,12: 76,15:134},
-  '5x10': {6:12,8: 25,10: 43,12: 68,15:120},
-  '5x12': {8:20,10: 34,12: 54,15: 95,19:195},
-  '6x6':  {6:19,8: 38,10: 65,12:102,15:180},
-  '6x8':  {6:15,8: 30,10: 51,12: 80,15:142},
-  '6x9':  {8:26,10: 45,12: 71,15:125},
-  '6x10': {8:24,10: 41,12: 64,15:113},
-  '6x12': {8:20,10: 34,12: 53,15: 94,19:193},
+  // ASTM E1300 Table 1 (AN glass, 4-edge SS, short duration load)
+  // 19mm and 25mm entries extrapolated using actual t^n scaling exponent
+  // derived from last two data points of each panel size entry.
+  '1x1':  {3:155,4:252,5:415,6:650,8:1300,10:2200,19:9991,25:19082},
+  '1x2':  {3:95, 4:155,5:255,6:400,8:800, 10:1350,19:6081,25:11573},
+  '1x3':  {3:65, 4:106,5:175,6:272,8:545, 10:920, 19:4148,25:7898},
+  '1x4':  {3:52, 4: 85,5:140,6:218,8:436, 10:736, 19:3319,25:6318},
+  '1x5':  {3:49, 4: 80,5:131,6:205,8:410, 10:693, 19:3136,25:5981},
+  '1x6':  {3:42, 4: 68,5:112,6:175,8:350, 10:590, 19:2650,25:5036},
+  '1x8':  {3:38, 4: 62,5:102,6:160,8:320, 10:541, 19:2450,25:4673},
+  '1x9':  {3:36, 4: 59,5: 96,6:150,8:300, 10:508, 19:2311,25:4417},
+  '1x10': {3:34, 4: 56,5: 92,6:143,8:287, 10:485, 19:2194,25:4182},
+  '1x12': {3:33, 4: 54,5: 89,6:139,8:278, 10:470, 19:2128,25:4060},
+  '2x2':  {3:38, 4: 63,5:103,6:162,8:325, 10:550, 19:2498,25:4770},
+  '2x3':  {3:26, 4: 43,5: 71,6:111,8:222, 10:375, 19:1694,25:3228},
+  '2x4':  {3:21, 4: 34,5: 57,6: 89,8:178, 10:300, 19:1347,25:2559},
+  '2x5':  {3:20, 4: 32,5: 53,6: 83,8:167, 10:282, 19:1273,25:2424},
+  '2x6':  {3:17, 4: 27,5: 45,6: 71,8:142, 10:240, 19:1086,25:2071},
+  '2x8':  {3:15, 4: 24,5: 40,6: 63,8:126, 10:213, 19: 964,25:1839},
+  '2x9':  {3:14, 4: 23,5: 38,6: 60,8:120, 10:203, 19: 921,25:1758},
+  '2x10': {3:13, 4: 22,5: 36,6: 57,8:114, 10:193, 19: 878,25:1677},
+  '2x12': {3:13, 4: 21,5: 35,6: 55,8:110, 10:187, 19: 860,25:1652},
+  '3x3':  {3:17,4:28,5:46,6:72,8:145,10:245,19:1108,25:2111},
+  '3x4':  {3:13,4:22,5:36,6:56,8:112,10:190,19: 869,25:1665},
+  '3x5':  {3:11,4:18,5:30,6:47,8: 94,10:160,19: 739,25:1421},
+  '3x6':  {3: 9,4:15,5:25,6:40,8: 80,10:135,19: 608,25:1157},
+  '3x8':  {3: 8,4:13,5:21,6:33,8: 67,10:113,19: 508,25: 967},
+  '3x9':  {3: 7,4:12,5:20,6:31,8: 62,10:105,19: 478,25: 913},
+  '3x10': {3: 7,4:11,5:18,6:29,8: 58,10: 98,19: 443,25: 845},
+  '3x12': {3: 6,4:10,5:17,6:26,8: 53,10: 89,19: 395,25: 748},
+  '4x4':  {4:15,5:26,6:42,8: 85,10:145,19: 674,25:1300},
+  '4x5':  {4:12,5:21,6:33,8: 67,10:114,19: 526,25:1011},
+  '4x6':  {4:10,5:17,6:28,8: 56,10: 95,19: 434,25: 832},
+  '4x8':  {5:13,6:21,8: 43,10: 73,12:115,19: 362,25: 717},
+  '4x9':  {5:12,6:19,8: 37,10: 63,12:100,19: 320,25: 642},
+  '4x10': {5:11,6:17,8: 34,10: 58,12: 92,19: 294,25: 589},
+  '4x12': {5:10,6:15,8: 30,10: 51,12: 81,19: 260,25: 522},
+  '5x5':  {5:17,6:27,8: 55,10: 93,12:145,19: 444,25: 867},
+  '5x6':  {5:14,6:22,8: 45,10: 76,12:120,19: 379,25: 755},
+  '5x8':  {6:16,8: 33,10: 56,12: 88,15:155,19: 282,25: 566},
+  '5x9':  {6:14,8: 28,10: 48,12: 76,15:134,19: 244,25: 491},
+  '5x10': {6:12,8: 25,10: 43,12: 68,15:120,19: 219,25: 440},
+  '5x12': {8:20,10: 34,12: 54,15: 95,19:195,25: 449},
+  '6x6':  {6:19,8: 38,10: 65,12:102,15:180,19: 329,25: 661},
+  '6x8':  {6:15,8: 30,10: 51,12: 80,15:142,19: 261,25: 528},
+  '6x9':  {8:26,10: 45,12: 71,15:125,19: 228,25: 456},
+  '6x10': {8:24,10: 41,12: 64,15:113,19: 206,25: 415},
+  '6x12': {8:20,10: 34,12: 53,15: 94,19:193,25: 445},
 };
 
 function interpNflTable(a_ft_raw, b_ft_raw, t_mm) {
-  // Allow down to 1ft (12") — extrapolate below 3ft using plate scaling NFL ∝ 1/a²
-  const a_ft = Math.max(1, Math.min(6, a_ft_raw));
-  const b_ft = Math.max(a_ft, Math.min(12, b_ft_raw));
+  // If span exceeds table max (6ft), extrapolate using NFL ∝ 1/a²
+  const extrapolate = a_ft_raw > 6;
+  const a_ft = extrapolate ? 6 : Math.max(1, a_ft_raw);
+  // b must be >= a but clamped to table max 12. When extrapolating a square
+  // beam lookup (a_ft_raw === b_ft_raw), b must equal a (i.e. 6) so we use
+  // the square table entry rather than a wider aspect-ratio entry.
+  const b_ft_clamped = extrapolate && (b_ft_raw >= a_ft_raw - 0.01)
+    ? 6  // square beam lookup — keep b = a = 6
+    : Math.max(a_ft, Math.min(12, b_ft_raw));
+  const b_ft = b_ft_clamped;
+
   const aVals = [1,2,3,4,5,6];
   const bVals = [1,2,3,4,5,6,8,9,10,12];
 
@@ -3234,51 +3244,50 @@ function interpNflTable(a_ft_raw, b_ft_raw, t_mm) {
   const v11=getNFL(a_hi,b_hi,t_mm)||v00;
   const fa = a_hi!==a_lo ? (a_ft-a_lo)/(a_hi-a_lo) : 0;
   const fb = b_hi!==b_lo ? (b_ft-b_lo)/(b_hi-b_lo) : 0;
-  const nfl = v00*(1-fa)*(1-fb)+v10*fa*(1-fb)+v01*(1-fa)*fb+v11*fa*fb;
-  return nfl;
+  let nfl = v00*(1-fa)*(1-fb)+v10*fa*(1-fb)+v01*(1-fa)*fb+v11*fa*fb;
+
+  // Extrapolate beyond 6ft: NFL ∝ 1/a² → scale by (6/a)²
+  if (extrapolate) {
+    nfl *= Math.pow(6 / a_ft_raw, 2);
+  }
+  return { nfl, extrapolated: extrapolate };
 }
 
 function calcLR_psi(t_mm, type, W_in, H_in, edges) {
-  // For 2-edge, the span direction depends on which edges are unsupported
-  // Long unsupported → short edges bear load → glass spans SHORT dimension
-  // Short unsupported → long edges bear load → glass spans LONG dimension
   let a_ft, b_ft;
   if(edges===2){
     if(gwUnsupported==='long'){
-      // Long edges (vertical) free → bears on short edges → spans LONG dim
-      // Table lookup: span=long, perp=short → a=short, b=long (min/max as usual)
-      a_ft = Math.min(W_in,H_in)/12;
+      // Long edges free → beam spanning LONG dim → use square lookup at long dim
+      a_ft = Math.max(W_in,H_in)/12;
       b_ft = Math.max(W_in,H_in)/12;
     } else {
-      // Short edges (horizontal) free → bears on long edges → spans SHORT dim
-      // Table lookup: span=short, perp=short → use short×short
+      // Short edges free → beam spanning SHORT dim → use square lookup at short dim
       a_ft = Math.min(W_in,H_in)/12;
       b_ft = Math.min(W_in,H_in)/12;
     }
   } else if(edges===3){
     if(gwUnsupported==='long'){
-      // One long (vertical) edge free → spans short dim → use short×long table
-      a_ft = Math.min(W_in,H_in)/12;
+      // One long edge free → effective span = long dim
+      a_ft = Math.max(W_in,H_in)/12;
       b_ft = Math.max(W_in,H_in)/12;
     } else {
-      // One short (horizontal) edge free → spans short dim with 3-side restraint
-      // Less severe — use short×short table (effective span = short dim)
+      // One short edge free → effective span = short dim
       a_ft = Math.min(W_in,H_in)/12;
       b_ft = Math.min(W_in,H_in)/12;
     }
   } else {
+    // 4-edge: standard lookup — short dim = a, long dim = b
     a_ft = Math.min(W_in,H_in)/12;
     b_ft = Math.max(W_in,H_in)/12;
   }
-  let NFL = interpNflTable(a_ft, b_ft, t_mm);
+  const { nfl: NFL_raw, extrapolated } = interpNflTable(a_ft, b_ft, t_mm);
+  let NFL = NFL_raw;
   if(edges===3){
     NFL *= (gwUnsupported==='long') ? 0.45 : 0.60;
   } else if(edges===2){
-    // Long unsupported: glass acts as beam spanning the long dimension → heavily penalise
-    // Short unsupported: glass acts as beam spanning the short dimension → less severe
     NFL *= (gwUnsupported==='long') ? 0.30 : 0.50;
   }
-  return NFL * (GLASS_GTF[type]||1.0);
+  return { LR: NFL * (GLASS_GTF[type]||1.0), extrapolated };
 }
 
 /* ── Plate deflection (Timoshenko) ───────────────────────────
@@ -3377,26 +3386,40 @@ function getSelectedOptionText(selectId, fallback) {
 }
 
 /* ── Find minimum passing thickness ─────────────────────────── */
-function findMinThickness(type, W_in, H_in, w_psf, edges) {
+function findMinThickness(type, W_in, H_in, w_psf, edges, liteObj) {
   const { allow_in: deflAllow } = getDeflAllow_in(W_in, H_in);
+  // For laminated lites: test symmetric laminated pairs using same interlayer/type
+  if (liteObj && liteObj.lam) {
+    for (const t of GLASS_THICKNESSES_MM) {
+      const lamTest = Object.assign({}, liteObj, { thickMM: t, thickMM2: t });
+      const te = effThick(lamTest);
+      const { LR } = calcLR_psi(te, type, W_in, H_in, edges);
+      const defl = calcDeflection_in(te, W_in, H_in, w_psf, edges);
+      if (LR >= w_psf && defl <= deflAllow) return t + '+' + t;
+    }
+    return null;
+  }
+  // Monolithic
   for (const t of GLASS_THICKNESSES_MM) {
-    const LR = calcLR_psi(t, type, W_in, H_in, edges);
+    const { LR } = calcLR_psi(t, type, W_in, H_in, edges);
     const defl = calcDeflection_in(t, W_in, H_in, w_psf, edges);
     if (LR >= w_psf && defl <= deflAllow) return t;
   }
   return null;
 }
 
-function findSuggestedThickness(t_current_mm, type, W_in, H_in, w_psf, edges) {
-  // Find minimum adequate thickness; if current is more than one step above it, suggest reduction
-  const minT = findMinThickness(type, W_in, H_in, w_psf, edges);
-  if (!minT) return null; // nothing passes — no suggestion
+function findSuggestedThickness(t_current_mm, type, W_in, H_in, w_psf, edges, liteObj) {
+  const minT = findMinThickness(type, W_in, H_in, w_psf, edges, liteObj);
+  if (!minT) return null;
+  // For laminated results (e.g. "10+10"), extract the ply thickness for comparison
+  const minVal = typeof minT === 'string' && minT.includes('+')
+    ? parseInt(minT.split('+')[0]) : minT;
   const idx = GLASS_THICKNESSES_MM.indexOf(t_current_mm);
-  const minIdx = GLASS_THICKNESSES_MM.indexOf(minT);
+  const minIdx = GLASS_THICKNESSES_MM.indexOf(minVal);
   if (minIdx < 0 || idx < 0) return null;
-  if (idx > minIdx + 1) return minT; // current is more than one step thicker than minimum
-  if (idx === minIdx + 1) return minT; // current is one step above minimum — still suggest
-  return null; // already at minimum or close enough
+  if (idx > minIdx + 1) return minT;
+  if (idx === minIdx + 1) return minT;
+  return null;
 }
 
 /* ── UI Builders ────────────────────────────────────────────── */
@@ -3598,13 +3621,13 @@ function onGwChange() {
   if (gwAssembly === 'mono') {
     const l = gwLites[0];
     const te = effThick(l);
-    const LR   = calcLR_psi(te, l.type, W_in, H_in, gwSupport);
+    const { LR, extrapolated: lrExtrap } = calcLR_psi(te, l.type, W_in, H_in, gwSupport);
     const defl  = calcDeflection_in(te, W_in, H_in, w_psf, gwSupport);
     const strPass  = LR >= w_psf;
     const deflPass = defl <= deflAllow_in;
-    const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w_psf, gwSupport) : null;
-    const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w_psf, gwSupport) : null;
-    results.push({ label:liteLabel(l,'Lite'), t:te, LR, w_psf, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, deflCapped, minT, suggestT, sgp:sgpNote(l) });
+    const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w_psf, gwSupport, l) : null;
+    const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w_psf, gwSupport, l) : null;
+    results.push({ label:liteLabel(l,'Lite'), t:te, LR, w_psf, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, deflCapped, lrExtrap, minT, suggestT, sgp:sgpNote(l) });
 
   } else if (gwAssembly === 'igu' || gwAssembly === 'triple') {
     const lites = gwAssembly === 'triple'
@@ -3620,13 +3643,13 @@ function onGwChange() {
     const loads = lsfs.map(lsf => w_psf * lsf);
     lites.forEach((l, i) => {
       const te = tes[i], w = loads[i], lsf = lsfs[i];
-      const LR   = calcLR_psi(te, l.type, W_in, H_in, gwSupport);
+      const { LR, extrapolated: lrExtrap } = calcLR_psi(te, l.type, W_in, H_in, gwSupport);
       const defl  = calcDeflection_in(te, W_in, H_in, w, gwSupport);
       const strPass  = LR >= w;
       const deflPass = defl <= deflAllow_in;
-      const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w, gwSupport) : null;
-      const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w, gwSupport) : null;
-      results.push({ label:liteLabel(l, labels[i]), t:te, LR, w_psf:w, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, deflCapped, minT, suggestT, lsf, sgp:sgpNote(l) });
+      const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w, gwSupport, l) : null;
+      const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w, gwSupport, l) : null;
+      results.push({ label:liteLabel(l, labels[i]), t:te, LR, w_psf:w, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, deflCapped, lrExtrap, minT, suggestT, lsf, sgp:sgpNote(l) });
     });
 
   }
@@ -3749,6 +3772,8 @@ function renderGwResult(r) {
 
     // Min thickness warning
     if(res.minT) html += `<div style="font-size:11px;background:rgba(220,91,35,0.1);border:1px solid rgba(220,91,35,0.3);border-radius:4px;padding:7px 10px;color:var(--danger);font-family:'Lato',sans-serif;margin-top:6px">Min. adequate: <b>${res.minT}mm</b></div>`;
+    else if(!overall) html += `<div style="font-size:11px;background:rgba(220,91,35,0.1);border:1px solid rgba(220,91,35,0.3);border-radius:4px;padding:7px 10px;color:var(--danger);font-family:'Lato',sans-serif;margin-top:6px">No standard thickness passes — consider changing support condition or reducing span</div>`;
+    if(res.lrExtrap) html += `<div style="font-size:11px;background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.4);border-radius:4px;padding:7px 10px;color:#a07000;font-family:'Lato',sans-serif;margin-top:6px">⚠ Panel span exceeds ASTM E1300 table range (6ft max). LR extrapolated beyond standard — treat as indicative only. Verify with full E1300 analysis.</div>`;
     // Suggest reduction if significantly over-designed
     if(!res.minT && res.suggestT) html += `<div style="font-size:11px;background:rgba(74,154,106,0.1);border:1px solid rgba(74,154,106,0.35);border-radius:4px;padding:7px 10px;color:#4a9a6a;font-family:'Lato',sans-serif;margin-top:6px">Could reduce to <b>${res.suggestT}mm</b></div>`;
     if(res.sgp)  html += `<div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:5px">SGP: conservative model — actual performance will be higher.</div>`;
