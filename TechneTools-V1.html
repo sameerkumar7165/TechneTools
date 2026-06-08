@@ -687,7 +687,7 @@ input[type=range]::-webkit-slider-thumb {
   white-space:pre-wrap;word-break:break-all"></div>
 
 <script>
-const APP_VERSION = '1.021';
+const APP_VERSION = '1.023';
 // GITHUB-DIFF-TEST: 2026-06-08
 
 function applyAppVersion() {
@@ -4465,8 +4465,7 @@ function generatePrintPage() {
     const fsVal = fsEl ? fsEl.value + ' ' + (fsUnit?fsUnit.textContent:'psi') : '—';
     const prodEl = document.getElementById('si-product');
     const prodVal = getSelectedOptionText('si-product', '—');
-    const shortSide = isM ? (Math.min(r.W_in,r.H_in)*IN_TO_MM).toFixed(0)+' mm' 
-                          : (Math.min(r.W_in,r.H_in)/12).toFixed(2)+" ft";
+    const shortSide = isM ? r.S_mm.toFixed(0)+' mm' : r.S_ft.toFixed(2)+' ft';
 
     siHTML = `
       <h2>Silicone Bite Sizing</h2>
@@ -4492,7 +4491,7 @@ function generatePrintPage() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TechneTools — ${dateStr}</title>
+<title></title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Arial', sans-serif; color: #1a1a1a; background: white; padding: 20px 24px; max-width: 800px; margin: 0 auto; }
@@ -4573,20 +4572,32 @@ function generatePrintPage() {
   </div>
 </div>
 <div style="font-size:11px;color:#aaa;text-align:center;padding:8px 0 4px;font-family:Arial,sans-serif" class="no-print">
-  On iPhone: tap <strong>Print / Save PDF</strong> above, or use Safari's Share button (□↑) → Print
+  On iPhone: use Safari's Share button (□↑) → Print &nbsp;·&nbsp; On desktop Safari: in the print dialog, click <strong>Show Details</strong> → uncheck <strong>Print headers and footers</strong>
 </div>
 
 <!-- TITLE BLOCK -->
 <div class="title-block" style="margin-bottom:0">
-  <!-- Two-column: logo left, project info right -->
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
-    <img src="${TECHNE_LOGO_URI}" alt="TECHNE" style="height:24px;width:auto;display:block">
-    <div style="font-family:Arial,sans-serif;font-size:12px;color:#444;line-height:1.9;text-align:right;width:55%">
-      <div>Project Name: <strong>${projName}</strong></div>
-      <div>Project Number: <strong>${projNum}</strong></div>
-      <div>Panel Type: <strong>${panelLabel}</strong></div>
-      <div style="margin-top:6px">By: <strong>${author}</strong></div>
-      <div>Date: <strong>${dateStr}</strong></div>
+  <!-- Three-column layout: logo | labels | values -->
+  <div style="display:grid;grid-template-columns:35% 15% 50%;align-items:start;margin-bottom:16px">
+    <!-- Col 1: Logo -->
+    <div style="padding-top:4px">
+      <img src="${TECHNE_LOGO_URI}" alt="TECHNE" style="height:24px;width:auto;display:block">
+    </div>
+    <!-- Col 2: Labels, right-aligned -->
+    <div style="font-family:Arial,sans-serif;font-size:11px;color:#666;line-height:2.0;text-align:right;padding-right:10px;border-right:1px solid #ccc">
+      <div>Project Name:</div>
+      <div>Project Number:</div>
+      <div>Panel Type:</div>
+      <div style="margin-top:6px">By:</div>
+      <div>Date:</div>
+    </div>
+    <!-- Col 3: Values, left-aligned -->
+    <div style="font-family:Arial,sans-serif;font-size:11px;color:#1a1a1a;line-height:2.0;padding-left:10px">
+      <div><strong>${projName}</strong></div>
+      <div><strong>${projNum}</strong></div>
+      <div><strong>${panelLabel}</strong></div>
+      <div style="margin-top:6px"><strong>${author}</strong></div>
+      <div><strong>${dateStr}</strong></div>
     </div>
   </div>
 
@@ -4638,6 +4649,18 @@ ${inc.diagram && diagImgSrc ? `
     window.onload = function() {
       setTimeout(function(){ window.print(); }, 300);
     };
+  }
+
+  // Safari leaves the print window blank after the print dialog closes.
+  // Force a repaint by briefly toggling display on the body.
+  var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  if (isSafari) {
+    window.addEventListener('afterprint', function() {
+      document.body.style.display = 'none';
+      // eslint-disable-next-line no-unused-expressions
+      document.body.offsetHeight; // force reflow
+      document.body.style.display = '';
+    });
   }
 </' + 'script>
 </body>
