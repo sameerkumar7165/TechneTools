@@ -687,7 +687,7 @@ input[type=range]::-webkit-slider-thumb {
   white-space:pre-wrap;word-break:break-all"></div>
 
 <script>
-const APP_VERSION = '1.024';
+const APP_VERSION = '1.034';
 // GITHUB-DIFF-TEST: 2026-06-08
 
 function applyAppVersion() {
@@ -1381,6 +1381,139 @@ window.addEventListener('error', function(e) {
       Strength per ASTM E1300 glass failure prediction model. Deflection per plate bending approximation (Timoshenko). Vertical glazing, short-duration wind load assumed. For IGU/triple: each lite is checked against its load-share deflection; the deflection limit applies equally to all lites (limit is a span/serviceability criterion, not load-dependent).
     </div>
   </div>
+
+  <!-- ══ GUARDRAIL DESIGN ══ -->
+  <div class="section" id="gr-section" style="margin-top:0;border-top:2px solid var(--border);padding-top:0">
+    <!-- Header row matching tool-header style, with Open/Close button -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0 14px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="logo-icon" id="gr-logo-icon" style="background:var(--surface2)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2.5" stroke-linecap="round" id="gr-logo-svg">
+            <line x1="4" y1="20" x2="4" y2="4"/>
+            <line x1="4" y1="4" x2="20" y2="4"/>
+            <line x1="4" y1="12" x2="14" y2="12"/>
+          </svg>
+        </div>
+        <h2 id="gr-title" style="color:var(--text-soft)">Guardrail Design</h2>
+      </div>
+      <button id="gr-toggle-btn" onclick="toggleGuardrail()"
+        style="font-size:11px;font-weight:700;font-family:'Lato',sans-serif;
+        background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);
+        border-radius:6px;padding:6px 14px;cursor:pointer;letter-spacing:0.5px">
+        ＋ Open
+      </button>
+    </div>
+
+    <div id="gr-panel" style="display:none">
+      <!-- E2353 toggle -->
+      <div style="display:flex;align-items:center;justify-content:space-between;
+        background:rgba(220,91,35,0.08);border:1px solid rgba(220,91,35,0.25);
+        border-radius:8px;padding:10px 12px;margin-bottom:14px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--danger);font-family:'Lato',sans-serif;letter-spacing:0.5px">ASTM E2353 — 4× Safety Factor</div>
+          <div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px" id="gr-e2353-note">Active — required for life-safety guardrail applications</div>
+        </div>
+        <div class="sec-type-toggle">
+          <button class="sec-type-btn active" id="gr-e2353-on"  onclick="setGrE2353(true)">ON</button>
+          <button class="sec-type-btn"        id="gr-e2353-off" onclick="setGrE2353(false)">OFF</button>
+        </div>
+      </div>
+
+      <!-- Glass makeup label with info button -->
+      <div class="section-label" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        Glass Makeup
+        <button class="help-btn" onclick="showHelp('guardrail')" title="Help">i</button>
+      </div>
+
+      <!-- Row 1: Type + Plies -->
+      <div class="field-row" style="margin-bottom:8px">
+        <div class="field">
+          <label>Type</label>
+          <div class="input-wrap">
+            <select id="gr-type" onchange="onGrChange()">
+              <option value="HS">Heat Str. (HS)</option>
+              <option value="FT" selected>Fully Temp. (FT)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="flex:0 0 auto">
+          <label>Plies</label>
+          <div class="sec-type-toggle" style="transform:scale(0.85);transform-origin:left center">
+            <button class="sec-type-btn active" id="gr-ply2" onclick="setGrPlies(2)">2</button>
+            <button class="sec-type-btn"        id="gr-ply3" onclick="setGrPlies(3)">3</button>
+            <button class="sec-type-btn"        id="gr-ply4" onclick="setGrPlies(4)">4</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Lite thickness fields (rebuilt dynamically) -->
+      <div id="gr-ply-fields"></div>
+
+      <!-- t_eff label -->
+      <div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:8px" id="gr-teff-label"></div>
+
+      <!-- Row 3: Interlayer + Interlayer T -->
+      <div class="field-row" style="margin-bottom:8px">
+        <div class="field">
+          <label>Interlayer</label>
+          <div class="input-wrap">
+            <select id="gr-inter" onchange="onGrInterChange()">
+              <option value="pvb">PVB</option>
+              <option value="pvb_str">Structural PVB</option>
+              <option value="sgp" selected>SentryGlas (SGP)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Interlayer t</label>
+          <div class="input-wrap">
+            <select id="gr-tpvb" onchange="onGrChange()">
+              <option value="0.38">0.38mm | 0.015"</option>
+              <option value="0.76">0.76mm | 0.030"</option>
+              <option value="1.14">1.14mm | 0.045"</option>
+              <option value="1.52" selected>1.52mm | 0.060"</option>
+              <option value="2.28">2.28mm | 0.090"</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- Interlayer non-compliant warning -->
+      <div id="gr-inter-warn" style="display:none;font-size:10px;color:var(--danger);
+        font-family:'Lato',sans-serif;margin-bottom:8px;padding:6px 8px;
+        background:rgba(220,91,35,0.08);border-radius:4px;border-left:3px solid var(--danger)">
+        ⚠ PVB interlayer does not meet E2353 structural interlayer requirement — use SGP or equivalent
+      </div>
+
+      <!-- Guardrail geometry -->
+      <div class="section-label" style="margin-bottom:8px">Guardrail Geometry</div>
+      <div class="field-row" style="margin-bottom:8px">
+        <div class="field">
+          <label>Glass Height</label>
+          <div class="ftin-pair" id="gr-h-pair">
+            <div class="input-wrap">
+              <input type="number" id="gr-h-ft" value="3" min="0" step="1" inputmode="decimal" onfocus="this.select()" oninput="onGrChange()">
+              <span class="unit-tag" id="gr-h-ft-tag">ft</span>
+            </div>
+            <div class="input-wrap" id="gr-h-in-wrap">
+              <input type="number" id="gr-h-in" value="6" min="0" step="0.125" inputmode="decimal" onfocus="this.select()" oninput="onGrChange()">
+              <span class="unit-tag">in</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="error-msg" id="gr-error"></div>
+
+      <!-- Result -->
+      <div class="result" id="gr-result" style="display:none">
+        <div class="result-header">
+          <div class="result-label" id="gr-result-label">Guardrail Check</div>
+        </div>
+        <div id="gr-result-body"></div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- end content-gw -->
 
 <!-- ══════════════════════ SILICONE BITE TAB ════════════════════ -->
@@ -3476,27 +3609,37 @@ function rebuildGwLiteFields() {
     const gamma = GW_GAMMA[l.interlayer||'pvb'];
     const conservative = l.lam && (l.interlayer==='sgp'||l.interlayer==='pvb_str');
 
-    // Build extra ply fields (plies 3 and 4)
-    const extraPlies = l.lam ? Array.from({length: plies - 2}, (_,i) => `
-        <div class="field">
-          <label>Lite ${i+3}</label>
-          <div class="input-wrap">
-            <select id="gw-thick${i+3}-${idx}" onchange="gwLites[${idx}].thickMM${i+3}=parseInt(this.value);rebuildGwLiteFields();onGwChange()">
-              ${thickOptions(i===0 ? (l.thickMM3||6) : (l.thickMM4||6))}
-            </select>
-          </div>
-        </div>`).join('') : '';
+    // Build lite thickness fields for all plies
+    const liteFields = [1,2,3,4].filter(p => !l.lam ? p===1 : p<=plies).map(p => {
+      const thickKey = p===1?'thickMM':p===2?'thickMM2':p===3?'thickMM3':'thickMM4';
+      const selId = p===1?`gw-thick-${idx}`:p===2?`gw-thick2-${idx}`:`gw-thick${p}-${idx}`;
+      const onch = p===1
+        ? `gwLites[${idx}].thickMM=parseInt(this.value);rebuildGwLiteFields();onGwChange()`
+        : p===2
+          ? `gwLites[${idx}].thickMM2=parseInt(this.value);rebuildGwLiteFields();onGwChange()`
+          : `gwLites[${idx}].thickMM${p}=parseInt(this.value);rebuildGwLiteFields();onGwChange()`;
+      const curVal = p===1?l.thickMM:p===2?(l.thickMM2||l.thickMM):p===3?(l.thickMM3||l.thickMM):(l.thickMM4||l.thickMM);
+      return `<div class="field">
+        <label>${l.lam?'Lite '+p:'Thickness'}</label>
+        <div class="input-wrap">
+          <select id="${selId}" onchange="${onch}">${thickOptions(curVal)}</select>
+        </div>
+      </div>`;
+    }).join('');
 
     return `
-    <div style="margin-bottom:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div style="margin-bottom:14px">
+      <!-- Header row: label + mono/lam toggle -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <span style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;font-family:'Lato',sans-serif">${label}</span>
         <div class="sec-type-toggle" style="transform:scale(0.85);transform-origin:right center">
           <button class="sec-type-btn ${!l.lam?'active':''}" onclick="gwLites[${idx}].lam=false;rebuildGwLiteFields();onGwChange()">Mono</button>
           <button class="sec-type-btn ${l.lam?'active':''}"  onclick="gwLites[${idx}].lam=true;rebuildGwLiteFields();onGwChange()">Lam</button>
         </div>
       </div>
-      <div class="field-row" style="margin-bottom:${l.lam?'8px':'0'}">
+
+      <!-- Row 1: Type + Plies (lam only) -->
+      <div class="field-row" style="margin-bottom:8px">
         <div class="field">
           <label>Type</label>
           <div class="input-wrap">
@@ -3507,38 +3650,28 @@ function rebuildGwLiteFields() {
             </select>
           </div>
         </div>
-        <div class="field">
-          <label>${l.lam?'Lite 1':'Thickness'}</label>
-          <div class="input-wrap">
-            <select id="gw-thick-${idx}" onchange="gwLites[${idx}].thickMM=parseInt(this.value);rebuildGwLiteFields();onGwChange()">
-              ${thickOptions(l.thickMM)}
-            </select>
-          </div>
-        </div>
-        ${l.lam ? `
-        <div class="field">
-          <label>Lite 2</label>
-          <div class="input-wrap">
-            <select id="gw-thick2-${idx}" onchange="gwLites[${idx}].thickMM2=parseInt(this.value);rebuildGwLiteFields();onGwChange()">
-              ${thickOptions(l.thickMM2||l.thickMM)}
-            </select>
-          </div>
-        </div>` : ''}
-      </div>
-      ${l.lam && plies > 2 ? `
-      <div class="field-row" style="margin-bottom:8px">
-        ${extraPlies}
-      </div>` : ''}
-      ${l.lam ? `
-      <div class="field-row" style="margin-bottom:4px">
-        <div class="field" style="flex:0 0 auto">
-          <label style="white-space:nowrap">Plies</label>
+        ${l.lam ? `<div class="field" style="flex:0 0 auto">
+          <label>Plies</label>
           <div class="sec-type-toggle" style="transform:scale(0.85);transform-origin:left center">
             <button class="sec-type-btn ${plies===2?'active':''}" onclick="gwLites[${idx}].plies=2;rebuildGwLiteFields();onGwChange()">2</button>
             <button class="sec-type-btn ${plies===3?'active':''}" onclick="gwLites[${idx}].plies=3;rebuildGwLiteFields();onGwChange()">3</button>
             <button class="sec-type-btn ${plies===4?'active':''}" onclick="gwLites[${idx}].plies=4;rebuildGwLiteFields();onGwChange()">4</button>
           </div>
-        </div>
+        </div>` : ''}
+      </div>
+
+      <!-- Row 2: Lite thickness fields -->
+      <div class="field-row" style="margin-bottom:${l.lam?'4px':'0'}">
+        ${liteFields}
+      </div>
+
+      <!-- t_eff label -->
+      ${l.lam ? `<div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:8px">
+        γ = ${gamma} · t_eff = ${teff}mm · ${plies}-ply${conservative ? ' · Conservative model' : ''}
+      </div>` : ''}
+
+      <!-- Row 3: Interlayer + Interlayer T (lam only) -->
+      ${l.lam ? `<div class="field-row" style="margin-bottom:0">
         <div class="field">
           <label>Interlayer</label>
           <div class="input-wrap">
@@ -3561,10 +3694,6 @@ function rebuildGwLiteFields() {
             </select>
           </div>
         </div>
-      </div>
-      <div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px">
-        γ = ${gamma} · t_eff = ${teff}mm · ${plies}-ply laminate
-        ${conservative ? '· Conservative model — actual performance higher' : ''}
       </div>` : ''}
     </div>`;
   }
@@ -3574,7 +3703,7 @@ function rebuildGwLiteFields() {
     html = liteRow(0, 'Glass Lite');
   } else if (gwAssembly === 'igu') {
     html = liteRow(0, 'Outer Lite') + liteRow(1, 'Inner Lite');
-  } else { // triple
+  } else {
     html = liteRow(0, 'Outer Lite') + liteRow(1, 'Middle Lite') + liteRow(2, 'Inner Lite');
   }
   c.innerHTML = html;
@@ -3989,8 +4118,458 @@ rebuildGwZoneDropdown();
 setTimeout(()=>{ onGwZoneSelect(); onGwChange(); }, 0);
 
 /* ═══════════════════════════════════════════════════════════════
-   SILICONE BITE TAB
+   GUARDRAIL DESIGN MODULE
+   ASCE 7-22 §4.5.1 · ASTM E1300 + E2353
    ═══════════════════════════════════════════════════════════════ */
+
+// State
+let grOpen      = false;
+let grE2353     = true;   // 4× safety factor active by default
+let grPlies     = 2;
+let grResult    = null;
+
+const GR_LOAD_HEIGHT_IN = 42; // ASCE 7 / IBC max load application height (in)
+const GR_UNIF_LB_LF    = 50; // LC1: 50 lb/lf uniform
+const GR_POINT_LB      = 200; // LC2: 200 lb point load
+const GR_E2353_SF      = 4.0; // E2353 §7.2.1 safety factor
+const GR_DEFL_LIMIT    = 1/50; // E2353 §7.3: H/50
+
+function toggleGuardrail() {
+  grOpen = !grOpen;
+  document.getElementById('gr-panel').style.display = grOpen ? 'block' : 'none';
+  const icon  = document.getElementById('gr-logo-icon');
+  const svg   = document.getElementById('gr-logo-svg');
+  const title = document.getElementById('gr-title');
+  const btn   = document.getElementById('gr-toggle-btn');
+  if (icon)  icon.style.background = grOpen ? 'var(--accent)'    : 'var(--surface2)';
+  if (svg)   svg.style.stroke      = grOpen ? 'white'            : 'var(--text-muted)';
+  if (title) title.style.color     = grOpen ? 'var(--text)'      : 'var(--text-soft)';
+  if (btn) {
+    btn.textContent = grOpen ? '✕ Close' : '＋ Open';
+    btn.style.background = grOpen ? 'var(--accent)' : 'var(--surface2)';
+    btn.style.color      = grOpen ? 'white'         : 'var(--text-muted)';
+    btn.style.border     = grOpen ? '1px solid var(--accent)' : '1px solid var(--border)';
+  }
+  if (grOpen) { rebuildGrPlyFields(); onGrChange(); }
+}
+
+function setGrE2353(on) {
+  grE2353 = on;
+  document.getElementById('gr-e2353-on').classList.toggle('active', on);
+  document.getElementById('gr-e2353-off').classList.toggle('active', !on);
+  const note = document.getElementById('gr-e2353-note');
+  if (on) {
+    note.textContent = 'Active — required for life-safety guardrail applications';
+    note.style.color = '';
+  } else {
+    note.textContent = '⚠ Disabled — results are E1300 only and do NOT comply with E2353';
+    note.style.color = 'var(--danger)';
+  }
+  onGrChange();
+}
+
+function setGrPlies(n) {
+  grPlies = n;
+  [2,3,4].forEach(p => document.getElementById('gr-ply'+p).classList.toggle('active', p===n));
+  rebuildGrPlyFields();
+  onGrChange();
+}
+
+function onGrInterChange() {
+  const inter = document.getElementById('gr-inter').value;
+  const warn = document.getElementById('gr-inter-warn');
+  warn.style.display = (inter === 'pvb' || inter === 'pvb_str') ? 'block' : 'none';
+  onGrChange();
+}
+
+function rebuildGrPlyFields() {
+  const container = document.getElementById('gr-ply-fields');
+  if (!container) return;
+
+  // Preserve existing selections before rebuilding
+  const prevVals = {};
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('gr-thick-'+i);
+    if (el) prevVals[i] = el.value;
+  }
+
+  // Row 2: lite thickness fields — one per ply
+  const liteFields = Array.from({length: grPlies}, (_,i) => {
+    const curVal = prevVals[i+1] || '10';
+    const opts = GLASS_THICKNESSES_MM.map((t,j) =>
+      `<option value="${t}" ${String(t)===curVal?'selected':''}>${t}mm | ${GLASS_THICK_FRAC[j]}</option>`).join('');
+    return `<div class="field">
+      <label>Lite ${i+1}</label>
+      <div class="input-wrap">
+        <select id="gr-thick-${i+1}" onchange="onGrChange()">${opts}</select>
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="field-row" style="margin-bottom:4px">
+      ${liteFields}
+    </div>`;
+}
+
+function getGrLiteObj() {
+  const inter = document.getElementById('gr-inter')?.value || 'sgp';
+  const tpvb  = parseFloat(document.getElementById('gr-tpvb')?.value || '1.52');
+  const type  = document.getElementById('gr-type')?.value || 'FT';
+  const obj = {
+    type, lam: true, plies: grPlies, interlayer: inter, tPvbMM: tpvb,
+    thickMM:  parseInt(document.getElementById('gr-thick-1')?.value || '10'),
+    thickMM2: parseInt(document.getElementById('gr-thick-2')?.value || '10'),
+    thickMM3: grPlies >= 3 ? parseInt(document.getElementById('gr-thick-3')?.value || '10') : undefined,
+    thickMM4: grPlies >= 4 ? parseInt(document.getElementById('gr-thick-4')?.value || '10') : undefined,
+  };
+  return obj;
+}
+
+function getGrHeightIn() {
+  const isM = pcUnit === 'metric';
+  if (isM) {
+    return (parseFloat(document.getElementById('gr-h-ft')?.value || 0)) / IN_TO_MM;
+  }
+  return (parseFloat(document.getElementById('gr-h-ft')?.value || 0)) * 12
+       + (parseFloat(document.getElementById('gr-h-in')?.value || 0));
+}
+
+function onGrChange() {
+  if (!grOpen) return;
+  const errEl = document.getElementById('gr-error');
+  const resEl = document.getElementById('gr-result');
+  if (!errEl || !resEl) return;
+  errEl.classList.remove('visible');
+
+  const H_in  = getGrHeightIn();
+  const lite  = getGrLiteObj();
+  const te    = effThick(lite);
+  const isM   = pcUnit === 'metric';
+
+  // Update t_eff label
+  const teffEl = document.getElementById('gr-teff-label');
+  const gamma  = GW_GAMMA[lite.interlayer] || 0.01;
+  if (teffEl) {
+    const plies = lite.plies || 2;
+    const plyThicks = [lite.thickMM, lite.thickMM2];
+    if(plies>=3) plyThicks.push(lite.thickMM3);
+    if(plies>=4) plyThicks.push(lite.thickMM4);
+    teffEl.textContent = `γ = ${gamma} · t_eff = ${te.toFixed(1)}mm · ${plies}-ply laminate`;
+  }
+
+  if (!H_in || H_in <= 0) {
+    errEl.textContent = 'Enter glass height.'; errEl.classList.add('visible');
+    resEl.style.display = 'none'; return;
+  }
+  if (H_in < 12) {
+    errEl.textContent = 'Glass height must be at least 12 inches.'; errEl.classList.add('visible');
+    resEl.style.display = 'none'; return;
+  }
+
+  // Load application height: min(H, 42")
+  const h_load_in = Math.min(H_in, GR_LOAD_HEIGHT_IN);
+  const H_ft = H_in / 12;
+  const h_load_ft = h_load_in / 12;
+
+  // Section properties for a 1"-wide strip (per unit width)
+  const t_in = te / 25.4;
+  const I_in4_per_in = Math.pow(t_in, 3) / 12; // moment of inertia per unit width (in³)
+  const S_in3_per_in = Math.pow(t_in, 2) / 6;  // section modulus per unit width (in²)
+  const E_psi = GLASS_E_PSI;
+
+  // Allowable stress: MOR × GTF / SF
+  // MOR for glass ≈ 6,000 psi (AN base), GTF applied
+  const MOR_PSI = 6000;
+  const GTF = GLASS_GTF[lite.type] || 1.0;
+  const SF  = grE2353 ? GR_E2353_SF : 1.0;
+  const allowStress_psi = MOR_PSI * GTF / SF;
+
+  // Deflection allowable: H/50 per E2353
+  const deflAllow_in = H_in / 50;
+
+  // Wind load (from panel configurator, uniform over full height)
+  const w_psf = pcGetWindPsf();
+  const w_pli = w_psf / 144; // lb/in² → lb/in per unit width
+
+  // ── LC1: 50 lb/lf uniform line load at h_load ──
+  // Treat as UDL of intensity w1_lin over height 0→h_load on a cantilever of total height H.
+  // M_base = w × h_load² / 2
+  // δ_tip (UDL over partial height h on cantilever H):
+  //   = w×h³/(24EI) × (4H - h)   [exact formula for partial-span UDL cantilever]
+  const w1_lin = GR_UNIF_LB_LF / 12; // lb/in per in of width
+  const M1_lb_in_per_in = w1_lin * Math.pow(h_load_in, 2) / 2;
+  const stress1_psi = M1_lb_in_per_in / S_in3_per_in;
+  const defl1_in = w1_lin * Math.pow(h_load_in, 3) / (24 * E_psi * I_in4_per_in)
+                 * (4 * H_in - h_load_in);
+
+  // ── LC2: 200 lb point load at h_load, distributed over width = H_in (45° rule) ──
+  // δ_tip for point load P at h on cantilever H:
+  //   = P×h²/(6EI) × (3H - h)
+  const tribWidth_in = H_in; // 45° distribution
+  const P2_lin = GR_POINT_LB / tribWidth_in; // lb/in per in of width
+  const M2_lb_in_per_in = P2_lin * h_load_in;
+  const stress2_psi = M2_lb_in_per_in / S_in3_per_in;
+  const defl2_in = P2_lin * Math.pow(h_load_in, 2) / (6 * E_psi * I_in4_per_in)
+                 * (3 * H_in - h_load_in);
+
+  // ── LC3: Wind load (uniform UDL over full height H) ──
+  // Full-height UDL: M_base = w×H²/2, δ_tip = wH⁴/(8EI)
+  const M3_lb_in_per_in = w_pli * Math.pow(H_in, 2) / 2;
+  const stress3_psi = M3_lb_in_per_in / S_in3_per_in;
+  const defl3_in = w_pli * Math.pow(H_in, 4) / (8 * E_psi * I_in4_per_in);
+
+  // Governing: worst of LC1, LC2, LC3
+  const govLC = stress1_psi >= stress2_psi && stress1_psi >= stress3_psi ? 1
+              : stress2_psi >= stress3_psi ? 2 : 3;
+  const govStress = Math.max(stress1_psi, stress2_psi, stress3_psi);
+  const govDefl   = Math.max(defl1_in, defl2_in, defl3_in);
+
+  // Base moment for connection design (governing LC, lb·ft/ft)
+  const govM_lbft_per_ft = Math.max(M1_lb_in_per_in, M2_lb_in_per_in, M3_lb_in_per_in) * 12 / 12;
+
+  const strPass  = govStress <= allowStress_psi;
+  const deflPass = govDefl   <= deflAllow_in;
+  const nonlinear = govDefl > H_in / 50;
+
+  // Find minimum symmetric ply thickness that passes both checks
+  let minPassThick = null;
+  for (const t of GLASS_THICKNESSES_MM) {
+    const testLite = Object.assign({}, lite, {
+      thickMM: t, thickMM2: t,
+      thickMM3: grPlies >= 3 ? t : undefined,
+      thickMM4: grPlies >= 4 ? t : undefined,
+    });
+    const te_test = effThick(testLite);
+    const t_in_test = te_test / 25.4;
+    const I_test = Math.pow(t_in_test, 3) / 12;
+    const S_test = Math.pow(t_in_test, 2) / 6;
+    const govM_test = Math.max(M1_lb_in_per_in, M2_lb_in_per_in,
+                               w_pli * Math.pow(H_in, 2) / 2);
+    const σ_test = govM_test / S_test;
+    const govδ_test = Math.max(
+      w1_lin * Math.pow(h_load_in, 3) / (24 * E_psi * I_test) * (4 * H_in - h_load_in),
+      P2_lin * Math.pow(h_load_in, 2) / (6 * E_psi * I_test) * (3 * H_in - h_load_in),
+      w_pli * Math.pow(H_in, 4) / (8 * E_psi * I_test)
+    );
+    if (σ_test <= allowStress_psi && govδ_test <= deflAllow_in) {
+      minPassThick = Array(grPlies).fill(t).join('+') + 'mm';
+      break;
+    }
+  }
+
+  grResult = { H_in, h_load_in, te, lite, govLC, govStress, allowStress_psi,
+               govDefl, deflAllow_in, strPass, deflPass, nonlinear, govM_lbft_per_ft,
+               stress1_psi, stress2_psi, stress3_psi,
+               defl1_in, defl2_in, defl3_in, w_psf, SF, GTF, tribWidth_in, minPassThick };
+
+  renderGrResult();
+  resEl.style.display = 'block';
+}
+
+function renderGrResult() {
+  const r = grResult;
+  if (!r) return;
+  const isM = pcUnit === 'metric';
+  const overall = r.strPass && r.deflPass;
+  const overallColor = overall ? '#4a9a6a' : '#DC5B23';
+  const e2353Label = grE2353 ? 'E1300 + E2353' : 'E1300 only';
+  const labelEl = document.getElementById('gr-result-label');
+  if (labelEl) labelEl.textContent = `Guardrail Check — ${e2353Label}`;
+
+  function pSt(v) { return isM ? (v*0.00689476).toFixed(2)+' MPa' : v.toFixed(0)+' psi'; }
+  function pD(v)  { return isM ? (v*25.4).toFixed(1)+' mm' : v.toFixed(3)+' in'; }
+  function pM(v)  { return isM ? (v*0.112985).toFixed(1)+' N·m/m' : v.toFixed(0)+' lb·ft/lf'; }
+  const lcName = ['','LC1 — 50 lb/lf uniform','LC2 — 200 lb point load','LC3 — Wind load'];
+
+  const h_in_disp  = isM ? (r.H_in*25.4).toFixed(0)+' mm' : (() => {
+    const ft=Math.floor(r.H_in/12), ins=parseFloat((r.H_in-ft*12).toFixed(3));
+    return ft>0 ? ft+"' "+ins+'"' : ins+'"';
+  })();
+  const hl_in_disp = isM ? (r.h_load_in*25.4).toFixed(0)+' mm'
+    : r.h_load_in.toFixed(0)+'"';
+  const tw_disp    = isM ? (r.tribWidth_in*25.4).toFixed(0)+' mm'
+    : (r.tribWidth_in/12).toFixed(2)+" ft";
+
+  let html = `
+  <div style="margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:11px;font-weight:700;font-family:'Lato',sans-serif;color:var(--text-soft)">
+        h = ${h_in_disp} · loads at ${hl_in_disp} · trib. width = ${tw_disp}
+      </span>
+      <span style="font-size:18px;font-weight:900;font-family:'Lato',sans-serif;color:${overallColor}">
+        ${overall ? '✓ PASS' : '✗ FAIL'}
+      </span>
+    </div>
+
+    <!-- LC summary table -->
+    <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+      color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:4px">Load Cases</div>
+    <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:'Lato',sans-serif;margin-bottom:10px">
+      <tr style="background:var(--surface2)">
+        <th style="padding:5px 6px;text-align:left;border:1px solid var(--border);color:var(--text-muted);font-weight:700">Load Case</th>
+        <th style="padding:5px 6px;text-align:right;border:1px solid var(--border);color:var(--text-muted);font-weight:700">Stress</th>
+        <th style="padding:5px 6px;text-align:right;border:1px solid var(--border);color:var(--text-muted);font-weight:700">Deflection</th>
+      </tr>
+      ${[1,2,3].map(i => {
+        const s = [r.stress1_psi, r.stress2_psi, r.stress3_psi][i-1];
+        const d = [r.defl1_in,   r.defl2_in,   r.defl3_in  ][i-1];
+        const gov = i === r.govLC;
+        return `<tr style="${gov ? 'background:rgba(100,127,191,0.07)' : ''}">
+          <td style="padding:5px 6px;border:1px solid var(--border);${gov?'font-weight:700':''}">${lcName[i]}${gov?' ★':''}</td>
+          <td style="padding:5px 6px;border:1px solid var(--border);text-align:right">${pSt(s)}</td>
+          <td style="padding:5px 6px;border:1px solid var(--border);text-align:right">${pD(d)}</td>
+        </tr>`;
+      }).join('')}
+    </table>
+
+    <!-- Strength card -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:4px">Allowable Stress</div>
+        <div style="font-size:20px;font-weight:900;font-family:'Lato',sans-serif;color:var(--text-soft)">${pSt(r.allowStress_psi)}</div>
+        <div style="font-size:9px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px">MOR × GTF(${r.GTF}) / SF(${r.SF})</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid ${r.strPass?'var(--border)':'rgba(220,91,35,0.4)'};border-radius:8px;padding:10px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:4px">Max Stress (gov.)</div>
+        <div style="font-size:20px;font-weight:900;font-family:'Lato',sans-serif;color:${r.strPass?'#4a9a6a':'#DC5B23'}">${pSt(r.govStress)}</div>
+        <div style="font-size:9px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px">${Math.round(r.govStress/r.allowStress_psi*100)}% of allowable</div>
+      </div>
+    </div>
+
+    <!-- Deflection card -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:4px">Allowable Deflection</div>
+        <div style="font-size:20px;font-weight:900;font-family:'Lato',sans-serif;color:var(--text-soft)">${pD(r.deflAllow_in)}</div>
+        <div style="font-size:9px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px">H/50 per E2353 §7.3</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid ${r.deflPass?'var(--border)':'rgba(220,91,35,0.4)'};border-radius:8px;padding:10px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:4px">Max Deflection (gov.)</div>
+        <div style="font-size:20px;font-weight:900;font-family:'Lato',sans-serif;color:${r.deflPass?'#4a9a6a':'#DC5B23'}">${pD(r.govDefl)}</div>
+        <div style="font-size:9px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px">${Math.round(r.govDefl/r.deflAllow_in*100)}% of limit</div>
+      </div>
+    </div>
+
+    <!-- Base moment -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);font-family:'Lato',sans-serif;margin-bottom:4px">Required Base Moment (connection design)</div>
+      <div style="font-size:20px;font-weight:900;font-family:'Lato',sans-serif;color:var(--accent)">${pM(r.govM_lbft_per_ft)}</div>
+      <div style="font-size:9px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px">Governing LC — no connection safety factor applied</div>
+    </div>
+
+    ${r.nonlinear ? `<div style="font-size:11px;background:rgba(255,100,0,0.12);border:1px solid rgba(255,100,0,0.4);border-radius:4px;padding:7px 10px;color:#b04000;font-family:'Lato',sans-serif;margin-bottom:8px">
+      ⚠ Deflection exceeds H/50 — small-deflection theory unreliable. FEA required.
+    </div>` : ''}
+    ${!r.strPass || !r.deflPass ? (r.minPassThick
+      ? `<div style="font-size:11px;background:rgba(220,91,35,0.08);border:1px solid rgba(220,91,35,0.3);border-radius:4px;padding:7px 10px;color:var(--danger);font-family:'Lato',sans-serif;margin-bottom:8px">
+          Min. adequate symmetric thickness: <strong>${r.minPassThick}</strong>
+        </div>`
+      : `<div style="font-size:11px;background:rgba(220,91,35,0.08);border:1px solid rgba(220,91,35,0.3);border-radius:4px;padding:7px 10px;color:var(--danger);font-family:'Lato',sans-serif;margin-bottom:8px">
+          No standard symmetric thickness passes — reduce height or add intermediate support
+        </div>`) : ''}
+    ${!grE2353 ? `<div style="font-size:11px;background:rgba(220,91,35,0.12);border:1px solid rgba(220,91,35,0.4);border-radius:4px;padding:7px 10px;color:var(--danger);font-family:'Lato',sans-serif;margin-bottom:8px">
+      ⚠ E2353 safety factor disabled — these results do NOT comply with E2353 and should not be used for final guardrail design.
+    </div>` : ''}
+    <div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;line-height:1.5;
+      padding:8px;background:var(--surface2);border-radius:6px;border-left:3px solid var(--accent)">
+      Cantilever beam model — outside ASTM E1300 scope. Verify against E2353, IBC §1015, and local code. Post-breakage performance requires engineering judgement or proof load testing.
+    </div>
+  </div>`;
+
+  document.getElementById('gr-result-body').innerHTML = html;
+}
+
+// ── Unit conversion for guardrail height field ──
+function convertGrToUnit() {
+  const isM = pcUnit === 'metric';
+  const ftEl = document.getElementById('gr-h-ft');
+  const inEl = document.getElementById('gr-h-in');
+  const inWrap = document.getElementById('gr-h-in-wrap');
+  const ftTag  = document.getElementById('gr-h-ft-tag');
+  if (!ftEl) return;
+  const wasM = ftEl.dataset.unit === 'metric';
+  // Get current value in inches
+  const cur_in = wasM
+    ? parseFloat(ftEl.value||0) / IN_TO_MM
+    : (parseFloat(ftEl.value||0)*12 + parseFloat(inEl?.value||0));
+  if (isM) {
+    ftEl.value = Math.round(cur_in * IN_TO_MM);
+    ftEl.step = '10'; ftTag.textContent = 'mm';
+    if (inWrap) inWrap.style.display = 'none';
+  } else {
+    const ft  = Math.floor(cur_in / 12);
+    const ins = Math.round((cur_in - ft * 12) * 100) / 100; // round to 2 decimal places
+    ftEl.value = ft;
+    if (inEl) inEl.value = ins;
+    ftEl.step = '1'; ftTag.textContent = 'ft';
+    if (inWrap) inWrap.style.display = '';
+  }
+  ftEl.dataset.unit = isM ? 'metric' : 'imperial';
+  if (grOpen) onGrChange();
+}
+
+// Hook into unit conversion
+(function() {
+  const orig = window.setPcUnit;
+  window.setPcUnit = function(u) {
+    orig && orig(u);
+    convertGrToUnit();
+  };
+})();
+
+// Tooltip
+HELP_CONTENT['guardrail'] = { title: 'Guardrail Design', body:`
+  <div class="help-body">
+    <h3>Overview</h3>
+    <p>Glass guardrail check per ASCE 7-22 §4.5.1 and ASTM E2353. Three independent load cases are checked — worst governs. Wind load is also checked independently against the design wind pressure from the panel configurator.</p>
+
+    <h3>Load Cases</h3>
+    <p><b>LC1 — 50 lb/lf uniform:</b> Applied horizontally at the load application height (min of glass height and 42"). Per ASCE 7-22 §4.5.1. Base moment = w × h²/2.</p>
+    <p><b>LC2 — 200 lb point load:</b> Applied at the load application height. Distributed over a tributary width equal to the glass height using a 45° spread assumption: w_equiv = 200/H. Base moment = P × h.</p>
+    <p><b>LC3 — Wind load:</b> Design wind pressure (ASD) from panel configurator, applied as uniform lateral load over the full glass height. Base moment = w × H²/2.</p>
+    <p>LC1 and LC2 are never combined. All three are checked independently — worst governs.</p>
+
+    <h3>Load Application Height</h3>
+    <p>Load is applied at min(H, 42"). If glass height exceeds 42", loads are still applied at 42" — never higher. This is per IBC §1015.3 minimum guardrail height and ASCE 7-22 §4.5.1.</p>
+
+    <h3>Support Condition</h3>
+    <p>One-edge fixed (cantilever). Glass fixed at base, free at top and sides. Cantilever beam formulae used:</p>
+    <ul>
+      <li>UDL over partial height: δ = w×h³/(6EI) × (3H−h)</li>
+      <li>Point load at height h: δ = P×h²/(6EI) × (3H−h)</li>
+      <li>Max stress: σ = M/S where S = t²/6 per unit width</li>
+    </ul>
+    <p>This is outside the scope of ASTM E1300 (which covers simply supported plates only). Results are flagged accordingly.</p>
+
+    <h3>Glass Requirements</h3>
+    <p><b>Type:</b> HS or FT required per E2353. AN glass is not permitted. FT is default and recommended.</p>
+    <p><b>Construction:</b> Laminated glass required per E2353 §6.1. 2, 3, or 4-ply configurations supported.</p>
+    <p><b>Interlayer:</b> SentryGlas (SGP) or equivalent structural interlayer required per E2353. PVB and structural PVB are flagged as non-compliant.</p>
+
+    <h3>Strength Check</h3>
+    <p><b>E2353 mode (default):</b> σ_allow = MOR × GTF / 4.0 per E2353 §7.2.1. MOR = 6,000 psi (glass base modulus of rupture). GTF: HS = 2.0, FT = 4.0.</p>
+    <p><b>E1300-only mode:</b> σ_allow = MOR × GTF (no 4× factor). Does not comply with E2353. Use for preliminary sizing or comparison only.</p>
+
+    <h3>Deflection Check</h3>
+    <p>Allowable tip deflection = H/50 per E2353 §7.3. When calculated deflection exceeds H/50, the small-deflection linear model is unreliable and a non-linearity warning is shown. FEA required for accurate results at large deflections.</p>
+
+    <h3>Base Moment</h3>
+    <p>Governing base moment (lb·ft/lf or N·m/m) is reported for use by the connection designer. No additional connection safety factor is applied — apply project-specific factors separately.</p>
+
+    <h3>E2353 Compliance Summary</h3>
+    <p>✅ Load cases (LC1, LC2) · ✅ Load height ≤ 42" · ✅ Laminated required · ✅ HS/FT required · ✅ SGP required (flagged) · ✅ 4× SF §7.2.1 (toggleable) · ✅ H/50 deflection §7.3 · ⚠ Post-breakage: manual check · ❌ Proof load testing: outside tool scope</p>
+
+    <h3>Disclaimer</h3>
+    <p>Indicative E1300-based cantilever check consistent with E2353 §7.2. Does not replace a full E2353 analysis, engineering review, or proof load testing. All results must be reviewed by a qualified engineer.</p>
+  </div>`
+};
+
+// Init guardrail ply fields (deferred — panel not open yet)
+document.addEventListener('DOMContentLoaded', function() {
+  const ftEl = document.getElementById('gr-h-ft');
+  if (ftEl) ftEl.dataset.unit = 'imperial';
+});
 // pcUnit now references pcUnit
 let siResult = null;
 
