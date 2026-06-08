@@ -1352,7 +1352,7 @@ window.addEventListener('unhandledrejection', function(e){
     <div style="margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:6px;
       font-size:11px;color:var(--text-muted);font-family:'Lato',sans-serif;line-height:1.5;
       border-left:3px solid var(--accent)">
-      Strength per ASTM E1300 glass failure prediction model. Deflection per plate bending approximation. Vertical glazing, short-duration wind load assumed.
+      Strength per ASTM E1300 glass failure prediction model. Deflection per plate bending approximation (Timoshenko). Vertical glazing, short-duration wind load assumed. For IGU/triple: each lite is checked against its load-share deflection; the deflection limit applies equally to all lites (limit is a span/serviceability criterion, not load-dependent).
     </div>
   </div>
 </div><!-- end content-gw -->
@@ -2390,10 +2390,13 @@ function onUvFrameConfig() {
     document.getElementById('uv-uf').value=isM?(U_frame_btu*BTU_TO_W).toFixed(2):U_frame_btu.toFixed(2);
     document.getElementById('uv-eog-v').value=isM?(U_eog_btu*BTU_TO_W).toFixed(2):U_eog_btu.toFixed(2);
   } else {
-    // Frameless: U-Frame = 0, U-EOG based on spacer + COG only
+    // Frameless / channel-glazed: no frame member, so U-Frame = 0.
+    // U-EOG is approximated as U-COG + spacer adder, which accounts for the
+    // edge-seal thermal penalty but ignores any channel or structural silicone
+    // contribution. This is conservative (overstates edge-of-glass U slightly).
+    // For accurate frameless U-values, use THERM simulation with actual detail geometry.
     const spacerAdd=parseFloat(document.getElementById('uv-spacer-bar').value)||0.05;
     const U_cog_btu=getU_uv('uv-cog-v');
-    // For frameless IGU, EOG = spacer contribution approximated as COG + edge penalty
     const U_eog_btu = U_cog_btu + spacerAdd;
     const isM=pcUnit==='metric';
     document.getElementById('uv-eog-v').value=isM?(U_eog_btu*BTU_TO_W).toFixed(2):U_eog_btu.toFixed(2);
@@ -2689,6 +2692,7 @@ HELP_CONTENT['frame']={title:'Frame Configuration',body:`<div class="help-body">
 <p><code>U-Frame = base + spacer adder</code></p>
 <p><code>U-EOG = (U-Frame + U-COG) / 2</code></p>
 <p>Values are indicative. Use THERM simulation for certified NFRC 100 submissions.</p>
+<p><b>Frameless / channel-glazed</b>: U-Frame is set to zero and U-EOG is approximated as U-COG + spacer adder. This ignores the channel or structural silicone detail and may understate system U-value. Use THERM with actual detail geometry for accurate results.</p>
 </div>`};
 HELP_CONTENT['glass']={title:'Glass Configuration',body:`<div class="help-body"><h3>U-COG Typical Values (BTU/hr·ft²·°F)</h3><ul><li>Double, no coating: air 0.48 · argon 0.42</li><li>Double, 1 coating: air 0.30 · argon 0.25</li><li>Double, 2 coatings: air 0.26 · argon 0.22</li><li>Triple, no coating: air 0.28 · argon 0.23</li><li>Triple, 1 coating: air 0.20 · argon 0.17</li><li>Triple, 2 coatings: air 0.17 · argon 0.14</li></ul><p>Values are indicative. Use certified manufacturer data for submissions.</p></div>`};
 HELP_CONTENT['spandrel']={title:'Spandrel Configuration',body:`<div class="help-body"><h3>Opaque</h3><p><code>U = 1 / (R-se + R-ins + R-si)</code></p><ul><li>R-se = 0.17 · R-si = 0.68 hr·ft²·°F/BTU</li><li>R-ins (insulation) = thickness × R per inch</li></ul><h3>Shadowbox</h3><p><code>U = 1 / (R-se + 1/U-cog-vision + R-cavity + R-ins + R-si)</code></p><ul><li>R-cavity = 0.97 (2" sealed air space, ASHRAE)</li></ul><h3>Default R/inch = 4.2</h3><p>Typical for mineral wool batts.</p></div>`};
@@ -3186,8 +3190,9 @@ function calcLR_psi(t_mm, type, W_in, H_in, edges) {
   if(edges===3){
     NFL *= (gwUnsupported==='long') ? 0.45 : 0.60;
   } else if(edges===2){
-    // Both cases now use correct span; apply beam reduction factor
-    NFL *= (gwUnsupported==='long') ? 0.30 : 0.30;
+    // Long unsupported: glass acts as beam spanning the long dimension → heavily penalise
+    // Short unsupported: glass acts as beam spanning the short dimension → less severe
+    NFL *= (gwUnsupported==='long') ? 0.30 : 0.50;
   }
   return NFL * (GLASS_GTF[type]||1.0);
 }
@@ -3697,7 +3702,7 @@ HELP_CONTENT['glass_sizing'] = { title: 'Glass Sizing — ASTM E1300', body:`
     <p><code>LR = NFL × GTF</code></p>
     <p>NFL (Non-Factored Load) is read from digitised E1300 Figure 1 tables with bilinear interpolation between panel sizes and cubic (t³) interpolation between thicknesses. Coverage: 1–6ft short side, 1–12ft long side.</p>
     <p>Glass Type Factor (GTF): AN = 1.0 · HS = 2.0 · FT = 4.0</p>
-    <p>Edge reductions applied to NFL: 3-edge long free ×0.45 · 3-edge short free ×0.60 · 2-edge ×0.30</p>
+    <p>Edge reductions applied to NFL: 3-edge long free ×0.45 · 3-edge short free ×0.60 · 2-edge long free ×0.30 · 2-edge short free ×0.50</p>
     <h3>IGU Load Share (E1300 X1/X2)</h3>
     <p><code>LSF_i = t³_eff_i / Σ(t³_eff)</code> — each lite checked at its share of wind load.</p>
     <h3>Laminated — Bennison-Stelzer</h3>
