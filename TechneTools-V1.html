@@ -687,7 +687,7 @@ input[type=range]::-webkit-slider-thumb {
   white-space:pre-wrap;word-break:break-all"></div>
 
 <script>
-const APP_VERSION = '1.017';
+const APP_VERSION = '1.018';
 // GITHUB-DIFF-TEST: 2026-06-08
 
 function applyAppVersion() {
@@ -3342,7 +3342,12 @@ function calcDeflection_in(t_mm, W_in, H_in, w_psf, edges) {
   else alpha=5.0/384.0; // beam analogy (2-edge)
 
   const w_psi = w_psf/144;
-  return alpha * w_psi * Math.pow(a,4) / (GLASS_E_PSI * Math.pow(t_in,3));
+  const span_in = a; // governing span
+  const defl = alpha * w_psi * Math.pow(span_in,4) / (GLASS_E_PSI * Math.pow(t_in,3));
+  // Flag non-linearity: when δ > L/50, small-deflection theory breaks down.
+  // Actual deflection will be larger than calculated (no membrane restraint on free edges).
+  const nonlinear = defl > span_in / 50;
+  return { defl, nonlinear };
 }
 
 /* ── Governing span for deflection ───────────────────────────── */
@@ -3394,7 +3399,7 @@ function findMinThickness(type, W_in, H_in, w_psf, edges, liteObj) {
       const lamTest = Object.assign({}, liteObj, { thickMM: t, thickMM2: t });
       const te = effThick(lamTest);
       const { LR } = calcLR_psi(te, type, W_in, H_in, edges);
-      const defl = calcDeflection_in(te, W_in, H_in, w_psf, edges);
+      const { defl } = calcDeflection_in(te, W_in, H_in, w_psf, edges);
       if (LR >= w_psf && defl <= deflAllow) return t + '+' + t;
     }
     return null;
@@ -3402,7 +3407,7 @@ function findMinThickness(type, W_in, H_in, w_psf, edges, liteObj) {
   // Monolithic
   for (const t of GLASS_THICKNESSES_MM) {
     const { LR } = calcLR_psi(t, type, W_in, H_in, edges);
-    const defl = calcDeflection_in(t, W_in, H_in, w_psf, edges);
+    const { defl } = calcDeflection_in(t, W_in, H_in, w_psf, edges);
     if (LR >= w_psf && defl <= deflAllow) return t;
   }
   return null;
@@ -3622,12 +3627,12 @@ function onGwChange() {
     const l = gwLites[0];
     const te = effThick(l);
     const { LR, extrapolated: lrExtrap } = calcLR_psi(te, l.type, W_in, H_in, gwSupport);
-    const defl  = calcDeflection_in(te, W_in, H_in, w_psf, gwSupport);
+    const { defl, nonlinear: deflNonlinear } = calcDeflection_in(te, W_in, H_in, w_psf, gwSupport);
     const strPass  = LR >= w_psf;
     const deflPass = defl <= deflAllow_in;
     const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w_psf, gwSupport, l) : null;
     const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w_psf, gwSupport, l) : null;
-    results.push({ label:liteLabel(l,'Lite'), t:te, LR, w_psf, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, deflCapped, lrExtrap, minT, suggestT, sgp:sgpNote(l) });
+    results.push({ label:liteLabel(l,'Lite'), t:te, LR, w_psf, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, deflCapped, deflNonlinear, lrExtrap, minT, suggestT, sgp:sgpNote(l) });
 
   } else if (gwAssembly === 'igu' || gwAssembly === 'triple') {
     const lites = gwAssembly === 'triple'
@@ -3644,12 +3649,12 @@ function onGwChange() {
     lites.forEach((l, i) => {
       const te = tes[i], w = loads[i], lsf = lsfs[i];
       const { LR, extrapolated: lrExtrap } = calcLR_psi(te, l.type, W_in, H_in, gwSupport);
-      const defl  = calcDeflection_in(te, W_in, H_in, w, gwSupport);
+      const { defl, nonlinear: deflNonlinear } = calcDeflection_in(te, W_in, H_in, w, gwSupport);
       const strPass  = LR >= w;
       const deflPass = defl <= deflAllow_in;
       const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w, gwSupport, l) : null;
       const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w, gwSupport, l) : null;
-      results.push({ label:liteLabel(l, labels[i]), t:te, LR, w_psf:w, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, deflCapped, lrExtrap, minT, suggestT, lsf, sgp:sgpNote(l) });
+      results.push({ label:liteLabel(l, labels[i]), t:te, LR, w_psf:w, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, deflCapped, deflNonlinear, lrExtrap, minT, suggestT, lsf, sgp:sgpNote(l) });
     });
 
   }
@@ -3773,7 +3778,8 @@ function renderGwResult(r) {
     // Min thickness warning
     if(res.minT) html += `<div style="font-size:11px;background:rgba(220,91,35,0.1);border:1px solid rgba(220,91,35,0.3);border-radius:4px;padding:7px 10px;color:var(--danger);font-family:'Lato',sans-serif;margin-top:6px">Min. adequate: <b>${res.minT}mm</b></div>`;
     else if(!overall) html += `<div style="font-size:11px;background:rgba(220,91,35,0.1);border:1px solid rgba(220,91,35,0.3);border-radius:4px;padding:7px 10px;color:var(--danger);font-family:'Lato',sans-serif;margin-top:6px">No standard thickness passes — consider changing support condition or reducing span</div>`;
-    if(res.lrExtrap) html += `<div style="font-size:11px;background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.4);border-radius:4px;padding:7px 10px;color:#a07000;font-family:'Lato',sans-serif;margin-top:6px">⚠ Panel span exceeds ASTM E1300 table range (6ft max). LR extrapolated beyond standard — treat as indicative only. Verify with full E1300 analysis.</div>`;
+    if(res.lrExtrap) html += `<div style="font-size:11px;background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.4);border-radius:4px;padding:7px 10px;color:#a07000;font-family:'Lato',sans-serif;margin-top:6px">⚠ Panel span exceeds ASTM E1300 table range (6ft max). LR extrapolated — treat as indicative only. Verify with full E1300 analysis.</div>`;
+    if(res.deflNonlinear) html += `<div style="font-size:11px;background:rgba(255,100,0,0.12);border:1px solid rgba(255,100,0,0.4);border-radius:4px;padding:7px 10px;color:#b04000;font-family:'Lato',sans-serif;margin-top:6px">⚠ Calculated deflection exceeds L/50 — small-deflection theory is unreliable. Actual deflection will be significantly larger. FEA required for accurate results.</div>`;
     // Suggest reduction if significantly over-designed
     if(!res.minT && res.suggestT) html += `<div style="font-size:11px;background:rgba(74,154,106,0.1);border:1px solid rgba(74,154,106,0.35);border-radius:4px;padding:7px 10px;color:#4a9a6a;font-family:'Lato',sans-serif;margin-top:6px">Could reduce to <b>${res.suggestT}mm</b></div>`;
     if(res.sgp)  html += `<div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:5px">SGP: conservative model — actual performance will be higher.</div>`;
@@ -3853,32 +3859,60 @@ HELP_CONTENT['glass_sizing'] = { title: 'Glass Sizing — ASTM E1300', body:`
   <div class="help-body">
     <h3>Strength — ASTM E1300 Model</h3>
     <p><code>LR = NFL × GTF</code></p>
-    <p>NFL (Non-Factored Load) is read from digitised E1300 Figure 1 tables with bilinear interpolation between panel sizes and cubic (t³) interpolation between thicknesses. Coverage: 1–6ft short side, 1–12ft long side.</p>
+    <p>NFL (Non-Factored Load) is read from digitised ASTM E1300 Figure 1 tables (AN glass, 4-edge simply supported, short-duration load) with bilinear interpolation between panel sizes and cubic (t³) interpolation between thicknesses. Table coverage: 1–6ft short side, 1–12ft long side. Thicknesses beyond the table maximum (25mm) are extrapolated using the actual power-law exponent derived from each panel size's data.</p>
     <p>Glass Type Factor (GTF): AN = 1.0 · HS = 2.0 · FT = 4.0</p>
-    <p>Edge reductions applied to NFL: 3-edge long free ×0.45 · 3-edge short free ×0.60 · 2-edge long free ×0.30 · 2-edge short free ×0.50</p>
-    <h3>IGU Load Share (E1300 X1/X2)</h3>
-    <p><code>LSF_i = t³_eff_i / Σ(t³_eff)</code> — each lite checked at its share of wind load.</p>
-    <h3>Laminated — Bennison-Stelzer</h3>
-    <p><code>t_eff = (t₁³ + t₂³ + 12·γ·t₁·t₂·h_s²)^(1/3)</code></p>
-    <p>h_s = (t₁ + t_pvb + t₂) / 2 — distance between lite centroids</p>
-    <p>Coupling factor γ (short-duration wind, 20°C):</p>
+
+    <h3>2-Edge and 3-Edge Support</h3>
+    <p>For unsupported-edge conditions, glass acts as a beam rather than a plate. The NFL lookup uses a square table entry at the governing span dimension (span × span) to correctly model one-way beam action, rather than the full panel aspect ratio. A reduction factor is then applied:</p>
     <ul>
-      <li>PVB: γ = 0.01 (≈ conservative formula)</li>
-      <li>Structural PVB: γ = 0.35</li>
-      <li>SentryGlas SGP: γ = 0.85 (conservative model understates actual LR)</li>
+      <li>2-edge, long edges free: governing span = long dim · NFL reduction ×0.30</li>
+      <li>2-edge, short edges free: governing span = short dim · NFL reduction ×0.50</li>
+      <li>3-edge, long edge free: governing span = long dim · NFL reduction ×0.45</li>
+      <li>3-edge, short edge free: governing span = short dim · NFL reduction ×0.60</li>
     </ul>
+    <p>When the governing span exceeds 6ft (the ASTM E1300 table maximum), LR is extrapolated using NFL ∝ 1/a² scaling from the 6ft anchor value. Results are flagged as indicative — verify with full E1300 analysis for spans beyond 6ft.</p>
+
+    <h3>IGU Load Share (E1300 Appendix X1/X2)</h3>
+    <p><code>LSF_i = t³_eff_i / Σ(t³_eff)</code> — each lite is checked at its proportional share of total wind load.</p>
+
+    <h3>Laminated Glass — Bennison-Stelzer Effective Thickness</h3>
+    <p><code>t_eff = (t₁³ + t₂³ + 12·γ·I_s)^(1/3)</code></p>
+    <p>where <code>I_s = t₁·t₂·(t₁+t₂+2·t_pvb)² / (4·(t₁+t₂))</code></p>
+    <p>Coupling factor γ (short-duration wind load, ~20°C):</p>
+    <ul>
+      <li>PVB: γ = 0.01 — essentially two independent lites</li>
+      <li>Structural PVB: γ = 0.35 — partial composite action</li>
+      <li>SentryGlas (SGP): γ = 0.85 — near-full composite action. Note: this is a conservative model; actual performance is higher. Results are flagged accordingly.</li>
+    </ul>
+
     <h3>Deflection — Timoshenko Plate Theory</h3>
     <p><code>δ = α × w × a⁴ / (E × t³)</code></p>
     <ul>
-      <li>α — plate coefficient from Timoshenko Table 8-1, interpolated by aspect ratio</li>
-      <li>a — short span · w — load (lb/in²) · E = 10,400,000 psi · t — thickness</li>
+      <li>4-edge: α from Timoshenko Table 8-1, interpolated by aspect ratio a/b</li>
+      <li>2-edge (beam): α = 5/384</li>
+      <li>3-edge: α = 2 × 4-edge value (conservative)</li>
+      <li>E = 10,400,000 psi (glass) · a = governing span</li>
     </ul>
-    <h3>Assumptions</h3>
+    <p>Governing span for deflection allowable and beam model:</p>
     <ul>
-      <li>Short-duration wind load — most favourable for glass strength</li>
-      <li>Vertical glazing — self-weight in-plane, not contributing to lateral deflection</li>
-      <li>Probability of breakage: 8/1000 (E1300 default)</li>
-      <li>Indicative values only — use certified data for formal submissions</li>
+      <li>4-edge: short dimension</li>
+      <li>2/3-edge, long edges free: long dimension (unsupported edge governs)</li>
+      <li>2/3-edge, short edges free: short dimension</li>
+    </ul>
+    <p>Deflection allowable: L/175 (ASTM E1300/GANA default) or L/240, capped at ¾" (0.750") unless 1" absolute is selected. The 1" absolute option is the only one not subject to the ¾" cap.</p>
+
+    <h3>Non-Linearity Warning</h3>
+    <p>The Timoshenko formula assumes small deflections (linear elastic, geometric linearity). When calculated deflection exceeds L/50, this assumption breaks down — actual deflections will be significantly larger, particularly for 2-edge and 3-edge conditions where no membrane restraint develops along the free edges. A warning is shown and FEA (e.g. Mepla) is required for accurate results. This was validated against Mepla PRO FEA for a 15'×8' 2-edge panel at 23 psf, which showed 176mm (6.9") actual deflection vs. 16.7mm (0.66") from the linear model.</p>
+
+    <h3>Minimum Thickness Recommendation</h3>
+    <p>When a lite fails, the tool searches for the minimum standard thickness (monolithic) or minimum symmetric ply thickness (laminated, same interlayer) that satisfies both strength and deflection. If no standard thickness passes — common for large spans with severe edge reduction factors — a message is shown recommending a change in support condition or span reduction.</p>
+
+    <h3>General Assumptions</h3>
+    <ul>
+      <li>Short-duration wind load — most favourable glass strength condition</li>
+      <li>Vertical glazing — self-weight acts in-plane, not contributing to lateral deflection</li>
+      <li>Probability of breakage: 8/1000 (ASTM E1300 default)</li>
+      <li>Indicative values only — use certified manufacturer data and formal E1300 analysis for submissions</li>
     </ul>
   </div>`
 };
