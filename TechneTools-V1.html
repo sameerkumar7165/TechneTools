@@ -687,7 +687,7 @@ input[type=range]::-webkit-slider-thumb {
   white-space:pre-wrap;word-break:break-all"></div>
 
 <script>
-const APP_VERSION = '1.008';
+const APP_VERSION = '1.011';
 // GITHUB-DIFF-TEST: 2026-06-08
 
 function applyAppVersion() {
@@ -1339,8 +1339,8 @@ window.addEventListener('error', function(e) {
         <select id="gw-defl" onchange="onGwChange()">
           <option value="175" selected>L/175 (ASTM E1300 / GANA)</option>
           <option value="240">L/240</option>
-          <option value="19mm">¾" / 19mm absolute</option>
-          <option value="25mm">1" / 25mm absolute</option>
+          <option value="19mm">¾" / 19.1mm absolute</option>
+          <option value="25mm">1" / 25.4mm absolute</option>
           <option value="175_19">L/175 or ¾", whichever less</option>
           <option value="none">None — strength check only</option>
         </select>
@@ -3347,17 +3347,24 @@ function getDeflSpan_in(W_in, H_in) {
 }
 
 /* ── Deflection allowable ────────────────────────────────────── */
+// Returns { allow_in, capped } where capped=true means L/175 or L/240
+// exceeded the ¾" absolute cap and was clamped to it.
+// The 1" absolute option raises the cap to 1.0" exactly.
 function getDeflAllow_in(W_in, H_in) {
   const a = getDeflSpan_in(W_in, H_in);
   const deflEl = document.getElementById('gw-defl');
-  const deflOpt = deflEl ? deflEl.value : '175'; // default L/175 if element absent
-  if (deflOpt === 'none')   return Infinity;
-  if (deflOpt === '175')    return a / 175;
-  if (deflOpt === '240')    return a / 240;
-  if (deflOpt === '19mm')   return 19 / 25.4;
-  if (deflOpt === '25mm')   return 25 / 25.4;
-  if (deflOpt === '175_19') return Math.min(a/175, 19/25.4);
-  return a / 175;
+  const deflOpt = deflEl ? deflEl.value : '175';
+  const CAP_IN = 0.75; // ¾" absolute cap for span-based options
+
+  if (deflOpt === 'none')   return { allow_in: Infinity, capped: false };
+  if (deflOpt === '19mm')   return { allow_in: CAP_IN,   capped: false };  // ¾" = 0.750"
+  if (deflOpt === '25mm')   return { allow_in: 1.0,      capped: false };  // 1" = 25.4mm exactly
+  if (deflOpt === '175_19') return { allow_in: Math.min(a/175, CAP_IN), capped: false }; // capped by definition
+
+  // Span-based options (L/175, L/240): cap at ¾"
+  const raw = deflOpt === '240' ? a / 240 : a / 175;
+  const capped = raw > CAP_IN;
+  return { allow_in: capped ? CAP_IN : raw, capped };
 }
 
 function getSelectedOptionText(selectId, fallback) {
@@ -3371,7 +3378,7 @@ function getSelectedOptionText(selectId, fallback) {
 
 /* ── Find minimum passing thickness ─────────────────────────── */
 function findMinThickness(type, W_in, H_in, w_psf, edges) {
-  const deflAllow = getDeflAllow_in(W_in, H_in);
+  const { allow_in: deflAllow } = getDeflAllow_in(W_in, H_in);
   for (const t of GLASS_THICKNESSES_MM) {
     const LR = calcLR_psi(t, type, W_in, H_in, edges);
     const defl = calcDeflection_in(t, W_in, H_in, w_psf, edges);
@@ -3449,7 +3456,7 @@ function rebuildGwLiteFields() {
         <div class="field">
           <label>${l.lam?'Lite 1':'Thickness'}</label>
           <div class="input-wrap">
-            <select id="gw-thick-${idx}" onchange="gwLites[${idx}].thickMM=parseInt(this.value);onGwChange()">
+            <select id="gw-thick-${idx}" onchange="gwLites[${idx}].thickMM=parseInt(this.value);rebuildGwLiteFields();onGwChange()">
               ${thickOptions(l.thickMM)}
             </select>
           </div>
@@ -3458,7 +3465,7 @@ function rebuildGwLiteFields() {
         <div class="field">
           <label>Lite 2</label>
           <div class="input-wrap">
-            <select id="gw-thick2-${idx}" onchange="gwLites[${idx}].thickMM2=parseInt(this.value);onGwChange()">
+            <select id="gw-thick2-${idx}" onchange="gwLites[${idx}].thickMM2=parseInt(this.value);rebuildGwLiteFields();onGwChange()">
               ${thickOptions(l.thickMM2)}
             </select>
           </div>
@@ -3479,7 +3486,7 @@ function rebuildGwLiteFields() {
         <div class="field">
           <label>Interlayer t</label>
           <div class="input-wrap">
-            <select id="gw-tpvb-${idx}" onchange="gwLites[${idx}].tPvbMM=parseFloat(this.value);onGwChange()">
+            <select id="gw-tpvb-${idx}" onchange="gwLites[${idx}].tPvbMM=parseFloat(this.value);rebuildGwLiteFields();onGwChange()">
               <option value="0.38" ${(l.tPvbMM||0.76)===0.38?'selected':''}>0.38mm | 0.015"</option>
               <option value="0.76" ${(l.tPvbMM||0.76)===0.76?'selected':''}>0.76mm | 0.030"</option>
               <option value="1.14" ${(l.tPvbMM||0.76)===1.14?'selected':''}>1.14mm | 0.045"</option>
@@ -3575,7 +3582,7 @@ function onGwChange() {
   if (!H_in || !W_in || H_in<=0 || W_in<=0) return;
 
   const w_psf = pcGetWindPsf();
-  const deflAllow_in = getDeflAllow_in(W_in, H_in);
+  const { allow_in: deflAllow_in, capped: deflCapped } = getDeflAllow_in(W_in, H_in);
   const deflGovDim_in = getDeflSpan_in(W_in, H_in); // governing span for deflection label
   const isM = pcUnit === 'metric';
   const results = [];
@@ -3597,7 +3604,7 @@ function onGwChange() {
     const deflPass = defl <= deflAllow_in;
     const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w_psf, gwSupport) : null;
     const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w_psf, gwSupport) : null;
-    results.push({ label:liteLabel(l,'Lite'), t:te, LR, w_psf, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, minT, suggestT, sgp:sgpNote(l) });
+    results.push({ label:liteLabel(l,'Lite'), t:te, LR, w_psf, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, deflCapped, minT, suggestT, sgp:sgpNote(l) });
 
   } else if (gwAssembly === 'igu' || gwAssembly === 'triple') {
     const lites = gwAssembly === 'triple'
@@ -3619,7 +3626,7 @@ function onGwChange() {
       const deflPass = defl <= deflAllow_in;
       const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w, gwSupport) : null;
       const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w, gwSupport) : null;
-      results.push({ label:liteLabel(l, labels[i]), t:te, LR, w_psf:w, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, minT, suggestT, lsf, sgp:sgpNote(l) });
+      results.push({ label:liteLabel(l, labels[i]), t:te, LR, w_psf:w, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, deflCapped, minT, suggestT, lsf, sgp:sgpNote(l) });
     });
 
   }
@@ -3731,7 +3738,8 @@ function renderGwResult(r) {
         : isLongDim
           ? 'long dim — unsupported edge governs'
           : 'short dim — spanning between free edges';
-      const deflLabel = deflLimitText + ' · ' + govDimStr + ' ' + govEdgeLabel;
+      const capNote = res.deflCapped ? ' · capped at ¾" (0.750")' : '';
+      const deflLabel = deflLimitText + ' · ' + govDimStr + ' ' + govEdgeLabel + capNote;
       html += twoColCard(
         'Deflection',
         'Allowable', dD(res.deflAllow_in), 'var(--text-soft)', deflLabel,
