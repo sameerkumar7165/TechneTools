@@ -661,6 +661,10 @@ input[type=range]::-webkit-slider-thumb {
         <input type="checkbox" id="pch-gw" checked>
         <span>Glass Sizing</span>
       </label>
+      <label class="print-check-row" id="pch-gr-row" style="display:none">
+        <input type="checkbox" id="pch-gr" checked>
+        <span>Guardrail Design</span>
+      </label>
       <label class="print-check-row">
         <input type="checkbox" id="pch-si" checked>
         <span>Silicone Bite Sizing</span>
@@ -687,7 +691,7 @@ input[type=range]::-webkit-slider-thumb {
   white-space:pre-wrap;word-break:break-all"></div>
 
 <script>
-const APP_VERSION = '1.034';
+const APP_VERSION = '1.035';
 // GITHUB-DIFF-TEST: 2026-06-08
 
 function applyAppVersion() {
@@ -4818,6 +4822,9 @@ function showPrintModal() {
     const val = localStorage.getItem('techne_' + id);
     if(el && val) el.value = val;
   });
+  // Show guardrail checkbox only if guardrail has been calculated
+  const grRow = document.getElementById('pch-gr-row');
+  if (grRow) grRow.style.display = (grOpen && grResult) ? 'flex' : 'none';
   document.getElementById('print-modal').style.display = 'block';
 }
 function hidePrintModal() {
@@ -4849,6 +4856,7 @@ function generatePrintPage() {
     uv:      document.getElementById('pch-uv').checked,
     beam:    document.getElementById('pch-beam').checked,
     gw:      document.getElementById('pch-gw').checked,
+    gr:      (document.getElementById('pch-gr')?.checked && grOpen && grResult) || false,
     si:      document.getElementById('pch-si').checked,
   };
 
@@ -5104,6 +5112,75 @@ function generatePrintPage() {
       </div>`;
   }
 
+  // Build Guardrail section HTML
+  let grHTML = '';
+  if (inc.gr && grResult) {
+    const r = grResult;
+    const pSt = v => isM ? (v*0.00689476).toFixed(2)+' MPa' : v.toFixed(0)+' psi';
+    const pD  = v => isM ? (v*25.4).toFixed(1)+' mm' : v.toFixed(3)+' in';
+    const pM  = v => isM ? (v*0.112985).toFixed(1)+' N·m/m' : v.toFixed(0)+' lb·ft/lf';
+    const overall = r.strPass && r.deflPass;
+    const passColor    = overall ? '#f0faf4' : '#fff3f0';
+    const passBorder   = overall ? '#a8d5b5' : '#f0b8aa';
+    const passTextColor = overall ? '#2d7a4f' : '#c0392b';
+    const passLabel    = overall ? '✓ PASS' : '✗ FAIL';
+    const e2353Label   = grE2353 ? 'E1300 + E2353 (4× SF)' : 'E1300 only';
+    const lcNames = ['','LC1 — 50 lb/lf uniform','LC2 — 200 lb point load','LC3 — Wind load'];
+    const h_disp = isM ? (r.H_in*25.4).toFixed(0)+' mm'
+      : (()=>{ const ft=Math.floor(r.H_in/12),ins=parseFloat((r.H_in-ft*12).toFixed(2)); return ft>0?ft+"' "+ins+'"':ins+'"'; })();
+    const plyThicks = [r.lite.thickMM, r.lite.thickMM2];
+    if((r.lite.plies||2)>=3) plyThicks.push(r.lite.thickMM3);
+    if((r.lite.plies||2)>=4) plyThicks.push(r.lite.thickMM4);
+    const makeupStr = plyThicks.join('+')+' mm '+({pvb:'PVB',pvb_str:'Str. PVB',sgp:'SGP'}[r.lite.interlayer]||'')
+      +' '+({HS:'Heat-Strengthened (HS)',FT:'Fully Tempered (FT)'}[r.lite.type]||r.lite.type)
+      +' laminated (t_eff = '+r.te.toFixed(1)+' mm)';
+
+    grHTML = `
+      <h2>Guardrail Design — ${e2353Label}</h2>
+      <div class="pr-grid">
+        <div class="pr-item"><span class="pr-label">Glass Makeup</span><span class="pr-val">${makeupStr}</span></div>
+        <div class="pr-item"><span class="pr-label">Glass Height</span><span class="pr-val">${h_disp}</span></div>
+        <div class="pr-item"><span class="pr-label">Load Height</span><span class="pr-val">${pD(r.h_load_in)}</span></div>
+        <div class="pr-item"><span class="pr-label">Trib. Width (45°)</span><span class="pr-val">${pD(r.tribWidth_in)}</span></div>
+        <div class="pr-item"><span class="pr-label">Allowable Stress</span><span class="pr-val">${pSt(r.allowStress_psi)} · MOR×GTF(${r.GTF})/SF(${r.SF})</span></div>
+        <div class="pr-item"><span class="pr-label">Deflection Limit</span><span class="pr-val">${pD(r.deflAllow_in)} · H/50 (E2353 §7.3)</span></div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Arial,sans-serif;margin-bottom:14px">
+        <tr style="background:#f5f5f5">
+          <th style="padding:5px 8px;text-align:left;border:1px solid #e0e0e0;font-weight:700">Load Case</th>
+          <th style="padding:5px 8px;text-align:right;border:1px solid #e0e0e0;font-weight:700">Stress</th>
+          <th style="padding:5px 8px;text-align:right;border:1px solid #e0e0e0;font-weight:700">Deflection</th>
+          <th style="padding:5px 8px;text-align:center;border:1px solid #e0e0e0;font-weight:700">Check</th>
+        </tr>
+        ${[1,2,3].map(i => {
+          const s = [r.stress1_psi, r.stress2_psi, r.stress3_psi][i-1];
+          const d = [r.defl1_in,   r.defl2_in,   r.defl3_in  ][i-1];
+          const gov = i === r.govLC;
+          const sPass = s <= r.allowStress_psi;
+          const dPass = d <= r.deflAllow_in;
+          return `<tr style="${gov?'background:#f0f4ff':''}">
+            <td style="padding:5px 8px;border:1px solid #e0e0e0;${gov?'font-weight:700':''}">${lcNames[i]}${gov?' ★':''}</td>
+            <td style="padding:5px 8px;border:1px solid #e0e0e0;text-align:right;color:${sPass?'#2d7a4f':'#c0392b'};font-weight:700">${pSt(s)}</td>
+            <td style="padding:5px 8px;border:1px solid #e0e0e0;text-align:right;color:${dPass?'#2d7a4f':'#c0392b'};font-weight:700">${pD(d)}</td>
+            <td style="padding:5px 8px;border:1px solid #e0e0e0;text-align:center;font-weight:700;color:${sPass&&dPass?'#2d7a4f':'#c0392b'}">${sPass&&dPass?'✓':'✗'}</td>
+          </tr>`;
+        }).join('')}
+      </table>
+      <div style="background:#f0f4ff;border:1px solid #c5d0e8;border-radius:8px;padding:10px 14px;margin-bottom:10px">
+        <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#555">Required Base Moment</span>
+        <span style="font-size:18px;font-weight:900;color:#627FBF;margin-left:12px">${pM(r.govM_lbft_per_ft)}</span>
+      </div>
+      ${r.minPassThick ? `<div style="padding:6px 10px;background:#fff3f0;border:1px solid #f0b8aa;border-radius:4px;font-size:11px;color:#c0392b;margin-bottom:8px">Min. adequate symmetric thickness: <strong>${r.minPassThick}</strong></div>` : ''}
+      <div style="background:${passColor};border:2px solid ${passBorder};border-radius:8px;
+          padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#555">Overall Guardrail Check Result</span>
+        <span style="font-size:24px;font-weight:900;color:${passTextColor}">${passLabel}</span>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:#999;font-style:italic">
+        Cantilever beam model per E2353/ASCE 7-22. Outside ASTM E1300 scope. Verify with qualified engineer. Post-breakage performance requires separate assessment.
+      </div>`;
+  }
+
   // Build Silicone section HTML
   let siHTML = '';
   if (inc.si && siResult) {
@@ -5285,7 +5362,7 @@ ${inc.diagram && diagImgSrc ? `
 
 <section class="tab-section">${uvHTML || '<h2>U-Value Calculation</h2><p style="color:#999;font-size:13px;padding:20px 0">No U-Value data — tab not calculated.</p>'}</section>
 <section class="tab-section">${beamHTML || '<h2>Mullion Sizing</h2><p style="color:#999;font-size:13px;padding:20px 0">No Mullion data — tab not calculated.</p>'}</section>
-<section class="tab-section">${gwHTML || '<h2>Glass Sizing — ASTM E1300</h2><p style="color:#999;font-size:13px;padding:20px 0">No Glass Sizing data — tab not calculated.</p>'}</section>
+<section class="tab-section">${gwHTML || '<h2>Glass Sizing — ASTM E1300</h2><p style="color:#999;font-size:13px;padding:20px 0">No Glass Sizing data — tab not calculated.</p>'}${grHTML ? `<div style="border-top:2px solid #eee;margin-top:24px;padding-top:24px">${grHTML}</div>` : ''}</section>
 <section class="tab-section">${siHTML || '<h2>Silicone Bite Sizing</h2><p style="color:#999;font-size:13px;padding:20px 0">No Silicone Bite data — tab not calculated.</p>'}</section>
 
 <div class="page-footer">
