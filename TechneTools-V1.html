@@ -687,7 +687,7 @@ input[type=range]::-webkit-slider-thumb {
   white-space:pre-wrap;word-break:break-all"></div>
 
 <script>
-const APP_VERSION = '1.007';
+const APP_VERSION = '1.008';
 // GITHUB-DIFF-TEST: 2026-06-08
 
 function applyAppVersion() {
@@ -3597,7 +3597,7 @@ function onGwChange() {
     const deflPass = defl <= deflAllow_in;
     const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w_psf, gwSupport) : null;
     const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w_psf, gwSupport) : null;
-    results.push({ label:liteLabel(l,'Lite'), t:te, LR, w_psf, strPass, defl, deflAllow_in, deflGovDim_in, deflPass, minT, suggestT, sgp:sgpNote(l) });
+    results.push({ label:liteLabel(l,'Lite'), t:te, LR, w_psf, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, minT, suggestT, sgp:sgpNote(l) });
 
   } else if (gwAssembly === 'igu' || gwAssembly === 'triple') {
     const lites = gwAssembly === 'triple'
@@ -3619,7 +3619,7 @@ function onGwChange() {
       const deflPass = defl <= deflAllow_in;
       const minT = (!strPass||!deflPass) ? findMinThickness(l.type, W_in, H_in, w, gwSupport) : null;
       const suggestT = (strPass && deflPass) ? findSuggestedThickness(l.thickMM, l.type, W_in, H_in, w, gwSupport) : null;
-      results.push({ label:liteLabel(l, labels[i]), t:te, LR, w_psf:w, strPass, defl, deflAllow_in, deflGovDim_in, deflPass, minT, suggestT, lsf, sgp:sgpNote(l) });
+      results.push({ label:liteLabel(l, labels[i]), t:te, LR, w_psf:w, strPass, defl, deflAllow_in, deflGovDim_in, deflIsLongDim: deflGovDim_in >= Math.max(W_in,H_in)-0.01, deflPass, minT, suggestT, lsf, sgp:sgpNote(l) });
     });
 
   }
@@ -3725,7 +3725,7 @@ function renderGwResult(r) {
       const govDimStr = isM
         ? Math.round(govDim_in * 25.4) + ' mm'
         : (function(){ const ft=Math.floor(govDim_in/12), ins=parseFloat((govDim_in-ft*12).toFixed(0)); return ft>0?ft+"'"+( ins>0?ins+'"':''):ins+'"'; })();
-      const isLongDim = govDim_in >= Math.max(W_in, H_in) - 0.01;
+      const isLongDim = res.deflIsLongDim;
       const govEdgeLabel = gwSupport === 4
         ? 'short dim (4-edge)'
         : isLongDim
