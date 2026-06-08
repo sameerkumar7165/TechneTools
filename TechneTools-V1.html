@@ -687,7 +687,7 @@ input[type=range]::-webkit-slider-thumb {
   white-space:pre-wrap;word-break:break-all"></div>
 
 <script>
-const APP_VERSION = '1.023';
+const APP_VERSION = '1.024';
 // GITHUB-DIFF-TEST: 2026-06-08
 
 function applyAppVersion() {
@@ -3141,9 +3141,9 @@ let gwAssembly = 'mono'; // mono | igu | lam
 let gwSupport  = 4;      // 2 | 3 | 4 edges
 let gwUnsupported = 'long'; // long | short (for 2/3-edge)
 let gwLites = [
-  { type:'AN', thickMM:6, lam:false, thickMM2:6, interlayer:'pvb', tPvbMM:0.76 },
-  { type:'AN', thickMM:6, lam:false, thickMM2:6, interlayer:'pvb', tPvbMM:0.76 },
-  { type:'AN', thickMM:6, lam:false, thickMM2:6, interlayer:'pvb', tPvbMM:0.76 },
+  { type:'AN', thickMM:6, lam:false, plies:2, thickMM2:6, thickMM3:6, thickMM4:6, interlayer:'pvb', tPvbMM:0.76 },
+  { type:'AN', thickMM:6, lam:false, plies:2, thickMM2:6, thickMM3:6, thickMM4:6, interlayer:'pvb', tPvbMM:0.76 },
+  { type:'AN', thickMM:6, lam:false, plies:2, thickMM2:6, thickMM3:6, thickMM4:6, interlayer:'pvb', tPvbMM:0.76 },
 ];
 let gwResult_data = null;
 
@@ -3393,14 +3393,23 @@ function getSelectedOptionText(selectId, fallback) {
 /* ── Find minimum passing thickness ─────────────────────────── */
 function findMinThickness(type, W_in, H_in, w_psf, edges, liteObj) {
   const { allow_in: deflAllow } = getDeflAllow_in(W_in, H_in);
-  // For laminated lites: test symmetric laminated pairs using same interlayer/type
+  // For laminated lites: test symmetric configurations for current ply count
+  // using the same interlayer as the current lite
   if (liteObj && liteObj.lam) {
+    const plies = liteObj.plies || 2;
     for (const t of GLASS_THICKNESSES_MM) {
-      const lamTest = Object.assign({}, liteObj, { thickMM: t, thickMM2: t });
+      // Build a symmetric test lite with all plies equal to t
+      const lamTest = Object.assign({}, liteObj, {
+        thickMM: t, thickMM2: t,
+        thickMM3: plies >= 3 ? t : undefined,
+        thickMM4: plies >= 4 ? t : undefined,
+      });
       const te = effThick(lamTest);
       const { LR } = calcLR_psi(te, type, W_in, H_in, edges);
       const { defl } = calcDeflection_in(te, W_in, H_in, w_psf, edges);
-      if (LR >= w_psf && defl <= deflAllow) return t + '+' + t;
+      if (LR >= w_psf && defl <= deflAllow) {
+        return Array(plies).fill(t).join('+');
+      }
     }
     return null;
   }
@@ -3459,8 +3468,25 @@ function rebuildGwLiteFields() {
   function thickOptions(sel) {
     return GLASS_THICKNESSES_MM.map((t,j)=>`<option value="${t}" ${t===sel?'selected':''}>${t}mm | ${GLASS_THICK_FRAC[j]}</option>`).join('');
   }
+
   function liteRow(idx, label) {
-    const l = gwLites[idx] || { type:'AN', thickMM:6, lam:false, thickMM2:6, interlayer:'pvb' };
+    const l = gwLites[idx] || { type:'AN', thickMM:6, lam:false, plies:2, thickMM2:6, thickMM3:6, thickMM4:6, interlayer:'pvb', tPvbMM:0.76 };
+    const plies = l.lam ? (l.plies||2) : 1;
+    const teff = l.lam ? effThick(l).toFixed(1) : null;
+    const gamma = GW_GAMMA[l.interlayer||'pvb'];
+    const conservative = l.lam && (l.interlayer==='sgp'||l.interlayer==='pvb_str');
+
+    // Build extra ply fields (plies 3 and 4)
+    const extraPlies = l.lam ? Array.from({length: plies - 2}, (_,i) => `
+        <div class="field">
+          <label>Lite ${i+3}</label>
+          <div class="input-wrap">
+            <select id="gw-thick${i+3}-${idx}" onchange="gwLites[${idx}].thickMM${i+3}=parseInt(this.value);rebuildGwLiteFields();onGwChange()">
+              ${thickOptions(i===0 ? (l.thickMM3||6) : (l.thickMM4||6))}
+            </select>
+          </div>
+        </div>`).join('') : '';
+
     return `
     <div style="margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
@@ -3494,13 +3520,25 @@ function rebuildGwLiteFields() {
           <label>Lite 2</label>
           <div class="input-wrap">
             <select id="gw-thick2-${idx}" onchange="gwLites[${idx}].thickMM2=parseInt(this.value);rebuildGwLiteFields();onGwChange()">
-              ${thickOptions(l.thickMM2)}
+              ${thickOptions(l.thickMM2||l.thickMM)}
             </select>
           </div>
         </div>` : ''}
       </div>
+      ${l.lam && plies > 2 ? `
+      <div class="field-row" style="margin-bottom:8px">
+        ${extraPlies}
+      </div>` : ''}
       ${l.lam ? `
-      <div class="field-row" style="margin-bottom:0">
+      <div class="field-row" style="margin-bottom:4px">
+        <div class="field" style="flex:0 0 auto">
+          <label style="white-space:nowrap">Plies</label>
+          <div class="sec-type-toggle" style="transform:scale(0.85);transform-origin:left center">
+            <button class="sec-type-btn ${plies===2?'active':''}" onclick="gwLites[${idx}].plies=2;rebuildGwLiteFields();onGwChange()">2</button>
+            <button class="sec-type-btn ${plies===3?'active':''}" onclick="gwLites[${idx}].plies=3;rebuildGwLiteFields();onGwChange()">3</button>
+            <button class="sec-type-btn ${plies===4?'active':''}" onclick="gwLites[${idx}].plies=4;rebuildGwLiteFields();onGwChange()">4</button>
+          </div>
+        </div>
         <div class="field">
           <label>Interlayer</label>
           <div class="input-wrap">
@@ -3524,9 +3562,9 @@ function rebuildGwLiteFields() {
           </div>
         </div>
       </div>
-      <div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:4px">
-        γ = ${{pvb:0.01,pvb_str:0.35,sgp:0.85}[l.interlayer||'pvb']} · t_eff = ${(()=>{const h1=l.thickMM,h2=l.thickMM2||l.thickMM,tp=l.tPvbMM||0.76,g={pvb:0.01,pvb_str:0.35,sgp:0.85}[l.interlayer||'pvb']||0.01,Is=h1*h2*Math.pow(h1+h2+2*tp,2)/(4*(h1+h2));return Math.pow(h1**3+h2**3+12*g*Is,1/3).toFixed(1)})()}mm
-        ${(l.interlayer==='sgp'||l.interlayer==='pvb_str')?'· Result is conservative':''}
+      <div style="font-size:10px;color:var(--text-muted);font-family:'Lato',sans-serif;margin-top:2px">
+        γ = ${gamma} · t_eff = ${teff}mm · ${plies}-ply laminate
+        ${conservative ? '· Conservative model — actual performance higher' : ''}
       </div>` : ''}
     </div>`;
   }
@@ -3546,13 +3584,37 @@ function rebuildGwLiteFields() {
 /* ── Bennison-Stelzer (global — used by both onGwChange and generatePrintPage) ── */
 const GW_GAMMA        = { pvb:0.01, pvb_str:0.35, sgp:0.85 };
 const GW_TPVB_DEFAULT = { pvb:0.76, pvb_str:0.76, sgp:1.52 };
+// Generalised Bennison-Stelzer for N-ply laminates (2, 3, or 4 plies, same interlayer)
+// Ref: Bennison et al. (2008), generalised to N plies via parallel-axis theorem.
+// For each ply i, compute centroid distance from neutral axis, then:
+// EI_eff = E × (Σ t_i³/12 + Σ t_i × z_i²) + γ × E × Σ (interlayer contributions)
+// Simplified to t_eff = (Σ t_i³ + 12·γ·Σ I_s_i)^(1/3)
 function effThick(l) {
   if(!l.lam) return l.thickMM;
-  const h1 = l.thickMM, h2 = l.thickMM2||l.thickMM;
   const tpvb = l.tPvbMM || GW_TPVB_DEFAULT[l.interlayer] || 0.76;
   const gamma = GW_GAMMA[l.interlayer] || 0.01;
-  const Is = h1*h2*Math.pow(h1+h2+2*tpvb, 2) / (4*(h1+h2));
-  return Math.pow(h1**3 + h2**3 + 12*gamma*Is, 1/3);
+  // Build ply array
+  const plies = [l.thickMM];
+  if(l.thickMM2) plies.push(l.thickMM2);
+  if(l.thickMM3) plies.push(l.thickMM3);
+  if(l.thickMM4) plies.push(l.thickMM4);
+  const n = plies.length;
+  if(n === 1) return plies[0];
+  // Compute centroid of each ply (distance from bottom face of stack)
+  const gaps = n - 1; // number of interlayer gaps
+  let z = []; // centroid of each ply from bottom
+  let pos = 0;
+  for(let i = 0; i < n; i++) {
+    z.push(pos + plies[i]/2);
+    pos += plies[i] + (i < n-1 ? tpvb : 0);
+  }
+  const totalH = pos;
+  const zNA = totalH / 2; // neutral axis at mid-height (symmetric or not — approximate)
+  // Self-inertia terms: Σ t_i³
+  const sumT3 = plies.reduce((s,t) => s + t**3, 0);
+  // Composite inertia terms: 12·γ·Σ t_i·(z_i - z_NA)²
+  const sumIS = plies.reduce((s,t,i) => s + t * (z[i] - zNA)**2, 0);
+  return Math.pow(sumT3 + 12*gamma*sumIS, 1/3);
 }
 
 function onGwPanelChange() { rebuildGwZoneDropdown(); onGwZoneSelect(); }
@@ -3619,7 +3681,11 @@ function onGwChange() {
   function liteLabel(l, prefix) {
     if(!l.lam) return prefix+' ('+l.type+', '+l.thickMM+'mm)';
     const iLabel = l.interlayer==='sgp'?'SGP':l.interlayer==='pvb_str'?'Str. PVB':'PVB';
-    return prefix+' ('+l.type+', '+l.thickMM+'+'+l.thickMM2+'mm '+iLabel+', t_eff='+effThick(l).toFixed(1)+'mm)';
+    const plies = l.plies||2;
+    let plyStr = l.thickMM+'+'+(l.thickMM2||l.thickMM);
+    if(plies>=3) plyStr += '+'+(l.thickMM3||l.thickMM);
+    if(plies>=4) plyStr += '+'+(l.thickMM4||l.thickMM);
+    return prefix+' ('+l.type+', '+plyStr+'mm '+iLabel+', t_eff='+effThick(l).toFixed(1)+'mm)';
   }
   function sgpNote(l) { return l.lam && l.interlayer==='sgp'; }
 
@@ -4374,9 +4440,14 @@ function generatePrintPage() {
       if (!l.lam) return lbl + ': ' + l.thickMM + 'mm ' + typeStr + ' (monolithic)';
       const inter = interMap[l.interlayer] || l.interlayer;
       const te = effThick(l).toFixed(1);
-      return lbl + ': ' + l.thickMM + 'mm + ' + (l.tPvbMM||0.76) + 'mm ' + inter
-           + ' + ' + (l.thickMM2||l.thickMM) + 'mm ' + typeStr
-           + ' laminated  (t_eff = ' + te + 'mm)';
+      const tpvb = l.tPvbMM || 0.76;
+      const plies = l.plies || 2;
+      // Build ply string: t1 + pvb + t2 + pvb + t3 ...
+      const plyThicks = [l.thickMM, l.thickMM2||l.thickMM];
+      if(plies>=3) plyThicks.push(l.thickMM3||l.thickMM);
+      if(plies>=4) plyThicks.push(l.thickMM4||l.thickMM);
+      const plyStr = plyThicks.join('mm + '+tpvb+'mm '+inter+' + ')+'mm';
+      return lbl + ': ' + plyStr + ' ' + typeStr + ' laminated  (t_eff = ' + te + 'mm)';
     }
 
     const liteConfigs = gwAssembly === 'mono'
