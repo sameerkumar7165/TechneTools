@@ -320,7 +320,6 @@ input[type=range]::-webkit-slider-thumb {
 .help-body li { margin-bottom: 4px; }
 
 
-
 /* Drum picker (glass weight) */
 .drum-wrap {
   flex: 1; background: var(--input-bg); border: 1px solid var(--border);
@@ -688,6 +687,24 @@ input[type=range]::-webkit-slider-thumb {
   white-space:pre-wrap;word-break:break-all"></div>
 
 <script>
+const APP_VERSION = '1.004';
+// GITHUB-DIFF-TEST: 2026-06-08
+
+function applyAppVersion() {
+  const versionText = 'V ' + APP_VERSION;
+  document.querySelectorAll('[data-app-version], #version-label').forEach(function(el) {
+    el.textContent = versionText;
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', applyAppVersion);
+} else {
+  applyAppVersion();
+}
+
+
+
 window.onerror = function(msg, src, line, col, err) {
   const b = document.getElementById('err-banner');
   if(b){
@@ -754,7 +771,7 @@ window.addEventListener('unhandledrejection', function(e){
       </div>
     </div>
     <div id="wind-bar-right">
-      <span style="font-size:9px;font-weight:700;letter-spacing:0.5px;color:rgba(255,255,255,0.5);font-family:'Lato',sans-serif;align-self:flex-end">V 1.003</span>
+      <span id="version-label" data-app-version style="font-size:9px;font-weight:700;letter-spacing:0.5px;color:rgba(255,255,255,0.5);font-family:'Lato',sans-serif;align-self:flex-end">V 1.004</span>
       <span id="wind-unit-label">Units</span>
       <div class="wind-unit-toggle">
         <button class="wind-unit-btn active" id="pc-btn-imperial" onclick="setPcUnit('imperial')">Imp</button>
@@ -807,7 +824,6 @@ window.addEventListener('unhandledrejection', function(e){
         </div>
       </div>
     </div>
-
 
 
     <!-- All zones and transoms rendered dynamically in correct order -->
@@ -1107,7 +1123,6 @@ window.addEventListener('unhandledrejection', function(e){
   </div>
 
 
-
   <!-- Design Criteria -->
   <div class="section">
     <div class="section-label">Design Criteria
@@ -1381,7 +1396,6 @@ window.addEventListener('unhandledrejection', function(e){
   </div>
 
 
-
   <!-- Zone / Custom -->
   <div class="section">
     <div class="section-label" style="display:flex;justify-content:space-between;align-items:center">Panel Zone
@@ -1499,7 +1513,6 @@ window.addEventListener('unhandledrejection', function(e){
     <div id="help-body" style="font-family:'Lato',sans-serif;font-size:14px;color:var(--text-soft);line-height:1.7"></div>
   </div>
 </div>
-
 
 
 </div><!-- end app -->
