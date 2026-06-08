@@ -687,7 +687,7 @@ input[type=range]::-webkit-slider-thumb {
   white-space:pre-wrap;word-break:break-all"></div>
 
 <script>
-const APP_VERSION = '1.018';
+const APP_VERSION = '1.021';
 // GITHUB-DIFF-TEST: 2026-06-08
 
 function applyAppVersion() {
@@ -4291,7 +4291,7 @@ function generatePrintPage() {
       bkHTML += '</table>';
     }
 
-    uvHTML = `<section>
+    uvHTML = `
       <h2>System U-Value Calculation</h2>
       <div class="pr-grid">
         <div class="pr-item"><span class="pr-label">Frame Type</span><span class="pr-val">${frameVal}</span></div>
@@ -4308,8 +4308,7 @@ function generatePrintPage() {
         <span class="pr-result-val">${uvImp}</span>
         <span class="pr-result-val-met">${uvMet}</span>
       </div>
-      ${bkHTML}
-    </section>`;
+      ${bkHTML}`;
   }
 
   // Build Beam section HTML
@@ -4332,7 +4331,7 @@ function generatePrintPage() {
     const passStr = r ? (r.pass ? '✓ PASS' : '✗ FAIL') : '—';
     const utilStr = r ? Math.round(r.util*100)+'%' : '—';
 
-    beamHTML = `<section>
+    beamHTML = `
       <h2>Mullion Sizing</h2>
       <div class="pr-grid">
         <div class="pr-item"><span class="pr-label">Member</span><span class="pr-val">${memberVal}</span></div>
@@ -4348,8 +4347,7 @@ function generatePrintPage() {
       <div class="pr-result ${r&&r.pass?'pr-pass':'pr-fail'}">
         <span class="pr-result-label">Result — Governs: ${r?r.governs:'—'}</span>
         <span class="pr-result-val">${passStr} (${utilStr})</span>
-      </div>
-    </section>`;
+      </div>`;
   }
 
   // Build Glass section HTML
@@ -4436,7 +4434,7 @@ function generatePrintPage() {
         </div>`;
     });
 
-    gwHTML = `<section>
+    gwHTML = `
       <h2>Glass Sizing — ASTM E1300</h2>
       <div class="pr-grid">
         <div class="pr-item"><span class="pr-label">Assembly Type</span><span class="pr-val">${asmVal}</span></div>
@@ -4453,8 +4451,7 @@ function generatePrintPage() {
         <span style="font-size:24px;font-weight:900;color:${passTextColor};letter-spacing:1px">
           ${passLabel}
         </span>
-      </div>
-    </section>`;
+      </div>`;
   }
 
   // Build Silicone section HTML
@@ -4471,7 +4468,7 @@ function generatePrintPage() {
     const shortSide = isM ? (Math.min(r.W_in,r.H_in)*IN_TO_MM).toFixed(0)+' mm' 
                           : (Math.min(r.W_in,r.H_in)/12).toFixed(2)+" ft";
 
-    siHTML = `<section>
+    siHTML = `
       <h2>Silicone Bite Sizing</h2>
       <div class="pr-grid">
         <div class="pr-item"><span class="pr-label">Product</span><span class="pr-val">${prodVal}</span></div>
@@ -4483,8 +4480,7 @@ function generatePrintPage() {
         <span class="pr-result-label">Required Bite</span>
         <span class="pr-result-val">${impVal}</span>
         <span class="pr-result-val-met">${metVal}</span>
-      </div>
-    </section>`;
+      </div>`;
   }
 
   // ── Build the full print HTML page ──
@@ -4544,11 +4540,14 @@ function generatePrintPage() {
   @media print {
     body { padding: 0; }
     .no-print { display: none !important; }
-    /* Title block always ends its own page so section 1 starts fresh */
-    .title-block { page-break-after: always; }
-    /* Sections flow naturally — break before only if needed, never force */
-    section + section { border-top: 2px solid #ddd; padding-top: 20px; }
-    section { page-break-inside: avoid; }
+    /* Page 1: title block + panel config/diagram — no break after title block */
+    .title-block { page-break-after: avoid; }
+    /* Panel config section (page 1) — page break after it to start tab pages */
+    .panel-section { page-break-after: always; }
+    /* Each tab section always starts on its own page */
+    .tab-section { page-break-before: always; page-break-inside: auto; }
+    /* Diagram constrained to fit on page 1 */
+    .diagram-img { max-height: 320px; }
     .no-break { page-break-inside: avoid; }
     @page { margin: 15mm 15mm; }
   }
@@ -4579,19 +4578,20 @@ function generatePrintPage() {
 
 <!-- TITLE BLOCK -->
 <div class="title-block" style="margin-bottom:0">
-  <!-- Logo -->
-  <img src="${TECHNE_LOGO_URI}" alt="TECHNE" style="height:56px;width:auto;display:block;margin-bottom:12px">
-  <!-- Project info — indented to align with logo text body -->
-  <div style="padding-left:32px;font-family:Arial,sans-serif;font-size:12px;color:#444;line-height:1.9">
-    <div>Project Name: <strong>${projName}</strong></div>
-    <div>Project Number: <strong>${projNum}</strong></div>
-    <div>Panel Type: <strong>${panelLabel}</strong></div>
-    <div style="margin-top:6px">By: <strong>${author}</strong></div>
-    <div>Date: <strong>${dateStr}</strong></div>
+  <!-- Two-column: logo left, project info right -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+    <img src="${TECHNE_LOGO_URI}" alt="TECHNE" style="height:24px;width:auto;display:block">
+    <div style="font-family:Arial,sans-serif;font-size:12px;color:#444;line-height:1.9;text-align:right;width:55%">
+      <div>Project Name: <strong>${projName}</strong></div>
+      <div>Project Number: <strong>${projNum}</strong></div>
+      <div>Panel Type: <strong>${panelLabel}</strong></div>
+      <div style="margin-top:6px">By: <strong>${author}</strong></div>
+      <div>Date: <strong>${dateStr}</strong></div>
+    </div>
   </div>
 
   <!-- Horizontal rule -->
-  <div style="border-top:2px solid #999;margin:16px 0 12px"></div>
+  <div style="border-top:2px solid #999;margin-bottom:12px"></div>
 
   <!-- Wind load + comments below rule -->
   <div style="font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;line-height:1.8">
@@ -4607,22 +4607,28 @@ function generatePrintPage() {
 </div>
 
 ${inc.diagram && diagImgSrc ? `
-<section>
+<section class="panel-section">
   <h2>Panel Configuration</h2>
   <div class="panel-config">
     <div class="panel-config-title">Panel Geometry</div>
     ${zonesHTML}
   </div>
   <img class="diagram-img" src="${diagImgSrc}" alt="Panel Diagram"/>
-</section>` : ''}
+</section>` : `<section class="panel-section">
+  <h2>Panel Configuration</h2>
+  <div class="panel-config">
+    <div class="panel-config-title">Panel Geometry</div>
+    ${zonesHTML}
+  </div>
+</section>`}
 
-${uvHTML}
-${beamHTML}
-${gwHTML}
-${siHTML}
+<section class="tab-section">${uvHTML || '<h2>U-Value Calculation</h2><p style="color:#999;font-size:13px;padding:20px 0">No U-Value data — tab not calculated.</p>'}</section>
+<section class="tab-section">${beamHTML || '<h2>Mullion Sizing</h2><p style="color:#999;font-size:13px;padding:20px 0">No Mullion data — tab not calculated.</p>'}</section>
+<section class="tab-section">${gwHTML || '<h2>Glass Sizing — ASTM E1300</h2><p style="color:#999;font-size:13px;padding:20px 0">No Glass Sizing data — tab not calculated.</p>'}</section>
+<section class="tab-section">${siHTML || '<h2>Silicone Bite Sizing</h2><p style="color:#999;font-size:13px;padding:20px 0">No Silicone Bite data — tab not calculated.</p>'}</section>
 
 <div class="page-footer">
-  TechneTools V1 — All calculations are indicative only and not for use in formal engineering submissions. Verify with appropriate standards and professional engineering judgement.
+  TechneTools V ${APP_VERSION} &nbsp;·&nbsp; All calculations are indicative only and not for use in formal engineering submissions. Verify with appropriate standards and professional engineering judgement.
 </div>
 
 <script>
