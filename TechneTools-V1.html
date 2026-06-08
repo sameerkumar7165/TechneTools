@@ -754,7 +754,7 @@ window.addEventListener('unhandledrejection', function(e){
       </div>
     </div>
     <div id="wind-bar-right">
-      <span style="font-size:9px;font-weight:700;letter-spacing:0.5px;color:rgba(255,255,255,0.5);font-family:'Lato',sans-serif;align-self:flex-end">V 1.001</span>
+      <span style="font-size:9px;font-weight:700;letter-spacing:0.5px;color:rgba(255,255,255,0.5);font-family:'Lato',sans-serif;align-self:flex-end">V 1.002</span>
       <span id="wind-unit-label">Units</span>
       <div class="wind-unit-toggle">
         <button class="wind-unit-btn active" id="pc-btn-imperial" onclick="setPcUnit('imperial')">Imp</button>
@@ -2384,10 +2384,12 @@ function updateUvInheritedChips() {
 function onUvFwChange() { onUvFrameConfig(); }
 
 function isFrameless() {
-  return document.getElementById('uv-frame-type').value === 'frameless';
+  const el = document.getElementById('uv-frame-type');
+  return el ? el.value === 'frameless' : false;
 }
 
 function onUvFrameConfig() {
+  if(!document.getElementById('uv-frame-type')) return;
   const frameless = isFrameless();
   // Show/hide frame-specific fields
   const fwRow = document.getElementById('uv-fw-row');
@@ -2421,7 +2423,9 @@ function onUvFrameConfig() {
 }
 
 function onUvGlassConfig() {
-  const igu=document.getElementById('uv-igu').value;
+  const iguEl=document.getElementById('uv-igu');
+  if(!iguEl) return;
+  const igu=iguEl.value;
   const coatings=parseInt(document.getElementById('uv-coatings').value)||0;
   const fill=document.getElementById('uv-fill').value||'argon';
   // Guard: ensure igu and coatings keys exist in table
@@ -2545,7 +2549,9 @@ function cogArea(w,h,e){if(w<=2*e||h<=2*e) return 0; return (w-2*e)*(h-2*e);}
 
 function onUvChange() {
   if(document.body.getAttribute('data-tab')!=='uv') return;
-  const errEl=document.getElementById('uv-error'); errEl.classList.remove('visible');
+  const errEl=document.getElementById('uv-error');
+  if(!errEl) return;
+  errEl.classList.remove('visible');
   const geom=computePanelGeometry(); if(!geom){return;}
 
   const frameless = isFrameless();
@@ -3300,7 +3306,8 @@ function calcDeflection_in(t_mm, W_in, H_in, w_psf, edges) {
 /* ── Deflection allowable ────────────────────────────────────── */
 function getDeflAllow_in(W_in, H_in) {
   const a = Math.min(W_in, H_in);
-  const deflOpt = document.getElementById('gw-defl').value;
+  const deflEl = document.getElementById('gw-defl');
+  const deflOpt = deflEl ? deflEl.value : '175'; // default L/175 if element absent
   if (deflOpt === 'none')   return Infinity;
   if (deflOpt === '175')    return a / 175;
   if (deflOpt === '240')    return a / 240;
@@ -3508,7 +3515,9 @@ function getGwDimIn(ftId,inId) {
 }
 
 function onGwChange() {
-  const errEl = document.getElementById('gw-error'); errEl.classList.remove('visible');
+  const errEl = document.getElementById('gw-error');
+  if(!errEl) return;
+  errEl.classList.remove('visible');
   const H_in = getGwDimIn('gw-h-ft','gw-h-in');
   const W_in = getGwDimIn('gw-w-ft','gw-w-in');
   if (!H_in || !W_in || H_in<=0 || W_in<=0) return;
@@ -3656,7 +3665,8 @@ function renderGwResult(r) {
 
     // Deflection card
     if(res.deflAllow_in < Infinity){
-      const deflLabel = document.getElementById('gw-defl').options[document.getElementById('gw-defl').selectedIndex].text.split('(')[0].trim();
+      const deflEl2 = document.getElementById('gw-defl');
+      const deflLabel = deflEl2 ? deflEl2.options[deflEl2.selectedIndex].text.split('(')[0].trim() : 'L/175';
       html += twoColCard(
         'Deflection',
         'Allowable', dD(res.deflAllow_in), 'var(--text-soft)', deflLabel,
@@ -3844,7 +3854,9 @@ function onSiProductChange(){
 }
 
 function onSiChange(){
-  const errEl=document.getElementById('si-error'); errEl.classList.remove('visible');
+  const errEl=document.getElementById('si-error');
+  if(!errEl) return;
+  errEl.classList.remove('visible');
   const isM=pcUnit==='metric';
   const H_in=isM?(parseFloat(document.getElementById('si-h-ft').value)||0)/IN_TO_MM:(parseFloat(document.getElementById('si-h-ft').value)||0)*12+(parseFloat(document.getElementById('si-h-in').value)||0);
   const W_in=isM?(parseFloat(document.getElementById('si-w-ft').value)||0)/IN_TO_MM:(parseFloat(document.getElementById('si-w-ft').value)||0)*12+(parseFloat(document.getElementById('si-w-in').value)||0);
